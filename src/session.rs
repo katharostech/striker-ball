@@ -14,9 +14,7 @@ pub trait SessionCreation {
 impl SessionCreation for Sessions {
     fn create_play(&mut self, mode: PlayMode) {
         self.add_command(Box::new(move |sessions| {
-            sessions.create_with(PLAY, |builder: &mut SessionBuilder| {
-                builder.install_plugin(PlayPlugin { mode });
-            });
+            sessions.create_with(PLAY, PlayPlugin { mode });
         }));
     }
     fn delete_play(&mut self) {

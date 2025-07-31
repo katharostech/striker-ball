@@ -17,9 +17,7 @@ fn main() {
     game.insert_shared_resource(ClearColor(Color::BLACK));
 
     game.install_plugin(LocalInputGamePlugin);
-    game.sessions.create_with(session::UI, |builder: &mut SessionBuilder| {
-        builder.install_plugin(UiSessionPlugin);
-    });
+    game.sessions.create_with(session::UI, UiSessionPlugin);
 
     BonesBevyRenderer::new(game)
         .namespace(("studio", "ktech", "striker_ball"))
