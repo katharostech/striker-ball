@@ -3,8 +3,10 @@ use bones_bevy_renderer::BonesBevyRenderer;
 use bones_framework::prelude::*;
 use striker_ball::*;
 
+const fn namespace() -> (&'static str, &'static str, &'static str) { ("ktech", "studio", "striker_ball") }
+
 fn main() {
-    setup_logs!("studio", "ktech", "striker_ball");
+    setup_logs!(namespace());
 
     crate::register_schemas();
 
@@ -20,8 +22,7 @@ fn main() {
     game.sessions.create_with(session::UI, UiSessionPlugin);
 
     BonesBevyRenderer::new(game)
-        .namespace(("studio", "ktech", "striker_ball"))
-        .preload(true)
+        .namespace(namespace())
         .app()
         .run();
 }
