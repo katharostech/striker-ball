@@ -4,8 +4,9 @@ use super::*;
 #[type_data(metadata_asset("game"))]
 #[repr(C)]
 pub struct Data {
-    pub screen_size: Vec2,
+    pub matchmaking_server: String,
     pub localization: Handle<LocalizationAsset>,
+    pub screen_size: Vec2,
     pub constant: Constants,
     pub sprite: Sprites,
     pub sound: Sounds,

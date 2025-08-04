@@ -1,3 +1,4 @@
+matchmaking_server: 2v5rsoywduwh7qs7itrpjfxecixttz6unhyghk7yosrmcu3efk3a
 localization: localization.yaml
 screen_size: [&screen_width 375, &screen_height 211]
 court: [sprites/soccerField.png, *screen_width, *screen_height]
