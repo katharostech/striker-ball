@@ -3,9 +3,10 @@ use super::*;
 #[derive(HasSchema, Clone, Default)]
 #[repr(C)]
 pub struct MatchDoneAssets {
-    pub buttons: Handle<Image>,
-    pub button_picker1: SizedImageAsset,
-    pub button_picker2: SizedImageAsset,
+    pub menu: SizedImageAsset,
+    pub cursor: SizedImageAsset,
+    pub play_again_pos: Vec2,
+    pub team_select_pos: Vec2,
 }
 
 #[derive(HasSchema, Clone, Default, Copy, Deref, DerefMut)]
@@ -28,6 +29,7 @@ impl MatchDone {
         }
     }
 }
+
 impl SessionPlugin for MatchDone {
     fn install(self, session: &mut SessionBuilder) {
         session.insert_resource(self);
@@ -42,30 +44,38 @@ pub fn show(world: &World) {
     let asset_server = world.resource::<AssetServer>();
     let root = asset_server.root::<Data>();
     let MatchDoneAssets {
-        button_picker1,
-        button_picker2,
-        buttons,
-        ..
+        menu,
+        cursor,
+        play_again_pos,
+        team_select_pos,
     } = root.menu.match_done;
 
     use egui::*;
     Area::new("match-done-ui")
         .anchor(Align2::CENTER_CENTER, [0., 0.])
+        .order(Order::Foreground)
         .show(&world.resource::<EguiCtx>(), |ui| {
             let textures = world.resource::<EguiTextures>();
             ui.horizontal(|ui| {
                 ui.style_mut().spacing.item_spacing = Vec2::ZERO;
-                ui.image(ImageSource::Texture(load::SizedTexture::new(
-                    match match_done.state {
-                        MatchDoneState::PlayAgain => textures.get(*button_picker1),
-                        MatchDoneState::TeamSelect => textures.get(*button_picker2),
-                    },
-                    button_picker1.egui_size(),
+                let response = ui.image(ImageSource::Texture(load::SizedTexture::new(
+                    textures.get(*menu),
+                    menu.egui_size(),
                 )));
-                ui.image(ImageSource::Texture(load::SizedTexture::new(
-                    textures.get(buttons),
-                    [55., 30.],
-                )));
+
+                let pos = match match_done.state {
+                    MatchDoneState::PlayAgain => play_again_pos,
+                    MatchDoneState::TeamSelect => team_select_pos,
+                };
+                ui.painter().image(
+                    textures.get(*cursor),
+                    Rect::from_min_size(
+                        response.rect.min + egui::Vec2::new(pos.x, pos.y),
+                        cursor.egui_size(),
+                    ),
+                    default_uv(),
+                    Color32::WHITE,
+                )
             });
         });
 }

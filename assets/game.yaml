@@ -170,9 +170,10 @@ menu:
     team_b: [ui/winnerBannerBlue.png, *bannerx, *bannery]
 
   match_done:
-    buttons: ui/endGameButtons.png
-    button_picker1: [ui/endGameButtonPicker1.png, 5, 30]
-    button_picker2: [ui/endGameButtonPicker2.png, 5, 30]
+    menu: [ui/endGameMenu.png, 87, 33]
+    cursor: [ui/pauseCursor.png, 6, 5]
+    play_again_pos: [13, 8]
+    team_select_pos: [6, 20]
 
   pause:
     menu: [ui/pauseMenu.png, 177, 89]
