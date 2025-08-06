@@ -35,6 +35,7 @@ pub struct Sounds {
     pub ball_spin: VolumeSoundAsset,
     pub ball_spin_buffer: f32,
     pub ball_bounced: VolumeSoundAsset,
+    pub ball_kicked: VolumeSoundAsset,
 }
 
 #[derive(HasSchema, Clone, Default)]

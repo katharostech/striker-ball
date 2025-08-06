@@ -213,6 +213,7 @@ fn turn_out_transition(
     entities: Res<Entities>,
     root: Root<Data>,
     players: Comp<Player>,
+    mut audio: ResMut<AudioCenter>,
     mut balls: CompMut<Ball>,
     mut states: CompMut<State>,
 ) {
@@ -228,6 +229,8 @@ fn turn_out_transition(
 
         ball.owner = Maybe::Unset;
         ball.velocity = player.angle * root.constant.kick_power;
+        let Sounds { ball_kicked, .. } = root.sound;
+        audio.play_sound(*ball_kicked, ball_kicked.volume());
     }
 }
 
@@ -379,6 +382,7 @@ fn shoot_out_transition(
     inputs: Res<PlayInputs>,
     clients: Comp<Client>,
     root: Root<Data>,
+    mut audio: ResMut<AudioCenter>,
     mut players: CompMut<Player>,
     mut states: CompMut<State>,
     mut balls: CompMut<Ball>,
@@ -398,6 +402,8 @@ fn shoot_out_transition(
                 ball.velocity = player.angle * root.constant.kick_power;
             }
         }
+        let Sounds { ball_kicked, .. } = root.sound;
+        audio.play_sound(*ball_kicked, ball_kicked.volume());
     }
 }
 
