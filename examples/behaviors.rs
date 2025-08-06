@@ -3,7 +3,9 @@ use bones_bevy_renderer::BonesBevyRenderer;
 use bones_framework::prelude::*;
 use striker_ball::*;
 
-const fn namespace() -> (&'static str, &'static str, &'static str) { ("striker_ball", "example", "behaviors") }
+const fn namespace() -> (&'static str, &'static str, &'static str) {
+    ("striker_ball", "example", "behaviors")
+}
 
 fn main() {
     setup_logs!(namespace());

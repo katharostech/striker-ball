@@ -3,7 +3,9 @@ use bones_bevy_renderer::BonesBevyRenderer;
 use bones_framework::prelude::*;
 use striker_ball::*;
 
-const fn namespace() -> (&'static str, &'static str, &'static str) { ("ktech", "studio", "striker_ball") }
+const fn namespace() -> (&'static str, &'static str, &'static str) {
+    ("ktech", "studio", "striker_ball")
+}
 
 fn main() {
     setup_logs!(namespace());
