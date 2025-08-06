@@ -2,7 +2,8 @@ use super::*;
 
 pub mod prelude {
     pub use super::{
-        AimArrow, AimCone, Player, PlayerShadowSprite, PlayerSlot, PlayerSprite, Team,
+        AimArrow, AimCone, Player, PlayerShadowSprite, PlayerSlot, PlayerSprite, StickIndicator,
+        Team,
     };
 }
 pub mod state {
@@ -70,6 +71,8 @@ impl PlayerSlot {
 pub struct AimArrow(pub Entity);
 #[derive(HasSchema, Clone, Default)]
 pub struct AimCone(pub Entity);
+#[derive(HasSchema, Clone, Default)]
+pub struct StickIndicator;
 #[derive(HasSchema, Clone, Default)]
 pub struct PlayerSprite;
 #[derive(HasSchema, Clone, Default)]
@@ -145,6 +148,7 @@ pub fn plugin(session: &mut SessionBuilder) {
         .add_system_to_stage(Update, aim_arrows_update)
         .add_system_to_stage(Update, aim_cones_update)
         .add_system_to_stage(PostUpdate, player_graphics)
+        .add_system_to_stage(PostUpdate, hide_stick_indicators)
         .add_system_to_stage(PostUpdate, sync_sub_sprites);
 }
 
@@ -701,6 +705,31 @@ fn sync_sub_sprites(
         let player = players.get(follow.target()).unwrap();
         atlas.flip_x = player.flip_x;
         bank.set_current(player.animation);
+    }
+}
+
+fn hide_stick_indicators(
+    entities: Res<Entities>,
+    states: Comp<State>,
+    players: Comp<Player>,
+    indicators: Comp<StickIndicator>,
+    follows: Comp<Follow>,
+    mut sprites: CompMut<Sprite>,
+) {
+    for (_e, (_i, follow, sprite)) in entities.iter_with((&indicators, &follows, &mut sprites)) {
+        if !players.contains(follow.target()) {
+            continue;
+        }
+        let Some(state) = states.get(follow.target()) else {
+            continue;
+        };
+        let state = state.current;
+
+        if state == state::shoot() || state == state::win() || state == state::lose() {
+            sprite.color = Color::NONE;
+        } else {
+            sprite.color = Color::WHITE;
+        }
     }
 }
 

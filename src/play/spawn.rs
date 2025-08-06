@@ -192,6 +192,7 @@ pub fn player(world: &World, player: PlayerInfo) -> Entity {
     if dual_stick {
         world
             .spawn()
+            .insert(StickIndicator)
             .insert(Sprite {
                 image: match slot {
                     PlayerSlot::A1 | PlayerSlot::B1 => lstick_indicator,
