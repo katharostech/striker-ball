@@ -60,6 +60,7 @@ sound:
   winner: [sound/winner.ogg, 0.18]
   ball_spin: [sound/ball_spin.ogg, 0.05]
   ball_spin_buffer: 30.0
+  ball_bounced: [sound/ball_bounced.ogg, 0.5]
 
 # Fonts
 font:

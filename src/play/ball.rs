@@ -60,7 +60,8 @@ pub fn update_ball(
         ..
     } = root.constant;
 
-    let Sounds { ball_spin, .. } = root.sound;
+    let Sounds { ball_spin, ball_bounced, .. } = root.sound;
+
     for (ball_entity, (ball, animation)) in entities.iter_with((&mut balls, &mut animated_sprites))
     {
         if let Maybe::Set(target) = ball.owner {
@@ -119,25 +120,40 @@ pub fn update_ball(
             pos.y = bounds.y - ball_radius;
             ball.velocity.y = -ball.velocity.y;
             ball.velocity.y *= ball_etransfer;
-            ball.bounced = ball.owner.is_none();
+            if ball.owner.is_none() {
+                ball.bounced = true;
+                audio.play_sound(*ball_bounced, ball_bounced.volume());
+            }
         }
         if (-bounds.y - pos.y + ball_radius) > 0.0 {
             pos.y = -bounds.y + ball_radius;
             ball.velocity.y = -ball.velocity.y;
             ball.velocity.y *= ball_etransfer;
             ball.bounced = ball.owner.is_none();
+            if ball.owner.is_none() {
+                ball.bounced = true;
+                audio.play_sound(*ball_bounced, ball_bounced.volume());
+            }
         }
         if (bounds.x - pos.x - ball_radius) < 0.0 {
             pos.x = bounds.x - ball_radius;
             ball.velocity.x = -ball.velocity.x;
             ball.velocity.x *= ball_etransfer;
             ball.bounced = ball.owner.is_none();
+            if ball.owner.is_none() {
+                ball.bounced = true;
+                audio.play_sound(*ball_bounced, ball_bounced.volume());
+            }
         }
         if (-bounds.x - pos.x + ball_radius) > 0.0 {
             pos.x = -bounds.x + ball_radius;
             ball.velocity.x = -ball.velocity.x;
             ball.velocity.x *= ball_etransfer;
             ball.bounced = ball.owner.is_none();
+            if ball.owner.is_none() {
+                ball.bounced = true;
+                audio.play_sound(*ball_bounced, ball_bounced.volume());
+            }
         }
 
         // Drift to make sure the ball doesn't get stuck on the side.
