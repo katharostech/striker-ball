@@ -48,6 +48,12 @@ pub struct Visual {
     pub poll: u32,
 }
 impl Visual {
+    pub fn new_shown() -> Self {
+        Visual { show: true, ..Default::default() }
+    }
+    pub fn new_hidden() -> Self {
+        Visual { show: false, ..Default::default() }
+    }
     /// Whether or not the associated element should be seen.
     ///
     /// Returns `true` if [`Self::show`] is true and there are
