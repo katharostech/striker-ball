@@ -49,10 +49,16 @@ pub struct Visual {
 }
 impl Visual {
     pub fn new_shown() -> Self {
-        Visual { show: true, ..Default::default() }
+        Visual {
+            show: true,
+            ..Default::default()
+        }
     }
     pub fn new_hidden() -> Self {
-        Visual { show: false, ..Default::default() }
+        Visual {
+            show: false,
+            ..Default::default()
+        }
     }
     /// Whether or not the associated element should be seen.
     ///

@@ -16,7 +16,8 @@ fn main() {
     game.install_plugin(DefaultGamePlugin);
     game.install_plugin(LocalInputGamePlugin);
     game.init_shared_resource::<AssetServer>();
-    game.sessions.create_with("matchmaking", MatchmakingExamplePlugin);
+    game.sessions
+        .create_with("matchmaking", MatchmakingExamplePlugin);
 
     BonesBevyRenderer::new(game)
         .namespace(namespace())
@@ -29,16 +30,11 @@ impl SessionPlugin for MatchmakingExamplePlugin {
     fn install(self, session: &mut SessionBuilder) {
         session
             .install_plugin(DefaultSessionPlugin)
-            .install_plugin(
-                Matchmaker::new("striker_ball")
-                    .refresh(1.0)
-                    .player_count(2)
-            )
+            .install_plugin(Matchmaker::new("striker_ball").refresh(1.0).player_count(2))
             .install_plugin(MatchmakingMenu(Visual::new_shown()))
             .add_system_to_stage(Update, MatchmakingMenu::show);
     }
 }
-
 
 #[derive(HasSchema, Clone, Default, Deref, DerefMut)]
 pub struct MatchmakingMenu(pub Visual);

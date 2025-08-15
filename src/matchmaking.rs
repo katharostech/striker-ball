@@ -9,7 +9,7 @@ impl SessionPlugin for Matchmaker {
             First,
             |world: &World, time: Res<Time>, mut matchmaker: ResMut<Matchmaker>| {
                 matchmaker.update(time.delta());
-                
+
                 if let Some(socket) = matchmaker.network_match_socket() {
                     world.resources.insert(socket);
                 } else {
@@ -100,14 +100,9 @@ impl Matchmaker {
 // impl mut functions
 impl Matchmaker {
     pub fn lan_host(&mut self) {
-        let (is_recreated, server) = RUNTIME
-            .block_on(async {
-                lan::prepare_to_host(
-                    &mut self.server,
-                    &self.service_type,
-                    &self.host_name
-                ).await
-            });
+        let (is_recreated, server) = RUNTIME.block_on(async {
+            lan::prepare_to_host(&mut self.server, &self.service_type, &self.host_name).await
+        });
 
         lan::start_server(server.clone(), self.player_count);
 

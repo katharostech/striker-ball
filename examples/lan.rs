@@ -1,7 +1,7 @@
 #![allow(clippy::too_many_arguments)]
 use bones_bevy_renderer::BonesBevyRenderer;
-use bones_framework::networking::*;
 use bones_framework::networking::input::*;
+use bones_framework::networking::*;
 use striker_ball::*;
 
 mod matchmaking;
@@ -35,11 +35,7 @@ impl SessionPlugin for LanExamplePlugin {
         session
             .install_plugin(DefaultSessionPlugin)
             .install_plugin(MatchmakingMenu(Visual::new_shown()))
-            .install_plugin(
-                Matchmaker::new("striker_ball")
-                    .refresh(1.0)
-                    .player_count(2)
-            )
+            .install_plugin(Matchmaker::new("striker_ball").refresh(1.0).player_count(2))
             .add_system_to_stage(Update, ui_update);
     }
 }
@@ -72,26 +68,23 @@ impl SessionPlugin for LanSyncPlugin {
             control_source: ExampleSource::Keyboard,
             clients: default(),
         });
-        session.runner =
-            Box::new(
-                GgrsSessionRunner::<ExampleNetworkInputConfig>::new(
-                    Some(30.0),
-                    GgrsSessionRunnerInfo::new(
-                        self.socket.ggrs_socket(),
-                        Some(7),
-                        Some(2),
-                        0
-                    )
-                )
-            );
+        session.runner = Box::new(GgrsSessionRunner::<ExampleNetworkInputConfig>::new(
+            Some(30.0),
+            GgrsSessionRunnerInfo::new(self.socket.ggrs_socket(), Some(7), Some(2), 0),
+        ));
         session.insert_resource(self.socket);
         session.add_system_to_stage(Update, lan_sync_update);
     }
 }
 
-fn lan_sync_update(input: Res<ExampleInputs>, ctx: Res<EguiCtx>, syncing_info: Res<SyncingInfo>, mut shapes: ResMut<Shapes>) {
+fn lan_sync_update(
+    input: Res<ExampleInputs>,
+    ctx: Res<EguiCtx>,
+    syncing_info: Res<SyncingInfo>,
+    mut shapes: ResMut<Shapes>,
+) {
     use egui::*;
-    CentralPanel::default().show(&ctx, |ui|{
+    CentralPanel::default().show(&ctx, |ui| {
         for (i, input) in input.clients.iter().enumerate() {
             let shape = &mut shapes[i];
             shape.x += input.right as u8 as f32 * 10.0;
@@ -103,7 +96,12 @@ fn lan_sync_update(input: Res<ExampleInputs>, ctx: Res<EguiCtx>, syncing_info: R
             } else {
                 Color32::GREEN
             };
-            ui.painter().circle(shape.to_array().into(), 10., Color32::BLACK, Stroke::new(10., color));
+            ui.painter().circle(
+                shape.to_array().into(),
+                10.,
+                Color32::BLACK,
+                Stroke::new(10., color),
+            );
         }
     });
 }
@@ -177,7 +175,7 @@ impl PlayerControls<'_, ExampleInput> for ExampleInputs {
     type InputCollector = ExampleInputCollector;
     type ControlMapping = ExampleMapping;
     type ControlSource = ExampleSource;
-    
+
     fn update_controls(&mut self, collector: &mut Self::InputCollector) {
         panic!("incorrect assumption") // This is currently an unused function I believe, so no need to do.
     }
@@ -224,7 +222,10 @@ impl InputCollector<'_, ExampleMapping, ExampleSource, ExampleInput> for Example
         const STROKE: f32 = 0.5;
 
         for event in &gamepad.gamepad_events {
-            let Some(input) = self.current.get_mut(&ExampleSource::Gamepad(*event.gamepad_id())) else {
+            let Some(input) = self
+                .current
+                .get_mut(&ExampleSource::Gamepad(*event.gamepad_id()))
+            else {
                 continue;
             };
             #[allow(clippy::single_match)] // TODO: remove and add more inputs for example
@@ -270,11 +271,10 @@ impl InputCollector<'_, ExampleMapping, ExampleSource, ExampleInput> for Example
             just.right = current.right && !last.right;
         }
     }
-    
+
     fn advance_frame(&mut self) {
         self.last = self.current.clone();
     }
-
 
     fn get_control(&self, player_idx: usize, control_source: ExampleSource) -> &ExampleInput {
         self.current.get(&control_source).unwrap()

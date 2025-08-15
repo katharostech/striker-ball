@@ -60,7 +60,11 @@ pub fn update_ball(
         ..
     } = root.constant;
 
-    let Sounds { ball_spin, ball_bounced, .. } = root.sound;
+    let Sounds {
+        ball_spin,
+        ball_bounced,
+        ..
+    } = root.sound;
 
     for (ball_entity, (ball, animation)) in entities.iter_with((&mut balls, &mut animated_sprites))
     {
