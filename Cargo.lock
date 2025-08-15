@@ -1144,6 +1144,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb"
 
 [[package]]
+name = "bit_field"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc827186963e592360843fb5ba4b973e145841266c1357f7180c43526f2e5b61"
+
+[[package]]
+name = "bitfield"
+version = "0.19.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db1bcd90f88eabbf0cadbfb87a45bceeaebcd3b4bc9e43da379cd2ef0162590d"
+dependencies = [
+ "bitfield-macros",
+]
+
+[[package]]
+name = "bitfield-macros"
+version = "0.19.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3787a07661997bfc05dd3431e379c0188573f78857080cf682e1393ab8e4d64c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
 name = "bitfield-rle"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1211,7 +1237,6 @@ dependencies = [
 [[package]]
 name = "bones_asset"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "anyhow",
  "append-only-vec",
@@ -1245,7 +1270,6 @@ dependencies = [
 [[package]]
 name = "bones_bevy_renderer"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "anyhow",
  "bevy",
@@ -1262,7 +1286,6 @@ dependencies = [
 [[package]]
 name = "bones_ecs"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "anyhow",
  "atomicell",
@@ -1281,7 +1304,6 @@ dependencies = [
 [[package]]
 name = "bones_ecs_macros"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "bones_ecs_macros_core",
  "proc-macro2",
@@ -1290,7 +1312,6 @@ dependencies = [
 [[package]]
 name = "bones_ecs_macros_core"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1300,7 +1321,6 @@ dependencies = [
 [[package]]
 name = "bones_framework"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -1356,7 +1376,6 @@ dependencies = [
 [[package]]
 name = "bones_lib"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "bones_ecs",
  "instant",
@@ -1367,7 +1386,6 @@ dependencies = [
 [[package]]
 name = "bones_matchmaker_proto"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "iroh",
  "serde",
@@ -1376,7 +1394,6 @@ dependencies = [
 [[package]]
 name = "bones_schema"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "append-only-vec",
  "bones_schema_macros",
@@ -1397,7 +1414,6 @@ dependencies = [
 [[package]]
 name = "bones_schema_macros"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1407,7 +1423,6 @@ dependencies = [
 [[package]]
 name = "bones_scripting"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "async-channel",
  "bevy_tasks",
@@ -1426,7 +1441,6 @@ dependencies = [
 [[package]]
 name = "bones_utils"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "bones_utils_macros",
  "fxhash",
@@ -1441,7 +1455,6 @@ dependencies = [
 [[package]]
 name = "bones_utils_macros"
 version = "0.4.0"
-source = "git+https://github.com/fishfolk/bones.git#2aeb58d98a7addd07268a13943f46d676f3de4d9"
 dependencies = [
  "quote",
  "venial",
@@ -7031,6 +7044,8 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 name = "striker_ball"
 version = "0.1.0"
 dependencies = [
+ "bit_field",
+ "bitfield",
  "bones_bevy_renderer",
  "bones_framework",
  "bytemuck",
@@ -7038,6 +7053,7 @@ dependencies = [
  "gilrs",
  "tracing",
  "ttf-parser 0.24.1",
+ "ttf-parser 0.25.1",
  "uuid",
 ]
 

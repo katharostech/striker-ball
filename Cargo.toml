@@ -12,7 +12,10 @@ bones_framework = { git="https://github.com/fishfolk/bones.git" }
 bones_bevy_renderer = { git="https://github.com/fishfolk/bones.git" }
 bytemuck = "1.16.1"
 gilrs = "0.11.0"
-ttf-parser = { version = "*", features = ["std"] }
+ttf-parser = { version = "0.25.1", features = ["std"] }
+ttf-parser-older = { package = "ttf-parser", version = "0.24.1", features = ["std"] }
+bitfield = "0.19.1"
+bit_field = "0.10.2"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 # We don't directly depend on these but we need to add the WASM features to them because
