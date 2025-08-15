@@ -335,12 +335,14 @@ fn to_tackled_transition(
     transforms: Comp<Transform>,
     players: Comp<Player>,
     root: Root<Data>,
+    mut audio: ResMut<AudioCenter>,
     mut balls: CompMut<Ball>,
     mut states: CompMut<State>,
 ) {
     let (_ball_e, ball) = entities.get_single_with(&mut balls).unwrap();
     let player = players.get(player_e).unwrap();
     let pos = transforms.get(player_e).unwrap().translation.xy();
+    let Sounds { player_tackled, .. } = root.sound;
 
     for tackler_e in player_ent_signs.entities() {
         let tackler = players.get(tackler_e).unwrap();
@@ -352,6 +354,8 @@ fn to_tackled_transition(
             && tackler_pos.distance(pos) <= root.constant.player_radius * 2.
         {
             states.get_mut(player_e).unwrap().current = state::tackled();
+
+            audio.play_sound(*player_tackled, player_tackled.volume());
 
             if let Maybe::Set(target) = &mut ball.owner {
                 if *target == player_e {
@@ -366,6 +370,8 @@ fn to_tackle_transition(
     In(player_e): In<Entity>,
     inputs: Res<PlayInputs>,
     clients: Comp<Client>,
+    root: Root<Data>,
+    mut audio: ResMut<AudioCenter>,
     mut players: CompMut<Player>,
     mut states: CompMut<State>,
 ) {
@@ -373,10 +379,12 @@ fn to_tackle_transition(
     let state = states.get_mut(player_e).unwrap();
     let client = clients.get(player_e).unwrap();
     let control = inputs.get_control(client.index);
+    let Sounds { player_tackle, .. } = root.sound;
 
     if control.pass.just_pressed() {
         state.current = state::tackle();
         player.action_angle = player.angle;
+        audio.play_sound(*player_tackle, player_tackle.volume());
     }
 }
 

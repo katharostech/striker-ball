@@ -62,6 +62,8 @@ sound:
   ball_spin_buffer: 30.0
   ball_bounced: [sound/ball_bounced.ogg, 0.5]
   ball_kicked: [sound/ball_kicked.ogg, 0.5]
+  player_tackle: [sound/player_slide.ogg, 0.2]
+  player_tackled: [sound/player_tackled.ogg, 0.5]
 
 # Fonts
 font:
