@@ -344,7 +344,7 @@ pub fn show(world: &World) {
     // one number out of `frames` from 0.0 to 1.0
     let frame_progress = frames as f32 / cap as f32;
     // one number out of `rows` from 0 to `rows`
-    let index = (frame_progress * asset.rows as f32).floor() as usize;
+    let index = (frame_progress * asset.rows as f32 - 1.0).floor() as usize;
 
     AtlasPainter::new(asset.clone())
         .vertical()
