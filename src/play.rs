@@ -361,15 +361,26 @@ fn match_done_update(play: &World) {
     let to_team_select = || {
         let mut sessions = play.resource_mut::<Sessions>();
         let ui = sessions.get_world(session::UI).unwrap();
-        ui.resource_mut::<TeamSelect>().visible = true;
-        *ui.resource_mut() = MenuState::TeamSelect;
-        sessions.delete_play();
+        start_fade(
+            ui,
+            FadeTransition {
+                hide: play_hide,
+                prep: team_select_prep,
+                finish: team_select_finish,
+            },
+        );
     };
     let play_again = || {
         let mut sessions = play.resource_mut::<Sessions>();
         let ui = sessions.get_world(session::UI).unwrap();
-        ui.resource_mut::<Fade>().restart();
-        *ui.resource_mut() = MenuState::FadeToGame;
+        start_fade(
+            ui,
+            FadeTransition {
+                hide: play_hide,
+                prep: play_prep,
+                finish: play_finish,
+            },
+        );
     };
 
     let inputs = play.resource::<LocalInputs>();

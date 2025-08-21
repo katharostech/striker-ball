@@ -5,14 +5,14 @@ pub enum MenuState {
     #[default]
     Splash,
     HowToPlay,
-    FadeToTeamSelect,
+    FadeTransition,
     TeamSelect,
-    FadeToGame,
 }
 pub struct MenuPlugin;
 impl SessionPlugin for MenuPlugin {
     fn install(self, session: &mut SessionBuilder) {
         session.init_resource::<MenuState>();
+        session.init_resource::<FadeTransition>();
 
         session.install_plugin(Splash::Offline);
         session.install_plugin(HowToPlay::default());
@@ -113,14 +113,25 @@ pub fn update_pause(ui: &World) {
                     *pause = Pause::Hidden;
                 }
                 Pause::Restart => {
-                    ui.resource_mut::<Fade>().restart();
-                    *ui.resource_mut() = MenuState::FadeToGame;
+                    start_fade(
+                        ui,
+                        FadeTransition {
+                            hide: play_hide,
+                            prep: play_prep,
+                            finish: play_finish,
+                        },
+                    );
                     *pause = Pause::Hidden;
                 }
                 Pause::Quit => {
-                    *ui.resource_mut::<Splash>() = Splash::Offline;
-                    *ui.resource_mut() = MenuState::Splash;
-                    ui.resource_mut::<Sessions>().delete_play();
+                    start_fade(
+                        ui,
+                        FadeTransition {
+                            hide: play_hide,
+                            prep: splash_prep,
+                            finish: splash_finish,
+                        },
+                    );
                     *pause = Pause::Hidden;
                 }
                 Pause::Hidden => {}
@@ -132,20 +143,96 @@ pub fn update_pause(ui: &World) {
 pub fn update_menu(world: &World) {
     let game_state = *world.resource::<MenuState>();
     match game_state {
+        MenuState::FadeTransition => fade_transition(world),
         MenuState::Splash => splash_update(world),
         MenuState::HowToPlay => how_to_play_update(world),
-        MenuState::FadeToTeamSelect => fade_to_team_select_update(world),
         MenuState::TeamSelect => team_select_update(world),
-        MenuState::FadeToGame => fade_to_game_update(world),
     }
 }
 
-pub fn splash_update(ui: &World) {
-    let mut state = ui.resource_mut::<MenuState>();
-    let mut fade = ui.resource_mut::<Fade>();
-    let mut splash = ui.resource_mut::<Splash>();
-    let mut howtoplay = ui.resource_mut::<HowToPlay>();
+#[derive(HasSchema, Clone)]
+pub struct FadeTransition {
+    /// Makes the associated ui elements invisible while the screen is blank.
+    pub hide: fn(&World),
+    /// Makes the associated ui elements visible while the screen is blank to show up later.
+    pub prep: fn(&World),
+    /// Makes the changes that gives control over the associated ui elements.
+    pub finish: fn(&World),
+}
+impl Default for FadeTransition {
+    fn default() -> Self {
+        Self {
+            hide: |_| {},
+            prep: |_| {},
+            finish: |_| {},
+        }
+    }
+}
+pub fn fade_transition(ui: &World) {
+    let fade = ui.resource::<Fade>();
+    let transition = ui.resource::<FadeTransition>();
 
+    if fade.fade_out.just_finished() {
+        (transition.hide)(ui);
+        (transition.prep)(ui);
+    }
+    if fade.fade_in.just_finished() {
+        (transition.finish)(ui);
+    }
+}
+pub fn start_fade(world: &World, transition: FadeTransition) {
+    world.resource_mut::<Fade>().restart();
+    *world.resource_mut() = MenuState::FadeTransition;
+    *world.resource_mut() = transition;
+}
+pub fn splash_hide(world: &World) {
+    *world.resource_mut() = Splash::Hidden;
+}
+pub fn splash_prep(world: &World) {
+    *world.resource_mut() = Splash::Offline;
+}
+pub fn splash_finish(world: &World) {
+    *world.resource_mut() = MenuState::Splash;
+}
+pub fn team_select_hide(world: &World) {
+    world.resource_mut::<TeamSelect>().visible = false;
+}
+pub fn team_select_prep(world: &World) {
+    world.resource_mut::<TeamSelect>().visible = true;
+}
+pub fn team_select_finish(world: &World) {
+    *world.resource_mut() = MenuState::TeamSelect;
+}
+pub fn play_hide(ui: &World) {
+    let mut sessions = ui.resource_mut::<Sessions>();
+    sessions.delete_play();
+}
+pub fn play_prep(ui: &World) {
+    let mut sessions = ui.resource_mut::<Sessions>();
+    let player_signs = ui
+        .resource::<TeamSelect>()
+        .get_player_signs()
+        .unwrap_or_else(|| {
+            tracing::warn!("gamepad assignments were not made, defaulting to id 0 for all players");
+            default()
+        });
+
+    tracing::info!("fade_out, recreating PLAY session; assignments:{player_signs:?}");
+
+    sessions.create_play(PlayMode::Offline(player_signs));
+}
+pub fn play_finish(ui: &World) {
+    let mut sessions = ui.resource_mut::<Sessions>();
+    tracing::info!("fade_in, starting countdown");
+    sessions
+        .get_world(session::PLAY)
+        .unwrap()
+        .resource_mut::<Countdown>()
+        .restart();
+}
+
+pub fn splash_update(ui: &World) {
+    let mut splash = ui.resource_mut::<Splash>();
     let inputs = ui.resource::<LocalInputs>();
 
     for (_gamepad, input) in inputs.iter() {
@@ -158,15 +245,20 @@ pub fn splash_update(ui: &World) {
         if input.south.just_pressed() {
             match *splash {
                 Splash::Offline => {
-                    fade.restart();
-                    *state = MenuState::FadeToTeamSelect;
+                    start_fade(
+                        ui,
+                        FadeTransition {
+                            hide: splash_hide,
+                            prep: team_select_prep,
+                            finish: team_select_finish,
+                        },
+                    );
                     return;
                 }
-                // Splash::Online => todo!(),
                 Splash::HowToPlay => {
                     *splash = Splash::Hidden;
-                    *state = MenuState::HowToPlay;
-                    *howtoplay = HowToPlay::GameOverview;
+                    *ui.resource_mut() = MenuState::HowToPlay;
+                    *ui.resource_mut() = HowToPlay::GameOverview;
                     return;
                 }
                 Splash::Hidden => todo!(),
@@ -210,22 +302,6 @@ pub fn how_to_play_update(ui: &World) {
         }
     }
 }
-pub fn fade_to_team_select_update(ui: &World) {
-    let fade = ui.resource::<Fade>();
-    let mut state = ui.resource_mut::<MenuState>();
-    let mut splash = ui.resource_mut::<Splash>();
-    let mut team_select = ui.resource_mut::<TeamSelect>();
-
-    if fade.fade_out.just_finished() {
-        tracing::info!("fade out, show team select");
-        *splash = Splash::Hidden;
-        team_select.visible = true;
-    }
-    if fade.fade_in.just_finished() {
-        tracing::info!("fade in, control team select");
-        *state = MenuState::TeamSelect;
-    }
-}
 pub fn team_select_update(ui: &World) {
     let assignments = ui.resource_mut::<TeamSelect>().get_player_signs();
     let local_inputs = ui.resource::<LocalInputs>();
@@ -234,8 +310,14 @@ pub fn team_select_update(ui: &World) {
 
     for (gamepad, input) in local_inputs.iter() {
         if input.start.just_pressed() && assignments.is_some() {
-            ui.resource_mut::<Fade>().restart();
-            *ui.resource_mut() = MenuState::FadeToGame;
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: team_select_hide,
+                    prep: play_prep,
+                    finish: play_finish,
+                },
+            );
             return;
         }
         if input.start.just_pressed()
@@ -260,9 +342,14 @@ pub fn team_select_update(ui: &World) {
             ui.resource_mut::<TeamSelect>().reverse_gamepad(*gamepad);
         }
         if input.west.just_held(root.menu.team_select.back_buffer) {
-            *ui.resource_mut::<TeamSelect>() = default();
-            *ui.resource_mut::<Splash>() = Splash::Offline;
-            *ui.resource_mut() = MenuState::Splash
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: team_select_hide,
+                    prep: splash_prep,
+                    finish: splash_finish,
+                },
+            );
         }
         if input.left.just_pressed() {
             ui.resource_mut::<TeamSelect>().left_gamepad(*gamepad);
@@ -271,44 +358,15 @@ pub fn team_select_update(ui: &World) {
             ui.resource_mut::<TeamSelect>().right_gamepad(*gamepad);
         }
         if input.right_bump.just_held(20) && input.left_bump.just_held(20) {
-            ui.resource_mut::<Fade>().restart();
-            *ui.resource_mut() = MenuState::FadeToGame;
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: team_select_hide,
+                    prep: play_prep,
+                    finish: play_finish,
+                },
+            );
             return;
         }
-    }
-}
-
-fn fade_to_game_update(ui: &World) {
-    let Fade {
-        fade_out, fade_in, ..
-    } = &*ui.resource::<Fade>();
-
-    let mut sessions = ui.resource_mut::<Sessions>();
-
-    if fade_out.just_finished() {
-        let player_signs = ui
-            .resource::<TeamSelect>()
-            .get_player_signs()
-            .unwrap_or_else(|| {
-                tracing::warn!(
-                    "gamepad assignments were not made, defaulting to id 0 for all players"
-                );
-                default()
-            });
-
-        tracing::info!("fade_out, recreating PLAY session; assignments:{player_signs:?}");
-
-        *ui.resource_mut::<TeamSelect>() = default();
-        sessions.delete_play();
-        sessions.create_play(PlayMode::Offline(player_signs));
-    }
-
-    if fade_in.just_finished() {
-        tracing::info!("fade_in, starting countdown");
-        sessions
-            .get_world(session::PLAY)
-            .unwrap()
-            .resource_mut::<Countdown>()
-            .restart();
     }
 }
