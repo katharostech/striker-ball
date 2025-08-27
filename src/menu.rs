@@ -203,6 +203,15 @@ pub fn team_select_prep(world: &World) {
 pub fn team_select_finish(world: &World) {
     *world.resource_mut() = MenuState::TeamSelect;
 }
+pub fn how_to_play_hide(world: &World) {
+    *world.resource_mut() = HowToPlay::Hidden;
+}
+pub fn how_to_play_prep(world: &World) {
+    *world.resource_mut() = HowToPlay::GameOverview;
+}
+pub fn how_to_play_finish(world: &World) {
+    *world.resource_mut() = MenuState::HowToPlay;
+}
 pub fn play_hide(ui: &World) {
     let mut sessions = ui.resource_mut::<Sessions>();
     sessions.delete_play();
@@ -256,10 +265,14 @@ pub fn splash_update(ui: &World) {
                     return;
                 }
                 Splash::HowToPlay => {
-                    *splash = Splash::Hidden;
-                    *ui.resource_mut() = MenuState::HowToPlay;
-                    *ui.resource_mut() = HowToPlay::GameOverview;
-                    return;
+                    start_fade(
+                        ui,
+                        FadeTransition {
+                            hide: splash_hide,
+                            prep: how_to_play_prep,
+                            finish: how_to_play_finish,
+                        },
+                    );
                 }
                 Splash::Hidden => todo!(),
             }
@@ -267,17 +280,20 @@ pub fn splash_update(ui: &World) {
     }
 }
 pub fn how_to_play_update(ui: &World) {
-    let mut state = ui.resource_mut::<MenuState>();
-    let mut splash = ui.resource_mut::<Splash>();
     let mut howtoplay = ui.resource_mut::<HowToPlay>();
 
     let inputs = ui.resource::<LocalInputs>();
 
     for (_gamepad, input) in inputs.iter() {
         if input.west.just_pressed() {
-            *howtoplay = HowToPlay::Hidden;
-            *splash = Splash::Offline;
-            *state = MenuState::Splash;
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: how_to_play_hide,
+                    prep: splash_prep,
+                    finish: splash_finish,
+                },
+            );
         }
         match *howtoplay {
             HowToPlay::GameOverview => {
