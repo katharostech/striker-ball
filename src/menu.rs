@@ -17,7 +17,7 @@ impl SessionPlugin for MenuPlugin {
 
         session.install_plugin(Splash::Offline);
         session.install_plugin(HowToPlay::default());
-        session.install_plugin(Fade::new(0.7, 0.5, Color::BLACK, egui::Order::Foreground));
+        session.install_plugin(Fade::new(0.7, 0.5, Color::BLACK, egui::Order::Tooltip));
         session.install_plugin(TeamSelect::default());
         session.install_plugin(Pause::default());
         session.add_startup_system(|root: Root<Data>, mut audio: ResMut<AudioCenter>| {
