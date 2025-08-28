@@ -110,6 +110,7 @@ pub struct Menus {
     pub bframe: BorderImageMeta,
     pub score_bg: SizedImageAsset,
     pub go_text: SizedImageAsset,
+    pub countdown_bg: SizedImageAsset,
     pub winner_banner: WinnerBannerAssets,
     pub splash: SplashAssets,
     pub how_to_play: HowToPlayAssets,

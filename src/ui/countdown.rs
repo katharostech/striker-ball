@@ -7,6 +7,7 @@ pub struct Countdown {
     pub speed: f32,
     pub sound_marker: f32,
 }
+
 impl Countdown {
     pub fn new(seconds: f32, speed: f32) -> Self {
         Self {
@@ -61,14 +62,39 @@ pub fn show(world: &World) {
     } = root.sound;
 
     let Menus {
-        numbers, go_text, ..
+        numbers,
+        go_text,
+        countdown_bg,
+        ..
     } = root.menu;
+
+    let shadow_offset = Vec2::splat(2.0);
+
+    use egui::*;
+
+    let area = Area::new("countdown")
+        .anchor(Align2::CENTER_CENTER, [0., 0.])
+        .show(&ctx, |ui| {
+            ui.set_width(root.screen_size.x);
+            ui.set_height(root.screen_size.y);
+        });
+    let origin = area.response.rect.center();
+
+    let mut painter =
+        ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("countdown_canvas")));
+
+    painter.set_clip_rect(area.response.rect);
+
+    countdown_bg
+        .image_painter()
+        .align2(Align2::CENTER_CENTER)
+        .pos(origin)
+        .paint(&painter, &textures);
 
     if !countdown.timer.finished() {
         let duration = countdown.timer.duration().as_secs_f32();
         let progress = (countdown.timer.percent_left() * duration).ceil() - 1.0;
 
-        use egui::*;
         if progress > 0.0 {
             if progress != countdown.sound_marker {
                 countdown.sound_marker = progress;
@@ -76,39 +102,30 @@ pub fn show(world: &World) {
                     .resource_mut::<AudioCenter>()
                     .play_sound(*countdown_first, countdown_first.volume());
             }
+            let asset = asset_server.get(numbers);
+            let width = asset.tile_size.x;
+            let height = asset.tile_size.y;
+            let shift = 1.0 / asset.rows as f32;
 
-            Area::new("3-2-1")
-                .order(Order::Foreground)
-                .anchor(Align2::CENTER_CENTER, [0., 0.])
-                .show(&ctx, |ui| {
-                    let asset = asset_server.get(numbers);
-                    let width = asset.tile_size.x;
-                    let height = asset.tile_size.y;
-                    let shift = 1.0 / asset.rows as f32;
+            painter.image(
+                textures.get(asset.image),
+                Rect::from_center_size(origin + shadow_offset, Vec2::new(width, height)),
+                Rect::from_min_max(
+                    pos2(0.0, shift * progress),
+                    pos2(1.0, shift * progress + shift),
+                ),
+                Color32::BLACK,
+            );
 
-                    ui.set_width(width);
-                    ui.set_height(height);
-
-                    ui.painter().image(
-                        textures.get(asset.image),
-                        Rect::from_min_size(ui.cursor().min, Vec2::new(width, height) * 1.08),
-                        Rect::from_min_max(
-                            pos2(0.0, shift * progress),
-                            pos2(1.0, shift * progress + shift),
-                        ),
-                        Color32::BLACK,
-                    );
-
-                    ui.painter().image(
-                        textures.get(asset.image),
-                        Rect::from_min_size(ui.cursor().min, Vec2::new(width, height)),
-                        Rect::from_min_max(
-                            pos2(0.0, shift * progress),
-                            pos2(1.0, shift * progress + shift),
-                        ),
-                        Color32::WHITE,
-                    );
-                });
+            painter.image(
+                textures.get(asset.image),
+                Rect::from_center_size(origin, Vec2::new(width, height)),
+                Rect::from_min_max(
+                    pos2(0.0, shift * progress),
+                    pos2(1.0, shift * progress + shift),
+                ),
+                Color32::WHITE,
+            );
         } else {
             if progress != countdown.sound_marker {
                 countdown.sound_marker = progress;
@@ -117,27 +134,19 @@ pub fn show(world: &World) {
                     .play_sound(*countdown_final, countdown_final.volume());
             }
 
-            Area::new("GO!")
-                .order(Order::Foreground)
-                .anchor(Align2::CENTER_CENTER, [0., 0.])
-                .show(&ctx, |ui| {
-                    ui.set_width(go_text.width() as f32);
-                    ui.set_height(go_text.height() as f32);
+            painter.image(
+                textures.get(*go_text),
+                Rect::from_center_size(origin + shadow_offset, go_text.egui_size()),
+                default_uv(),
+                Color32::BLACK,
+            );
 
-                    ui.painter().image(
-                        textures.get(*go_text),
-                        Rect::from_min_size(ui.cursor().min, go_text.egui_size() * 1.08),
-                        default_uv(),
-                        Color32::BLACK,
-                    );
-
-                    ui.painter().image(
-                        textures.get(*go_text),
-                        Rect::from_min_size(ui.cursor().min, go_text.egui_size()),
-                        default_uv(),
-                        Color32::WHITE,
-                    );
-                });
+            painter.image(
+                textures.get(*go_text),
+                Rect::from_center_size(origin, go_text.egui_size()),
+                default_uv(),
+                Color32::WHITE,
+            );
         }
     } else {
         countdown.visual.hide();

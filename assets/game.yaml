@@ -84,7 +84,9 @@ menu:
       right: *margin
       bottom: *margin
     scale: 1
+
   score_bg: [ui/scoreBoardBackground.png, 91, 45]
+  countdown_bg: [ui/countDownBackground.png, 52, 38]
   go_text: [ui/countdownGo.png, 91, 45]
 
   splash:
