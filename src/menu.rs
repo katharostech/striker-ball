@@ -1,12 +1,13 @@
 use super::*;
 
-#[derive(HasSchema, Clone, Copy, Default)]
+#[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq)]
 pub enum MenuState {
     #[default]
     Splash,
     HowToPlay,
     FadeTransition,
     TeamSelect,
+    InGame,
 }
 pub struct MenuPlugin;
 impl SessionPlugin for MenuPlugin {
@@ -36,10 +37,11 @@ impl SessionPlugin for MenuPlugin {
 }
 
 pub fn update_pause(ui: &World) {
-    if ui
-        .resource_mut::<Sessions>()
-        .get_mut(session::PLAY)
-        .is_none()
+    if *ui.resource::<MenuState>() == MenuState::FadeTransition
+        || ui
+            .resource_mut::<Sessions>()
+            .get_mut(session::PLAY)
+            .is_none()
     {
         return;
     };
@@ -147,6 +149,7 @@ pub fn update_menu(world: &World) {
         MenuState::Splash => splash_update(world),
         MenuState::HowToPlay => how_to_play_update(world),
         MenuState::TeamSelect => team_select_update(world),
+        MenuState::InGame => {}
     }
 }
 
@@ -231,6 +234,7 @@ pub fn play_prep(ui: &World) {
     sessions.create_play(PlayMode::Offline(player_signs));
 }
 pub fn play_finish(ui: &World) {
+    *ui.resource_mut() = MenuState::InGame;
     let mut sessions = ui.resource_mut::<Sessions>();
     tracing::info!("fade_in, starting countdown");
     sessions
