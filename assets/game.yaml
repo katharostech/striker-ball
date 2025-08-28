@@ -41,6 +41,8 @@ sprite:
 
   player_a: sprites/players/redSoccerPlayer.atlas.yaml
   player_b: sprites/players/blueSoccerPlayer.atlas.yaml
+  player_a2: sprites/players/redSoccerPlayer2.atlas.yaml
+  player_b2: sprites/players/blueSoccerPlayer2.atlas.yaml
   player_animations: sprites/players/player.animations.yaml
   lstick_indicator: sprites/players/LStickIndicator.png
   rstick_indicator: sprites/players/RStickIndicator.png

@@ -133,8 +133,10 @@ pub fn player(world: &World, player: PlayerInfo) -> Entity {
     let animations = asset_server.get(root.sprite.player_animations);
 
     let Sprites {
-        player_a: a_guy,
-        player_b: b_guy,
+        player_a,
+        player_b,
+        player_a2,
+        player_b2,
         aim_cone,
         aim_arrow,
         lstick_indicator,
@@ -156,14 +158,16 @@ pub fn player(world: &World, player: PlayerInfo) -> Entity {
         .insert(path2d::player(&root));
 
     let sprite_offset =
-        (asset_server.get::<Atlas>(a_guy).value().tile_size.y / 2.) - player_radius * 2.;
+        (asset_server.get::<Atlas>(player_a).value().tile_size.y / 2.) - player_radius * 2.;
 
     world
         .spawn()
         .insert(PlayerSprite)
-        .insert(AtlasSprite::new(match team {
-            Team::A => a_guy,
-            Team::B => b_guy,
+        .insert(AtlasSprite::new(match slot {
+            PlayerSlot::A1 => player_a,
+            PlayerSlot::A2 => player_a2,
+            PlayerSlot::B1 => player_b,
+            PlayerSlot::B2 => player_b2,
         }))
         .insert(animations.to_bank(ustr("idle")))
         .insert(Follow::XY {

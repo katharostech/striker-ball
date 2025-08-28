@@ -79,6 +79,8 @@ pub struct Sprites {
 
     pub player_a: Handle<Atlas>,
     pub player_b: Handle<Atlas>,
+    pub player_a2: Handle<Atlas>,
+    pub player_b2: Handle<Atlas>,
     pub player_animations: Handle<AnimationBankAsset>,
     pub lstick_indicator: Handle<Image>,
     pub rstick_indicator: Handle<Image>,
