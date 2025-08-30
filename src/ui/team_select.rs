@@ -245,14 +245,8 @@ pub fn show(world: &World) {
             } else {
                 // The standby position, just off-screen.
                 match player_slot.team() {
-                    Team::A => {
-                        area.response.rect.center().x
-                            - (controller_icon_silhouette.width() as f32 + root.screen_size.x / 2.)
-                    }
-                    Team::B => {
-                        area.response.rect.center().x
-                            + (controller_icon_silhouette.width() as f32 + root.screen_size.x / 2.)
-                    }
+                    Team::A => -(controller_icon_silhouette.width() as f32),
+                    Team::B => root.screen_size.x + controller_icon_silhouette.width() as f32,
                 }
             };
             let x = ctx.animate_value_with_time(
