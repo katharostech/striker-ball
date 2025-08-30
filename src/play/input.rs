@@ -28,8 +28,8 @@ impl PlayInput {
         Self {
             x: local.left_stick.x,
             y: local.left_stick.y,
-            shoot: local.south | local.right_trigger | local.left_trigger,
-            pass: local.west | local.left_bump,
+            shoot: local.south | local.right_trigger | local.left_trigger | local.east,
+            pass: local.west | local.left_bump | local.north,
             start: local.start,
         }
     }
