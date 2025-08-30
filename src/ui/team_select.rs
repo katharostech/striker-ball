@@ -67,100 +67,33 @@ pub fn show(world: &World) {
     ));
 
     // Pad BGs
-    let is_player_id_used = |id: PlayerSlot| -> bool {
-        team_select.joins.iter().any(|join| {
-            join.is_player_id(id) && join.is_set()
-                || join.is_player_id(id.partner()) && join.is_dual_stick()
-        })
-    };
-    let size = pad_slot_bg.egui_size();
-    let multiple = 1.2;
+    for player_slot in [
+        PlayerSlot::A1,
+        PlayerSlot::A2,
+        PlayerSlot::B1,
+        PlayerSlot::B2,
+    ] {
+        let target = if team_select.joins.iter().any(|join| {
+            join.is_player_id(player_slot) && join.is_set()
+                || join.is_player_id(player_slot.partner()) && join.is_dual_stick()
+        }) {
+            pad_slot_bg.egui_size() * 1.2
+        } else {
+            pad_slot_bg.egui_size()
+        };
+        let x =
+            ctx.animate_value_with_time(Id::new("pad_bg_size_x").with(player_slot), target.x, 0.3);
+        let y =
+            ctx.animate_value_with_time(Id::new("pad_bg_size_y").with(player_slot), target.y, 0.3);
 
-    let builder = pad_slot_bg
-        .image_painter()
-        .size(size)
-        .pos(origin + slots.pad_bg_offset.to_array().into())
-        .align2(Align2::CENTER_CENTER);
-
-    let xid = Id::new("pad_bg_size_x");
-    let yid = Id::new("pad_bg_size_y");
-    let animation_time = 0.3;
-
-    // A1
-    let player_id = PlayerSlot::A1;
-    let target = if is_player_id_used(player_id) {
-        size * multiple
-    } else {
-        size
-    };
-    let x = ctx
-        .0
-        .animate_value_with_time(xid.with(player_id), target.x, animation_time);
-    let y = ctx
-        .0
-        .animate_value_with_time(yid.with(player_id), target.y, animation_time);
-    builder
-        .clone()
-        .size(egui::vec2(x, y))
-        .offset(slots.a1.to_array().into())
-        .paint(&painter, &textures);
-
-    // A2
-    let player_id = PlayerSlot::A2;
-    let target = if is_player_id_used(player_id) {
-        size * multiple
-    } else {
-        size
-    };
-    let x = ctx
-        .0
-        .animate_value_with_time(xid.with(player_id), target.x, animation_time);
-    let y = ctx
-        .0
-        .animate_value_with_time(yid.with(player_id), target.y, animation_time);
-    builder
-        .clone()
-        .size(egui::vec2(x, y))
-        .offset(slots.a2.to_array().into())
-        .paint(&painter, &textures);
-
-    // B1
-    let player_id = PlayerSlot::B1;
-    let target = if is_player_id_used(player_id) {
-        size * multiple
-    } else {
-        size
-    };
-    let x = ctx
-        .0
-        .animate_value_with_time(xid.with(player_id), target.x, animation_time);
-    let y = ctx
-        .0
-        .animate_value_with_time(yid.with(player_id), target.y, animation_time);
-    builder
-        .clone()
-        .size(egui::vec2(x, y))
-        .offset(slots.b1.to_array().into())
-        .paint(&painter, &textures);
-
-    // B2
-    let player_id = PlayerSlot::B2;
-    let target = if is_player_id_used(player_id) {
-        size * multiple
-    } else {
-        size
-    };
-    let x = ctx
-        .0
-        .animate_value_with_time(xid.with(player_id), target.x, animation_time);
-    let y = ctx
-        .0
-        .animate_value_with_time(yid.with(player_id), target.y, animation_time);
-    builder
-        .clone()
-        .size(egui::vec2(x, y))
-        .offset(slots.b2.to_array().into())
-        .paint(&painter, &textures);
+        pad_slot_bg
+            .image_painter()
+            .pos(origin + slots.pad_bg_offset.to_array().into())
+            .size(egui::vec2(x, y))
+            .offset(slots.get_player_pos(player_slot).to_array().into())
+            .align2(Align2::CENTER_CENTER)
+            .paint(&painter, &textures);
+    }
 
     // Pads
     for (index, join) in team_select.joins.iter().enumerate() {
@@ -247,6 +180,7 @@ pub fn show(world: &World) {
             {
                 partner_slot.x
             } else {
+                // The standby position, just off-screen.
                 match player_slot.team() {
                     Team::A => {
                         area.response.rect.center().x
@@ -265,11 +199,12 @@ pub fn show(world: &World) {
             );
             let pos = Vec2::new(x, partner_slot.y);
 
-            ImagePainter::new(*controller_icon_silhouette)
-                .size(controller_icon_silhouette.egui_size())
+            controller_icon_silhouette
+                .image_painter()
                 .pos(area.response.rect.min + pos)
                 .paint(&painter, &textures);
 
+            // play both text
             if team_select.is_player_id_ready(player_slot)
                 && !team_select.is_player_slot_dual_stick(player_slot)
                 && !team_select.is_player_slot_set(player_slot.partner())
