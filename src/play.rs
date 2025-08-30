@@ -209,6 +209,20 @@ impl SessionPlugin for FlowPlugin {
             target: 7,
             ..Default::default()
         });
+        session.add_startup_system(|root: Root<Data>, mut audio: ResMut<AudioCenter>| {
+            if let Some(kira::sound::PlaybackState::Playing) = audio.music_state() {
+                return;
+            }
+            audio.play_music_advanced(
+                *root.sound.menu_music,
+                root.sound.menu_music.volume(),
+                true,
+                false,
+                0.0,
+                1.0,
+                true,
+            );
+        });
         session.add_system_to_stage(First, |world: &World| {
             let state = *world.resource::<PlayState>();
             match state {
