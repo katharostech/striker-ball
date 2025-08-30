@@ -177,6 +177,7 @@ impl SizedImageAsset {
     pub fn sized_texture(&self, textures: &EguiTextures) -> egui::load::SizedTexture {
         egui::load::SizedTexture::new(textures.get(self.image()), self.egui_size())
     }
+    /// Returns an [`ImagePainter`] with the handle and size of `self`.
     pub fn image_painter(&self) -> crate::ImagePainter {
         crate::ImagePainter::new(self.image()).size(self.egui_size())
     }
