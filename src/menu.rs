@@ -201,7 +201,11 @@ pub fn team_select_hide(world: &World) {
     world.resource_mut::<TeamSelect>().visible = false;
 }
 pub fn team_select_prep(world: &World) {
-    world.resource_mut::<TeamSelect>().visible = true;
+    *world.resource_mut() = TeamSelect {
+        visible: true,
+        ..Default::default()
+    };
+    world.resource::<EguiCtx>().clear_animations();
 }
 pub fn team_select_finish(world: &World) {
     *world.resource_mut() = MenuState::TeamSelect;
