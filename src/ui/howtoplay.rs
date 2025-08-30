@@ -88,7 +88,12 @@ pub fn show(world: &World) {
             ));
         });
     let origin = area.response.rect.min;
-    let painter = ctx.layer_painter(foreground());
+    let mut painter = ctx.layer_painter(foreground());
+
+    painter.set_clip_rect(Rect::from_min_size(
+        origin,
+        root.screen_size.to_array().into(),
+    ));
 
     let target_offset_x = match *howtoplay {
         HowToPlay::GameOverview => 0.,
