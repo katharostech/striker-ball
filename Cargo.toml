@@ -32,3 +32,8 @@ strip = true
 codegen-units = 512
 opt-level     = 1
 debug = false
+
+[profile.dev.package."*"]
+codegen-units = 1
+debug         = 1 # Only keep line numbers
+opt-level     = 3
