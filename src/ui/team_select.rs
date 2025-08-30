@@ -66,6 +66,69 @@ pub fn show(world: &World) {
         root.screen_size.to_array().into(),
     ));
 
+    // This fixes a glitch with the ui animations when rendering new text.
+    // All of it is invisible with the default `Color32`.
+    painter.text(
+        default(),
+        Align2::LEFT_CENTER,
+        "Not Ready",
+        FontId {
+            size: 7.0,
+            family: FontFamily::Name(small_inner_font.clone()),
+        },
+        default(),
+    );
+    painter.text(
+        default(),
+        Align2::LEFT_CENTER,
+        "Not Ready",
+        FontId {
+            size: 7.0,
+            family: FontFamily::Name(small_outer_font.clone()),
+        },
+        default(),
+    );
+    painter.text(
+        default(),
+        Align2::LEFT_CENTER,
+        "Play Both",
+        FontId {
+            size: 7.0,
+            family: FontFamily::Name(small_inner_font.clone()),
+        },
+        default(),
+    );
+    painter.text(
+        default(),
+        Align2::LEFT_CENTER,
+        "Play Both",
+        FontId {
+            size: 7.0,
+            family: FontFamily::Name(small_outer_font.clone()),
+        },
+        default(),
+    );
+    painter.text(
+        default(),
+        Align2::LEFT_CENTER,
+        "Ready!",
+        FontId {
+            size: 7.0,
+            family: FontFamily::Name(small_inner_font.clone()),
+        },
+        default(),
+    );
+    painter.text(
+        default(),
+        Align2::LEFT_CENTER,
+        "Ready!",
+        FontId {
+            size: 7.0,
+            family: FontFamily::Name(small_outer_font.clone()),
+        },
+        default(),
+    );
+
     // Pad BGs
     for player_slot in [
         PlayerSlot::A1,
