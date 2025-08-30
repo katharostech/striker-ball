@@ -215,6 +215,7 @@ pub fn how_to_play_hide(world: &World) {
 }
 pub fn how_to_play_prep(world: &World) {
     *world.resource_mut() = HowToPlay::GameOverview;
+    world.resource::<EguiCtx>().clear_animations();
 }
 pub fn how_to_play_finish(world: &World) {
     *world.resource_mut() = MenuState::HowToPlay;
