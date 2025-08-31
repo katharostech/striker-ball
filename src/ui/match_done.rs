@@ -7,6 +7,7 @@ pub struct MatchDoneAssets {
     pub cursor: SizedImageAsset,
     pub play_again_pos: Vec2,
     pub team_select_pos: Vec2,
+    pub quit_pos: Vec2,
 }
 
 #[derive(HasSchema, Clone, Default, Copy, Deref, DerefMut)]
@@ -20,12 +21,21 @@ pub enum MatchDoneState {
     #[default]
     PlayAgain,
     TeamSelect,
+    Quit,
 }
 impl MatchDone {
-    pub fn toggle(&mut self) {
+    pub fn cycle_up(&mut self) {
+        self.state = match self.state {
+            MatchDoneState::PlayAgain => MatchDoneState::Quit,
+            MatchDoneState::TeamSelect => MatchDoneState::PlayAgain,
+            MatchDoneState::Quit => MatchDoneState::TeamSelect,
+        }
+    }
+    pub fn cycle_down(&mut self) {
         self.state = match self.state {
             MatchDoneState::PlayAgain => MatchDoneState::TeamSelect,
-            MatchDoneState::TeamSelect => MatchDoneState::PlayAgain,
+            MatchDoneState::TeamSelect => MatchDoneState::Quit,
+            MatchDoneState::Quit => MatchDoneState::PlayAgain,
         }
     }
 }
@@ -48,6 +58,7 @@ pub fn show(world: &World) {
         cursor,
         play_again_pos,
         team_select_pos,
+        quit_pos,
     } = root.menu.match_done;
 
     use egui::*;
@@ -66,6 +77,7 @@ pub fn show(world: &World) {
                 let pos = match match_done.state {
                     MatchDoneState::PlayAgain => play_again_pos,
                     MatchDoneState::TeamSelect => team_select_pos,
+                    MatchDoneState::Quit => quit_pos,
                 };
                 ui.painter().image(
                     textures.get(*cursor),

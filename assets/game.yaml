@@ -178,10 +178,11 @@ menu:
     team_b: [ui/winnerBannerBlue.png, *bannerx, *bannery]
 
   match_done:
-    menu: [ui/endGameMenu.png, 87, 33]
+    menu: [ui/endGameMenu.png, 87, 45]
     cursor: [ui/pauseCursor.png, 6, 5]
     play_again_pos: [13, 8]
     team_select_pos: [6, 20]
+    quit_pos: [25, 32]
 
   pause:
     menu: [ui/pauseMenu.png, 177, 89]

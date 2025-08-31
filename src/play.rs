@@ -396,6 +396,18 @@ fn match_done_update(play: &World) {
             },
         );
     };
+    let to_splash = || {
+        let mut sessions = play.resource_mut::<Sessions>();
+        let ui = sessions.get_world(session::UI).unwrap();
+        start_fade(
+            ui,
+            FadeTransition {
+                hide: play_hide,
+                prep: splash_prep,
+                finish: splash_finish,
+            },
+        );
+    };
 
     let inputs = play.resource::<LocalInputs>();
 
@@ -404,11 +416,15 @@ fn match_done_update(play: &World) {
             match match_done.state {
                 MatchDoneState::TeamSelect => to_team_select(),
                 MatchDoneState::PlayAgain => play_again(),
+                MatchDoneState::Quit => to_splash(),
             }
             play.resource_mut::<MatchDone>().visual.hide();
         }
-        if input.down.just_pressed() || input.up.just_pressed() {
-            play.resource_mut::<MatchDone>().toggle();
+        if input.up.just_pressed() {
+            play.resource_mut::<MatchDone>().cycle_up();
+        }
+        if input.down.just_pressed() {
+            play.resource_mut::<MatchDone>().cycle_down();
         }
     }
 }
