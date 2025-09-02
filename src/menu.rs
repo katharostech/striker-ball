@@ -42,6 +42,12 @@ pub fn update_pause(ui: &World) {
             .resource_mut::<Sessions>()
             .get_mut(session::PLAY)
             .is_none()
+        || ui
+            .resource_mut::<Sessions>()
+            .get_session_resource::<MatchDone>(session::PLAY)
+            .unwrap()
+            .visual
+            .shown()
     {
         return;
     };
