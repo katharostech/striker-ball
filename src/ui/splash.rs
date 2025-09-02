@@ -26,6 +26,7 @@ pub struct SplashSlots {
 pub enum Splash {
     #[default]
     Hidden,
+    PressGamepad,
     Offline,
     // Online,
     HowToPlay,
@@ -36,7 +37,7 @@ impl Splash {
             Splash::Offline => *self = /* Self::Online */Self::HowToPlay,
             // Splash::Online => *self = Self::Offline,
             Splash::HowToPlay => *self = Self::Offline,
-            Splash::Hidden => {}
+            Splash::Hidden | Splash::PressGamepad => {}
         }
     }
     pub fn cycle_down(&mut self) {
@@ -44,7 +45,7 @@ impl Splash {
             Splash::Offline => *self = /* Self::Online */Self::HowToPlay,
             // Splash::Online => *self = Self::HowToPlay,
             Splash::HowToPlay => *self = Self::Offline,
-            Splash::Hidden => {}
+            Splash::Hidden | Splash::PressGamepad => {}
         }
     }
 }
@@ -102,6 +103,42 @@ pub fn show(world: &World) {
         .size(title.egui_size())
         .offset(slots.title.to_array().into())
         .paint(&painter, &textures);
+
+    if let Splash::PressGamepad = *splash {
+        let inner_font = asset_server
+            .get(root.font.primary_inner)
+            .family_name
+            .clone();
+        let outer_font = asset_server
+            .get(root.font.primary_outer)
+            .family_name
+            .clone();
+
+        let builder = TextPainter::new("PRESS START ON A GAMEPAD")
+            .family(outer_font)
+            .size(7.0)
+            .align2(Align2::CENTER_CENTER)
+            .pos(area.response.rect.center() + vec2(0., 40.));
+
+        let rect = builder.clone().paint(&painter);
+
+        painter.add(
+            BorderedFrame::new(&root.menu.bframe)
+                .paint(textures.get(root.menu.bframe.image), rect.expand(6.0)),
+        );
+
+        builder.clone().paint(&painter);
+        builder
+            .clone()
+            .family(inner_font)
+            .color(if world.resource::<Time>().elapsed_seconds() % 1.0 > 0.5 {
+                Color32::WHITE
+            } else {
+                Color32::YELLOW
+            })
+            .paint(&painter);
+        return;
+    }
 
     builder
         .clone()

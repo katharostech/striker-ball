@@ -15,7 +15,7 @@ impl SessionPlugin for MenuPlugin {
         session.init_resource::<MenuState>();
         session.init_resource::<FadeTransition>();
 
-        session.install_plugin(Splash::Offline);
+        session.install_plugin(Splash::PressGamepad);
         session.install_plugin(HowToPlay::default());
         session.install_plugin(Fade::new(0.7, 0.5, Color::BLACK, egui::Order::Tooltip));
         session.install_plugin(TeamSelect::default());
@@ -253,6 +253,24 @@ pub fn splash_update(ui: &World) {
     let mut splash = ui.resource_mut::<Splash>();
     let inputs = ui.resource::<LocalInputs>();
 
+    if let Splash::PressGamepad = *splash {
+        for (_gamepad, input) in inputs.iter() {
+            if input.north.just_pressed()
+                || input.south.just_pressed()
+                || input.west.just_pressed()
+                || input.east.just_pressed()
+                || input.start.just_pressed()
+                || input.left_bump.just_pressed()
+                || input.right_bump.just_pressed()
+                || input.left_trigger.just_pressed()
+                || input.right_trigger.just_pressed()
+            {
+                *splash = Splash::Offline;
+            }
+        }
+        return;
+    }
+
     for (_gamepad, input) in inputs.iter() {
         if input.up.just_pressed() {
             splash.cycle_up();
@@ -283,6 +301,7 @@ pub fn splash_update(ui: &World) {
                         },
                     );
                 }
+                Splash::PressGamepad => unreachable!(),
                 Splash::Hidden => todo!(),
             }
         }
