@@ -51,6 +51,10 @@ impl LocalInput {
                 GamepadAxis::Other(_) => {}
             },
             GamepadEvent::Button(GamepadButtonEvent { button, value, .. }) => match button {
+                GamepadButton::DPadUp => self.up.apply_value(*value),
+                GamepadButton::DPadDown => self.down.apply_value(*value),
+                GamepadButton::DPadLeft => self.left.apply_value(*value),
+                GamepadButton::DPadRight => self.right.apply_value(*value),
                 GamepadButton::Start => self.start.apply_value(*value),
                 GamepadButton::North => self.north.apply_value(*value),
                 GamepadButton::South => self.south.apply_value(*value),
