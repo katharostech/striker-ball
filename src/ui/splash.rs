@@ -114,7 +114,7 @@ pub fn show(world: &World) {
             .family_name
             .clone();
 
-        let builder = TextPainter::new("PRESS START ON A GAMEPAD")
+        let builder = TextPainter::new("CONNECT GAMEPAD AND PRESS START")
             .family(outer_font)
             .size(7.0)
             .align2(Align2::CENTER_CENTER)
