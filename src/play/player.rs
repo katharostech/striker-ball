@@ -123,23 +123,23 @@ pub fn plugin(session: &mut SessionBuilder) {
         .add_system_to_stage(StateStage, turn_transition)
         .add_system_to_stage(
             StateStage,
-            timed_transition::<Player>(state::kick(), state::free(), 30),
+            timed_transition::<Player>(state::kick(), state::free(), seconds(0.5)),
         )
         .add_system_to_stage(
             StateStage,
-            timed_transition::<Player>(state::tackle(), state::free(), 30),
+            timed_transition::<Player>(state::tackle(), state::free(), seconds(0.5)),
         )
         .add_system_to_stage(
             StateStage,
-            timed_transition::<Player>(state::tackled(), state::free(), 30),
+            timed_transition::<Player>(state::tackled(), state::free(), seconds(0.5)),
         )
         .add_system_to_stage(
             StateStage,
-            timed_transition::<Player>(state::pass(), state::free(), 30),
+            timed_transition::<Player>(state::pass(), state::free(), seconds(0.5)),
         )
         .add_system_to_stage(
             StateStage,
-            timed_transition::<Player>(state::recieve(), state::free(), 30),
+            timed_transition::<Player>(state::recieve(), state::free(), seconds(0.5)),
         )
         .add_system_to_stage(PreUpdate, free_update)
         .add_system_to_stage(PreUpdate, ball_update)
@@ -161,13 +161,17 @@ pub fn plugin(session: &mut SessionBuilder) {
 // It then runs systems on each individual entity that make **only** changes that
 // are critical to state.
 
-pub fn timed_transition<T>(from_id: Ustr, to_id: Ustr, duration: u64) -> StaticSystem<(), ()>
+pub fn timed_transition<T>(
+    from_id: Ustr,
+    to_id: Ustr,
+    duration: std::time::Duration,
+) -> StaticSystem<(), ()>
 where
     T: HasSchema,
 {
     (move |entities: Res<Entities>, markers: Comp<T>, mut states: CompMut<State>| {
         for (_e, (_marker, state)) in entities.iter_with((&markers, &mut states)) {
-            if state.current == from_id && state.age() >= duration {
+            if state.current == from_id && state.duration() >= duration {
                 state.current = to_id;
             }
         }
@@ -223,7 +227,9 @@ fn turn_out_transition(
 ) {
     let state = states.get_mut(player_e).unwrap();
 
-    if state.age() >= root.constant.turn_frames {
+    if state.duration()
+        >= std::time::Duration::from_secs_f64(root.constant.turn_frames as f64 * TARGET_STEP)
+    {
         state.current = state::kick();
 
         let (_ball_e, ball) = entities.get_single_with(&mut balls).unwrap();
@@ -441,6 +447,7 @@ fn ball_update(world: &World) {
     }
 }
 fn shoot_update(
+    time: Res<Time>,
     player_ent_signs: Res<PlayerEntSigns>,
     inputs: Res<PlayInputs>,
     clients: Comp<Client>,
@@ -459,8 +466,8 @@ fn shoot_update(
 
         if direction.length() > 0.2 {
             let direction = direction.normalize();
-            let range_clock = Vec2::new(1.0, 0.05).normalize_or_zero();
-            let range_count = Vec2::new(1.0, -0.05).normalize_or_zero();
+            let range_clock = Vec2::new(1.0, 0.05 * time.delta_multiplier()).normalize_or_zero();
+            let range_count = Vec2::new(1.0, -0.05 * time.delta_multiplier()).normalize_or_zero();
 
             if direction.angle_between(player.angle) < range_clock.angle_between(Vec2::X) {
                 player.angle = player.angle.rotate(range_clock)
@@ -499,6 +506,7 @@ fn tackle_update(world: &World) {
 
             let entities = world.resource::<Entities>();
             let states = world.component::<State>();
+            let time = world.resource::<Time>();
 
             let mut players = world.component_mut::<Player>();
             let mut transforms = world.component_mut::<Transform>();
@@ -507,7 +515,10 @@ fn tackle_update(world: &World) {
 
             let player = players.get_mut(player_e).unwrap();
             let state = states.get(player_e).unwrap();
-            let force = (tackle_speed - state.age() as f32 * tackle_friction).max(0.0);
+            let accel = state.duration().as_secs_f32() * TARGET_FPS as f32;
+            let force = (tackle_speed * time.delta_multiplier()
+                - accel * tackle_friction * time.delta_multiplier())
+            .max(0.0);
             let movement = player.action_angle * force;
             {
                 let transform = transforms.get_mut(player_e).unwrap();
@@ -539,6 +550,7 @@ fn tackle_update(world: &World) {
 
 fn walk(In(player_e): In<Entity>, world: &World) {
     {
+        let time = world.resource::<Time>();
         let asset_server = world.asset_server();
         let root = asset_server.root::<Data>();
         let inputs = world.resource_mut::<PlayInputs>();
@@ -564,8 +576,8 @@ fn walk(In(player_e): In<Entity>, world: &World) {
             player.animation = ustr("walk");
             player.angle = direction.normalize_or_zero();
 
-            transform.translation.x += player.angle.x * speed;
-            transform.translation.y += player.angle.y * speed;
+            transform.translation.x += player.angle.x * speed * time.delta_multiplier();
+            transform.translation.y += player.angle.y * speed * time.delta_multiplier();
         } else {
             player.animation = ustr("idle");
         }

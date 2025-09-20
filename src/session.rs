@@ -6,6 +6,9 @@ pub const UI_PRIORITY: i32 = 2;
 pub const PLAY: &str = "play";
 pub const PLAY_PRIORITY: i32 = 1;
 
+pub const TARGET_FPS: f64 = 60.0;
+pub const TARGET_STEP: f64 = 1.0 / TARGET_FPS;
+
 // NOTE: session creation may need to have an immediate and delayed command versions for each session
 pub trait SessionCreation {
     fn create_play(&mut self, mode: PlayMode);
@@ -32,7 +35,7 @@ pub struct OfflineRunner {
 }
 impl SessionRunner for OfflineRunner {
     fn step(&mut self, frame_start: Instant, world: &mut World, stages: &mut SystemStages) {
-        pub const STEP: f64 = 1.0 / 60.;
+        pub const STEP: f64 = 1.0 / TARGET_FPS;
 
         let last_run = self.last_run.unwrap_or(frame_start);
         let delta = (frame_start - last_run).as_secs_f64();

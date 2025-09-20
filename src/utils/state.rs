@@ -23,6 +23,8 @@ pub struct State {
     pub current: Ustr,
     /// The number of frames that the pre_transition state has been current.
     age: u64,
+    /// The time that the pre_transition state has been current.
+    duration: std::time::Duration,
     /// The state of [`Self::current`], before the state transition systems ran last.
     /// This is used to check whether or not the state changed after a loop in the [`StateStage`].
     pre_transition: Ustr,
@@ -33,6 +35,7 @@ impl State {
         Self {
             current,
             age: default(),
+            duration: default(),
             pre_transition: current,
         }
     }
@@ -42,6 +45,14 @@ impl State {
             self.age
         } else {
             0
+        }
+    }
+    /// Gets the number of frames the current state has been active.
+    pub fn duration(&self) -> std::time::Duration {
+        if self.pre_transition == self.current {
+            self.duration
+        } else {
+            default()
         }
     }
     /// For use in transition systems. Gets the age of the pre_transition state if the
@@ -107,7 +118,10 @@ where
                 for (_ent, state) in entities.iter_with(&mut states) {
                     if state.pre_transition != state.current {
                         any_changed = true;
+                        // TODO: May need to wait until later to reset `state.age` & `state.pre_transition`
+                        // since the state could still return to the pre_transition state before the next frame.
                         state.age = 0;
+                        state.duration = default();
                         state.pre_transition = state.current;
                     }
                 }
@@ -138,8 +152,10 @@ impl SessionPlugin for StatePlugin {
         session.stages.add_system_to_stage(Last, update_state_age);
     }
 }
-pub fn update_state_age(entities: Res<Entities>, mut states: CompMut<State>) {
+pub fn update_state_age(time: Res<Time>, entities: Res<Entities>, mut states: CompMut<State>) {
     for (_ent, state) in entities.iter_with(&mut states) {
+        // TODO: should we warn if these saturate?
+        state.duration = state.duration.saturating_add(time.delta());
         state.age = state.age.saturating_add(1);
     }
 }

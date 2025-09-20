@@ -128,6 +128,23 @@ macro_rules! states {
     };
 }
 
+pub trait StrikerBallDelta {
+    fn delta_multiplier(&self) -> f32;
+}
+impl StrikerBallDelta for Time {
+    /// The multiplier used for movements, additions, and multiplications across frames in striker_ball.
+    ///
+    /// Multiplying speeds and frictions by this makes sure that the game functions are based on time and not
+    /// frames so that regardless of the processed frame-rate the game moves at the same real-time speed.
+    fn delta_multiplier(&self) -> f32 {
+        (self.delta_seconds_f64() * crate::TARGET_FPS) as f32
+    }
+}
+
+pub fn seconds(seconds: f32) -> std::time::Duration {
+    std::time::Duration::from_secs_f32(seconds)
+}
+
 pub trait SessionAccess {
     fn get_world(&mut self, name: impl Into<Ustr>) -> Option<&World>;
     fn get_session_resource<T: HasSchema>(&mut self, name: impl Into<Ustr>) -> Option<Ref<'_, T>>;

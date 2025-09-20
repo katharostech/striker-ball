@@ -41,6 +41,7 @@ pub fn plugin(session: &mut SessionBuilder) {
 pub fn update_ball(
     entities: Res<Entities>,
     root: Root<Data>,
+    time: Res<Time>,
     players: Comp<Player>,
     mut path_colors: CompMut<Path2dToggle>,
     mut audio: ResMut<AudioCenter>,
@@ -94,15 +95,15 @@ pub fn update_ball(
 
             // Friction
             if ball.bounced {
-                ball.velocity *= ball_friction;
+                ball.velocity *= ball_friction.powf(time.delta_multiplier());
             }
             if ball.velocity.length() < 0.01 {
                 ball.velocity = Vec2::ZERO;
             }
 
             // Movement
-            pos.x += ball.velocity.x;
-            pos.y += ball.velocity.y;
+            pos.x += ball.velocity.x * time.delta_multiplier();
+            pos.y += ball.velocity.y * time.delta_multiplier();
         }
         // Animation Speed
         animation.fps = 10.0 * ball.velocity.length();
