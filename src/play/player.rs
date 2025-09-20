@@ -746,10 +746,11 @@ fn player_graphics(
     states: Comp<State>,
     root: Root<Data>,
     mut path2ds: CompMut<Path2d>,
+    mut path_colors: CompMut<Path2dToggle>,
     mut players: CompMut<Player>,
 ) {
-    for (_player_e, (player, path, state)) in
-        entities.iter_with((&mut players, &mut path2ds, &states))
+    for (_player_e, (player, path, path_color, state)) in
+        entities.iter_with((&mut players, &mut path2ds, &mut path_colors, &states))
     {
         if player.angle.x > 0.0 {
             player.flip_x = false
@@ -759,47 +760,47 @@ fn player_graphics(
         *path.points.get_mut(10).unwrap() = player.angle * root.constant.player_radius;
 
         match state.current {
-            s if s == state::free() => path.color = path2d::color::FREE,
+            s if s == state::free() => **path_color = path2d::color::FREE,
             s if s == state::tackle() => {
                 player.animation = ustr("tackle");
-                path.color = path2d::color::SHOOT
+                **path_color = path2d::color::SHOOT
             }
             s if s == state::tackled() => {
                 player.animation = ustr("tackled");
-                path.color = path2d::color::SHOOT
+                **path_color = path2d::color::SHOOT
             }
             s if s == state::grab() => {
                 player.animation = ustr("grab");
-                path.color = path2d::color::KICK_GRAB
+                **path_color = path2d::color::KICK_GRAB
             }
-            s if s == state::ball() => path.color = path2d::color::DRIBBLE,
+            s if s == state::ball() => **path_color = path2d::color::DRIBBLE,
             s if s == state::shoot() => {
                 player.animation = ustr("shoot");
-                path.color = path2d::color::SHOOT
+                **path_color = path2d::color::SHOOT
             }
             s if s == state::pass() => {
                 player.animation = ustr("kick");
-                path.color = path2d::color::KICK_GRAB
+                **path_color = path2d::color::KICK_GRAB
             }
             s if s == state::kick() => {
                 player.animation = ustr("kick");
-                path.color = path2d::color::KICK_GRAB
+                **path_color = path2d::color::KICK_GRAB
             }
             s if s == state::recieve() => {
                 player.animation = ustr("idle");
-                path.color = path2d::color::KICK_GRAB
+                **path_color = path2d::color::KICK_GRAB
             }
             s if s == state::lose() => {
                 player.animation = ustr("tackled");
-                path.color = path2d::color::FREE
+                **path_color = path2d::color::FREE
             }
             s if s == state::win() => {
                 player.animation = ustr("winning");
-                path.color = path2d::color::FREE
+                **path_color = path2d::color::FREE
             }
             s if s == state::wait() => {
                 player.animation = ustr("idle");
-                path.color = path2d::color::FREE
+                **path_color = path2d::color::FREE
             }
             _ => {}
         }

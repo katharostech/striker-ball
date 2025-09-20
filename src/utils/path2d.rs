@@ -23,47 +23,43 @@ pub fn circle_points(radius: f32, lines: usize) -> Vec<Vec2> {
     vec
 }
 
-#[derive(HasSchema, Clone)]
-#[schema(no_default)]
+#[derive(HasSchema, Clone, Default, Deref, DerefMut)]
 pub struct Path2dToggle {
+    #[deref]
+    /// The true color when using the toggle component.
+    pub color: Color,
+    /// Whether or not the color should be transparent.
     pub hide: bool,
-    swapped: bool,
-    swap: AtomicComponentStore<Path2d>,
 }
 impl Path2dToggle {
-    pub fn shown() -> Self {
-        Path2dToggle {
-            hide: false,
-            swapped: false,
-            swap: AtomicComponentStore::new(AtomicCell::new(ComponentStore::default())),
+    pub fn new(color: Color) -> Self {
+        Self {
+            color,
+            ..Default::default()
         }
     }
-    pub fn hidden() -> Self {
-        Path2dToggle {
-            hide: true,
-            swapped: false,
-            swap: AtomicComponentStore::new(AtomicCell::new(ComponentStore::default())),
-        }
-    }
-    fn unswap_path2ds(world: &World, mut storage: ResMut<Path2dToggle>) {
-        if storage.hide && storage.swapped {
-            storage.swap.swap(&world.components.get_cell::<Path2d>());
-            storage.swapped = false;
-        }
-    }
-    fn apply_visibility(world: &World, mut storage: ResMut<Path2dToggle>) {
-        if storage.hide && !storage.swapped {
-            storage.swap.swap(&world.components.get_cell::<Path2d>());
-            storage.swapped = true;
+    pub fn display_color(&self) -> Color {
+        if self.hide {
+            Color::NONE
+        } else {
+            self.color
         }
     }
 }
-impl SessionPlugin for Path2dToggle {
+pub struct Path2dTogglePlugin;
+impl Path2dTogglePlugin {
+    pub fn apply_color(
+        entities: Res<Entities>,
+        toggles: Comp<Path2dToggle>,
+        mut path2ds: CompMut<Path2d>,
+    ) {
+        for (_entity, (toggle, path2d)) in entities.iter_with((&toggles, &mut path2ds)) {
+            path2d.color = toggle.display_color()
+        }
+    }
+}
+impl SessionPlugin for Path2dTogglePlugin {
     fn install(self, session: &mut SessionBuilder) {
-        session.insert_resource(self);
-        session
-            // TODO: Maybe add custom SystemStage to ensure early and late activation.
-            .add_system_to_stage(First, Self::unswap_path2ds)
-            .add_system_to_stage(Last, Self::apply_visibility);
+        session.add_system_to_stage(First, Self::apply_color);
     }
 }

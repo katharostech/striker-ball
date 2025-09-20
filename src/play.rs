@@ -168,12 +168,12 @@ impl SessionPlugin for ScenePlugin {
         };
         session.insert_resource(self.mode);
         session.init_resource::<PlayInputs>();
-
-        session.install_plugin(Path2dToggle::hidden());
+        session.install_plugin(Path2dTogglePlugin);
         session.add_system_to_stage(First, fix_camera_size);
         session.add_system_to_stage(Update, toggle_debug_lines);
 
         session.add_startup_system(spawn::scene);
+        session.add_startup_system(hide_debug_lines);
     }
 }
 
@@ -464,11 +464,19 @@ pub fn set_player_states_free(
     }
 }
 
-pub fn toggle_debug_lines(inputs: Res<KeyboardInputs>, mut path2ds: ResMut<Path2dToggle>) {
+pub fn toggle_debug_lines(inputs: Res<KeyboardInputs>, mut toggles: CompMut<Path2dToggle>) {
     for input in inputs.key_events.iter() {
         if input.button_state == ButtonState::Pressed && input.key_code == Set(KeyCode::F3) {
-            path2ds.hide = !path2ds.hide;
+            for toggle in toggles.iter_mut() {
+                toggle.hide = !toggle.hide;
+            }
         }
+    }
+}
+
+pub fn hide_debug_lines(mut toggles: CompMut<Path2dToggle>) {
+    for toggle in toggles.iter_mut() {
+        toggle.hide = true;
     }
 }
 

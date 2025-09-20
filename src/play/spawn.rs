@@ -25,6 +25,7 @@ pub fn scene(world: &World) {
     world
         .spawn()
         .insert(path2d::bounds(&root))
+        .insert(Path2dToggle::new(path2d::color::BOUNDS))
         .insert(Sprite {
             image: *root.court,
             ..Default::default()
@@ -39,6 +40,7 @@ pub fn scene(world: &World) {
             ..Default::default()
         })
         .insert(path2d::ball(&root))
+        .insert(Path2dToggle::new(path2d::color::BALL))
         .insert(AtlasSprite::new(root.sprite.ball))
         .insert(ball::sprite())
         .insert(Transform::from_translation(Vec3::new(0., 0., layers::BALL)));
@@ -82,6 +84,7 @@ pub fn pins(world: &World, root: Root<Data>) {
             .insert(AtlasSprite::new(a_pin))
             .insert(pin::animation_bank())
             .insert(path2d::pin(&root))
+            .insert(Path2dToggle::new(path2d::color::PIN))
             .insert(Transform::from_translation(Vec3::new(
                 -screen_bounds.x + x_padding,
                 y,
@@ -96,6 +99,7 @@ pub fn pins(world: &World, root: Root<Data>) {
             .insert(AtlasSprite::new(b_pin))
             .insert(pin::animation_bank())
             .insert(path2d::pin(&root))
+            .insert(Path2dToggle::new(path2d::color::PIN))
             .insert(Transform::from_translation(Vec3::new(
                 screen_bounds.x - x_padding,
                 y,
@@ -155,7 +159,8 @@ pub fn player(world: &World, player: PlayerInfo) -> Entity {
         })
         .insert(Player::new(slot))
         .insert(State::new("wait"))
-        .insert(path2d::player(&root));
+        .insert(path2d::player(&root))
+        .insert(Path2dToggle::new(path2d::color::FREE));
 
     let sprite_offset =
         (asset_server.get::<Atlas>(player_a).value().tile_size.y / 2.) - player_radius * 2.;

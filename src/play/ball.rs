@@ -42,7 +42,7 @@ pub fn update_ball(
     entities: Res<Entities>,
     root: Root<Data>,
     players: Comp<Player>,
-    mut paths: CompMut<Path2d>,
+    mut path_colors: CompMut<Path2dToggle>,
     mut audio: ResMut<AudioCenter>,
     mut balls: CompMut<Ball>,
     mut animated_sprites: CompMut<AnimatedSprite>,
@@ -169,9 +169,9 @@ pub fn update_ball(
             let mag = abs.max(ball_border_slide);
             let value = mag * signum;
             ball.velocity.x = value;
-            paths.get_mut(ball_entity).unwrap().color = Color::ORANGE;
+            path_colors.get_mut(ball_entity).unwrap().color = Color::ORANGE;
         } else {
-            paths.get_mut(ball_entity).unwrap().color = Color::GREEN;
+            path_colors.get_mut(ball_entity).unwrap().color = Color::GREEN;
         }
     }
 }
