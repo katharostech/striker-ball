@@ -10,11 +10,11 @@ impl SessionPlugin for Matchmaker {
             |world: &World, time: Res<Time>, mut matchmaker: ResMut<Matchmaker>| {
                 matchmaker.update(time.delta());
 
-                if let Some(socket) = matchmaker.network_match_socket() {
-                    world.resources.insert(socket);
-                } else {
-                    world.resources.remove::<NetworkMatchSocket>();
-                }
+                // if let Some(socket) = matchmaker.network_match_socket() {
+                //     world.resources.insert(socket);
+                // } else {
+                //     world.resources.remove::<NetworkMatchSocket>();
+                // }
             },
         );
     }
@@ -23,11 +23,11 @@ impl SessionPlugin for Matchmaker {
 #[derive(HasSchema, Clone)]
 #[schema(no_default)]
 pub struct Matchmaker {
-    service_type: String,
+    pub service_name: String,
 
     // Host
     pub host_name: String,
-    pub player_count: u32,
+    player_count: u32,
 
     server: Option<lan::ServerInfo>,
     joined_players: usize,
@@ -41,14 +41,14 @@ pub struct Matchmaker {
     wait: bool,
     socket: Option<NetworkMatchSocket>,
 }
-
+// TODO: separate builder functions into different type maybe a plugin
 // impl builder functions
 impl Matchmaker {
-    pub fn new(service_type: &str) -> Self {
+    pub fn new(service_name: &str) -> Self {
         Self {
             refresh: Timer::from_seconds(2., TimerMode::Once),
-            service_type: format!("_{service_type}._udp.local."),
-            host_name: String::from("default_host"),
+            service_name: service_name.to_string(),
+            host_name: String::from("default host"),
             player_count: 2,
             server: None,
             joined_players: 0,
@@ -86,6 +86,9 @@ impl Matchmaker {
     pub fn is_joined(&self) -> bool {
         self.socket.is_some()
     }
+    pub fn service_type(&self) -> String {
+        format!("_{}._udp.local.", self.service_name)
+    }
     pub fn lan_servers(&self) -> &Vec<lan::ServerInfo> {
         &self.lan_servers
     }
@@ -100,8 +103,9 @@ impl Matchmaker {
 // impl mut functions
 impl Matchmaker {
     pub fn lan_host(&mut self) {
+        let service_type = self.service_type();
         let (is_recreated, server) = RUNTIME.block_on(async {
-            lan::prepare_to_host(&mut self.server, &self.service_type, &self.host_name).await
+            lan::prepare_to_host(&mut self.server, &service_type, &self.host_name).await
         });
 
         lan::start_server(server.clone(), self.player_count);
@@ -116,8 +120,9 @@ impl Matchmaker {
         self.wait = false;
     }
     pub fn lan_search(&mut self) {
+        let service_type = self.service_type();
         lan::prepare_to_join(
-            &self.service_type,
+            &service_type,
             &mut self.lan_servers,
             &mut self.lan_discovery,
             &self.refresh,

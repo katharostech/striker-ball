@@ -27,5 +27,6 @@ pub use utils::*;
 pub mod schema;
 pub use schema::*;
 
-// pub mod matchmaking;
-// pub use matchmaking::*;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod matchmaking;
+pub use matchmaking::*;

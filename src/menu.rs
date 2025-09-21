@@ -8,6 +8,10 @@ pub enum MenuState {
     FadeTransition,
     TeamSelect,
     InGame,
+    #[cfg(not(target_arch = "wasm32"))]
+    Lan,
+    #[cfg(not(target_arch = "wasm32"))]
+    InNetworkGame,
 }
 pub struct MenuPlugin;
 impl SessionPlugin for MenuPlugin {
@@ -15,10 +19,20 @@ impl SessionPlugin for MenuPlugin {
         session.init_resource::<MenuState>();
         session.init_resource::<FadeTransition>();
 
-        session.install_plugin(Splash::PressGamepad);
+        #[cfg(not(target_arch = "wasm32"))]
+        session.install_plugin(
+            Matchmaker::new(MATCHMAKER_SERVICE_NAME_ONEPLAYER)
+                .refresh(1.0)
+                .player_count(2),
+        );
+        session.install_plugin(Splash {
+            visual: Visual::new_shown(),
+            ..Default::default()
+        });
         session.install_plugin(HowToPlay::default());
-        session.install_plugin(Fade::new(0.7, 0.5, Color::BLACK, egui::Order::Tooltip));
+        session.install_plugin(Fade::new(0.5, 0.5, Color::BLACK, egui::Order::Tooltip));
         session.install_plugin(TeamSelect::default());
+        session.install_plugin(LanUI::default());
         session.install_plugin(Pause::default());
         session.add_startup_system(|root: Root<Data>, mut audio: ResMut<AudioCenter>| {
             audio.play_music_advanced(
@@ -48,6 +62,8 @@ pub fn update_pause(ui: &World) {
             .unwrap()
             .visual
             .shown()
+        || *ui.resource::<MenuState>() == MenuState::InNetworkGame
+    // TODO: Remove these and add enabled bool to the Pause struct
     {
         return;
     };
@@ -124,9 +140,9 @@ pub fn update_pause(ui: &World) {
                     start_fade(
                         ui,
                         FadeTransition {
-                            hide: play_hide,
-                            prep: play_prep,
-                            finish: play_finish,
+                            hide: play_reset,
+                            prep: play_offline_prep,
+                            finish: play_offline_finish,
                         },
                     );
                     *pause = Pause::Hidden;
@@ -135,7 +151,7 @@ pub fn update_pause(ui: &World) {
                     start_fade(
                         ui,
                         FadeTransition {
-                            hide: play_hide,
+                            hide: play_leave,
                             prep: splash_prep,
                             finish: splash_finish,
                         },
@@ -156,6 +172,10 @@ pub fn update_menu(world: &World) {
         MenuState::HowToPlay => how_to_play_update(world),
         MenuState::TeamSelect => team_select_update(world),
         MenuState::InGame => {}
+        #[cfg(not(target_arch = "wasm32"))]
+        MenuState::InNetworkGame => {}
+        #[cfg(not(target_arch = "wasm32"))]
+        MenuState::Lan => lan_update(world),
     }
 }
 
@@ -199,10 +219,10 @@ pub fn start_fade(world: &World, transition: FadeTransition) {
     *world.resource_mut() = transition;
 }
 pub fn splash_hide(world: &World) {
-    *world.resource_mut() = Splash::Hidden;
+    world.resource_mut::<Splash>().visual.hide();
 }
 pub fn splash_prep(world: &World) {
-    *world.resource_mut() = Splash::Offline;
+    world.resource_mut::<Splash>().visual.show();
 }
 pub fn splash_finish(world: &World) {
     *world.resource_mut() = MenuState::Splash;
@@ -230,11 +250,44 @@ pub fn how_to_play_prep(world: &World) {
 pub fn how_to_play_finish(world: &World) {
     *world.resource_mut() = MenuState::HowToPlay;
 }
-pub fn play_hide(ui: &World) {
+pub fn lan_ui_hide(world: &World) {
+    world.resource_mut::<LanUI>().visible = false;
+}
+pub fn lan_ui_leave(world: &World) {
+    #[cfg(not(target_arch = "wasm32"))]
+    world.resource_mut::<Matchmaker>().lan_host_cancel();
+    #[cfg(not(target_arch = "wasm32"))]
+    world.resource_mut::<Matchmaker>().lan_join_cancel();
+    world.resource_mut::<LanUI>().visible = false;
+}
+pub fn lan_ui_prep(world: &World) {
+    world.resource_mut::<LanUI>().visible = true;
+}
+pub fn lan_ui_finish(world: &World) {
+    *world.resource_mut() = MenuState::Lan;
+}
+pub fn play_leave(ui: &World) {
+    #[cfg(not(target_arch = "wasm32"))]
+    ui.resource_mut::<Matchmaker>().lan_host_cancel();
+    #[cfg(not(target_arch = "wasm32"))]
+    ui.resource_mut::<Matchmaker>().lan_join_cancel();
+
     let mut sessions = ui.resource_mut::<Sessions>();
     sessions.delete_play();
 }
-pub fn play_prep(ui: &World) {
+pub fn play_reset(ui: &World) {
+    let mut sessions = ui.resource_mut::<Sessions>();
+    sessions
+        .get_mut(PLAY)
+        .unwrap()
+        .world
+        .resources
+        .insert(ResetWorld {
+            reset: true,
+            reset_resources: default(),
+        });
+}
+pub fn play_offline_prep(ui: &World) {
     let mut sessions = ui.resource_mut::<Sessions>();
     let player_signs = ui
         .resource::<TeamSelect>()
@@ -248,7 +301,27 @@ pub fn play_prep(ui: &World) {
 
     sessions.create_play(PlayMode::Offline(player_signs));
 }
-pub fn play_finish(ui: &World) {
+pub fn play_online_prep(ui: &World) {
+    let socket = ui.resource::<Matchmaker>().network_match_socket().unwrap();
+    let service_type = *ui.resource::<ServiceType>();
+    let mut sessions = ui.resource_mut::<Sessions>();
+
+    sessions.create_play(PlayMode::Online {
+        socket,
+        service_type,
+    });
+}
+pub fn play_online_finish(ui: &World) {
+    *ui.resource_mut() = MenuState::InNetworkGame;
+    let mut sessions = ui.resource_mut::<Sessions>();
+    tracing::info!("fade_in, starting countdown");
+    sessions
+        .get_world(session::PLAY)
+        .unwrap()
+        .resource_mut::<Countdown>()
+        .restart();
+}
+pub fn play_offline_finish(ui: &World) {
     *ui.resource_mut() = MenuState::InGame;
     let mut sessions = ui.resource_mut::<Sessions>();
     tracing::info!("fade_in, starting countdown");
@@ -263,7 +336,10 @@ pub fn splash_update(ui: &World) {
     let mut splash = ui.resource_mut::<Splash>();
     let inputs = ui.resource::<LocalInputs>();
 
-    if let Splash::PressGamepad = *splash {
+    if let SplashState::PressGamepad = splash.state {
+        if splash.interact == Some(SplashState::PressGamepad) {
+            splash.state = SplashState::Offline;
+        }
         for (_gamepad, input) in inputs.iter() {
             if input.north.just_pressed()
                 || input.south.just_pressed()
@@ -275,45 +351,62 @@ pub fn splash_update(ui: &World) {
                 || input.left_trigger.just_pressed()
                 || input.right_trigger.just_pressed()
             {
-                *splash = Splash::Offline;
+                splash.state = SplashState::Offline;
             }
         }
         return;
     }
 
-    for (_gamepad, input) in inputs.iter() {
+    let proceed = move |state: SplashState, gamepad: Option<u32>| match state {
+        SplashState::Offline => start_fade(
+            ui,
+            FadeTransition {
+                hide: splash_hide,
+                prep: team_select_prep,
+                finish: team_select_finish,
+            },
+        ),
+        SplashState::Lan => {
+            ui.resource_mut::<LanUI>().service = ServiceType::OnePlayer(gamepad.unwrap_or(0)); // TODO: add keyboard controls to lan
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: splash_hide,
+                    prep: lan_ui_prep,
+                    finish: lan_ui_finish,
+                },
+            )
+        }
+        SplashState::HowToPlay => {
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: splash_hide,
+                    prep: how_to_play_prep,
+                    finish: how_to_play_finish,
+                },
+            );
+        }
+        SplashState::PressGamepad => unreachable!(),
+    };
+
+    if let Some(interact) = splash.interact {
+        proceed(interact, None);
+        return;
+    }
+
+    for (gamepad, input) in inputs.iter() {
         if input.up.just_pressed() {
             splash.cycle_up();
+            return;
         }
         if input.down.just_pressed() {
             splash.cycle_down();
+            return;
         }
         if input.south.just_pressed() {
-            match *splash {
-                Splash::Offline => {
-                    start_fade(
-                        ui,
-                        FadeTransition {
-                            hide: splash_hide,
-                            prep: team_select_prep,
-                            finish: team_select_finish,
-                        },
-                    );
-                    return;
-                }
-                Splash::HowToPlay => {
-                    start_fade(
-                        ui,
-                        FadeTransition {
-                            hide: splash_hide,
-                            prep: how_to_play_prep,
-                            finish: how_to_play_finish,
-                        },
-                    );
-                }
-                Splash::PressGamepad => unreachable!(),
-                Splash::Hidden => todo!(),
-            }
+            proceed(splash.state, Some(*gamepad));
+            return;
         }
     }
 }
@@ -321,6 +414,22 @@ pub fn how_to_play_update(ui: &World) {
     let mut howtoplay = ui.resource_mut::<HowToPlay>();
 
     let inputs = ui.resource::<LocalInputs>();
+    let keyboard = ui.resource::<KeyboardInputs>();
+
+    for event in &keyboard.key_events {
+        if let Maybe::Set(key_code) = event.key_code {
+            if key_code == KeyCode::Escape && event.button_state == ButtonState::Pressed {
+                start_fade(
+                    ui,
+                    FadeTransition {
+                        hide: how_to_play_hide,
+                        prep: splash_prep,
+                        finish: splash_finish,
+                    },
+                );
+            }
+        }
+    }
 
     for (_gamepad, input) in inputs.iter() {
         if input.west.just_pressed() {
@@ -362,14 +471,31 @@ pub fn team_select_update(ui: &World) {
     let asset_server = ui.asset_server();
     let root = asset_server.root::<Data>();
 
+    let keyboard = ui.resource::<KeyboardInputs>();
+
+    for event in &keyboard.key_events {
+        if let Maybe::Set(key_code) = event.key_code {
+            if key_code == KeyCode::Escape && event.button_state == ButtonState::Pressed {
+                start_fade(
+                    ui,
+                    FadeTransition {
+                        hide: team_select_hide,
+                        prep: splash_prep,
+                        finish: splash_finish,
+                    },
+                );
+            }
+        }
+    }
+
     for (gamepad, input) in local_inputs.iter() {
         if input.start.just_pressed() && assignments.is_some() {
             start_fade(
                 ui,
                 FadeTransition {
                     hide: team_select_hide,
-                    prep: play_prep,
-                    finish: play_finish,
+                    prep: play_offline_prep,
+                    finish: play_offline_finish,
                 },
             );
             return;
@@ -416,11 +542,104 @@ pub fn team_select_update(ui: &World) {
                 ui,
                 FadeTransition {
                     hide: team_select_hide,
-                    prep: play_prep,
-                    finish: play_finish,
+                    prep: play_offline_prep,
+                    finish: play_offline_finish,
                 },
             );
             return;
+        }
+    }
+}
+
+pub fn lan_update(ui: &World) {
+    let mut lan_ui = ui.resource_mut::<LanUI>();
+    let local_inputs = ui.resource::<LocalInputs>();
+    let mut matchmaker = ui.resource_mut::<Matchmaker>();
+
+    let keyboard = ui.resource::<KeyboardInputs>();
+
+    for event in &keyboard.key_events {
+        if let Maybe::Set(key_code) = event.key_code {
+            if key_code == KeyCode::Escape && event.button_state == ButtonState::Pressed {
+                start_fade(
+                    ui,
+                    FadeTransition {
+                        hide: lan_ui_leave,
+                        prep: splash_prep,
+                        finish: splash_finish,
+                    },
+                );
+            }
+        }
+    }
+
+    if matchmaker.network_match_socket().is_some() {
+        ui.resources.insert(lan_ui.service);
+        start_fade(
+            ui,
+            FadeTransition {
+                hide: lan_ui_hide,
+                prep: play_online_prep,
+                finish: play_online_finish,
+            },
+        );
+        return;
+    }
+
+    fn lan_ui_action(state: &LanUIState, matchmaker: &mut Matchmaker) {
+        match state {
+            LanUIState::Host => {
+                if matchmaker.is_hosting() {
+                    matchmaker.lan_host_cancel();
+                } else {
+                    matchmaker.lan_host();
+                }
+            }
+            LanUIState::Server(i) => {
+                if let Some(server) = matchmaker.lan_servers().get(*i).cloned() {
+                    matchmaker.lan_join(&server);
+                }
+            }
+        }
+    }
+
+    if let Some(state) = &lan_ui.output {
+        lan_ui_action(state, &mut matchmaker);
+        return;
+    }
+
+    for (gamepad, input) in local_inputs.iter() {
+        if input.south.just_pressed() {
+            lan_ui_action(&lan_ui, &mut matchmaker);
+            return;
+        }
+        if matchmaker.is_hosting() {
+            if input.west.just_pressed() {
+                matchmaker.lan_host_cancel();
+                return;
+            }
+        } else {
+            if input.west.just_pressed() {
+                if let ServiceType::OnePlayer(p1) = lan_ui.service {
+                    if p1 == *gamepad {
+                        start_fade(
+                            ui,
+                            FadeTransition {
+                                hide: lan_ui_hide,
+                                prep: splash_prep,
+                                finish: splash_finish,
+                            },
+                        );
+                        return;
+                    }
+                }
+            }
+            if input.up.just_pressed() {
+                lan_ui.cycle_up();
+            }
+            if input.down.just_pressed() {
+                lan_ui.cycle_down();
+            }
         }
     }
 }

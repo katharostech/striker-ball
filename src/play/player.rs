@@ -281,15 +281,13 @@ fn to_ball_transition(
 
 fn ball_out_transition(
     In(player_e): In<Entity>,
-    inputs: Res<PlayInputs>,
+    inputs: Res<PlayTeamInputs>,
     player_ent_signs: Res<PlayerEntSigns>,
-    clients: Comp<Client>,
     transforms: CompMut<Transform>,
     mut players: CompMut<Player>,
     mut states: CompMut<State>,
 ) {
-    let client = clients.get(player_e).unwrap();
-    let control = inputs.get_control(client.index);
+    let control = inputs.get_character_control(players.get(player_e).unwrap().id);
 
     // pass
     if control.pass.just_pressed() {
@@ -374,8 +372,7 @@ fn to_tackled_transition(
 
 fn to_tackle_transition(
     In(player_e): In<Entity>,
-    inputs: Res<PlayInputs>,
-    clients: Comp<Client>,
+    inputs: Res<PlayTeamInputs>,
     root: Root<Data>,
     mut audio: ResMut<AudioCenter>,
     mut players: CompMut<Player>,
@@ -383,8 +380,7 @@ fn to_tackle_transition(
 ) {
     let player = players.get_mut(player_e).unwrap();
     let state = states.get_mut(player_e).unwrap();
-    let client = clients.get(player_e).unwrap();
-    let control = inputs.get_control(client.index);
+    let control = inputs.get_character_control(player.id);
     let Sounds { player_tackle, .. } = root.sound;
 
     if control.pass.just_pressed() {
@@ -397,8 +393,7 @@ fn to_tackle_transition(
 fn shoot_out_transition(
     In(player_e): In<Entity>,
     entities: Res<Entities>,
-    inputs: Res<PlayInputs>,
-    clients: Comp<Client>,
+    inputs: Res<PlayTeamInputs>,
     root: Root<Data>,
     mut audio: ResMut<AudioCenter>,
     mut players: CompMut<Player>,
@@ -407,8 +402,7 @@ fn shoot_out_transition(
 ) {
     let player = players.get_mut(player_e).unwrap();
     let state = states.get_mut(player_e).unwrap();
-    let client = clients.get(player_e).unwrap();
-    let control = inputs.get_control(client.index);
+    let control = inputs.get_character_control(player.id);
 
     if !control.shoot.pressed() {
         state.current = state::kick();
@@ -449,8 +443,7 @@ fn ball_update(world: &World) {
 fn shoot_update(
     time: Res<Time>,
     player_ent_signs: Res<PlayerEntSigns>,
-    inputs: Res<PlayInputs>,
-    clients: Comp<Client>,
+    inputs: Res<PlayTeamInputs>,
     states: Comp<State>,
     mut players: CompMut<Player>,
 ) {
@@ -459,9 +452,7 @@ fn shoot_update(
             continue;
         }
         let player = players.get_mut(player_e).unwrap();
-        let client = clients.get(player_e).unwrap();
-        let control = inputs.get_control(client.index);
-
+        let control = inputs.get_character_control(player.id);
         let direction = Vec2::new(control.x, control.y);
 
         if direction.length() > 0.2 {
@@ -553,8 +544,8 @@ fn walk(In(player_e): In<Entity>, world: &World) {
         let time = world.resource::<Time>();
         let asset_server = world.asset_server();
         let root = asset_server.root::<Data>();
-        let inputs = world.resource_mut::<PlayInputs>();
-        let clients = world.component_mut::<Client>();
+        let inputs = world.resource_mut::<PlayTeamInputs>();
+
         let mut players = world.component_mut::<Player>();
         let mut states = world.component_mut::<State>();
         let mut transforms = world.component_mut::<Transform>();
@@ -562,14 +553,13 @@ fn walk(In(player_e): In<Entity>, world: &World) {
         let player = players.get_mut(player_e).unwrap();
         let state = states.get_mut(player_e).unwrap();
         let transform = transforms.get_mut(player_e).unwrap();
-        let client = clients.get(player_e).unwrap();
 
         let speed = match state.current {
             id if id == state::free() => root.constant.run_speed,
             id if id == state::ball() => root.constant.dribble_speed,
             _ => return,
         };
-        let control = inputs.get_control(client.index);
+        let control = inputs.get_character_control(player.id);
         let direction = Vec2::new(control.x, control.y);
 
         if direction.length() > 0.2 {

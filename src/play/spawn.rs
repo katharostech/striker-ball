@@ -47,12 +47,57 @@ pub fn scene(world: &World) {
 
     // Players
     let ent_signs = match &*world.resource::<PlayMode>() {
-        PlayMode::Online { .. } => todo!(),
+        PlayMode::Online {
+            socket,
+            service_type,
+        } => {
+            let team = match socket.player_idx() {
+                0 => Team::A,
+                1 => Team::B,
+                _ => panic!("index out of player count bounds"),
+            };
+            let is_team_a = team == Team::A;
+            let is_team_b = team == Team::B;
+            match service_type {
+                ServiceType::OnePlayer(..) => PlayerEntSigns {
+                    a1: self::player(world, is_team_a.then_some(0), true, PlayerSlot::A1),
+                    a2: self::player(world, is_team_a.then_some(0), true, PlayerSlot::A2),
+                    b1: self::player(world, is_team_b.then_some(0), true, PlayerSlot::B1),
+                    b2: self::player(world, is_team_b.then_some(0), true, PlayerSlot::B2),
+                },
+                ServiceType::TwoPlayer(..) => PlayerEntSigns {
+                    a1: self::player(world, is_team_a.then_some(0), false, PlayerSlot::A1),
+                    a2: self::player(world, is_team_a.then_some(1), false, PlayerSlot::A2),
+                    b1: self::player(world, is_team_b.then_some(0), false, PlayerSlot::B1),
+                    b2: self::player(world, is_team_b.then_some(1), false, PlayerSlot::B2),
+                },
+            }
+        }
         PlayMode::Offline(PlayersInfo { team_a, team_b }) => PlayerEntSigns {
-            a1: self::player(world, team_a.primary()),
-            a2: self::player(world, team_a.secondary()),
-            b1: self::player(world, team_b.primary()),
-            b2: self::player(world, team_b.secondary()),
+            a1: self::player(
+                world,
+                team_a.primary().number.into(),
+                team_a.primary().dual_stick,
+                PlayerSlot::A1,
+            ),
+            a2: self::player(
+                world,
+                team_a.secondary().number.into(),
+                team_a.secondary().dual_stick,
+                PlayerSlot::A2,
+            ),
+            b1: self::player(
+                world,
+                team_b.primary().number.into(),
+                team_b.primary().dual_stick,
+                PlayerSlot::B1,
+            ),
+            b2: self::player(
+                world,
+                team_b.secondary().number.into(),
+                team_b.secondary().dual_stick,
+                PlayerSlot::B2,
+            ),
         },
     };
     world.resources.insert(ent_signs);
@@ -123,13 +168,7 @@ pub fn new_player_transform(player_id: PlayerSlot, root: &Data) -> Transform {
     Transform::from_translation(Vec3::new(pos.x, pos.y, layers::HITO))
 }
 
-pub fn player(world: &World, player: PlayerInfo) -> Entity {
-    let PlayerInfo {
-        number,
-        dual_stick,
-        slot,
-        ..
-    } = player;
+pub fn player(world: &World, number: Option<usize>, dual_stick: bool, slot: PlayerSlot) -> Entity {
     let asset_server = world.asset_server();
     let root = asset_server.root::<Data>();
     let transform = new_player_transform(slot, &root);
@@ -154,9 +193,6 @@ pub fn player(world: &World, player: PlayerInfo) -> Entity {
 
     player
         .insert(transform)
-        .insert(Client {
-            index: slot.index(),
-        })
         .insert(Player::new(slot))
         .insert(State::new("wait"))
         .insert(path2d::player(&root))
@@ -215,18 +251,20 @@ pub fn player(world: &World, player: PlayerInfo) -> Entity {
             })
             .insert(Transform::from_z(layers::HITO_SHADOW));
     }
-    world
-        .spawn()
-        .insert(Sprite {
-            image: **root.menu.team_select.player_icons()[number],
-            ..Default::default()
-        })
-        .insert(Follow::XY {
-            target: player.id(),
-            offset: Vec2::new(0., -18.),
-        })
-        .insert(Lifetime::seconds(3.0))
-        .insert(Transform::from_z(layers::HITO_SHADOW));
+    if let Some(number) = number {
+        world
+            .spawn()
+            .insert(Sprite {
+                image: **root.menu.team_select.player_icons()[number],
+                ..Default::default()
+            })
+            .insert(Follow::XY {
+                target: player.id(),
+                offset: Vec2::new(0., -18.),
+            })
+            .insert(Lifetime::seconds(3.0))
+            .insert(Transform::from_z(layers::HITO_SHADOW));
+    }
 
     world
         .spawn()

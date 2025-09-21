@@ -15,15 +15,14 @@ pub mod spawn;
 pub use spawn::prelude::*;
 
 #[cfg(not(target_arch = "wasm32"))]
-type NetworkMatchSocket = bones_framework::networking::NetworkMatchSocket;
-#[cfg(target_arch = "wasm32")]
-type NetworkMatchSocket = ();
+use bones_framework::networking::NetworkMatchSocket;
 
 #[derive(HasSchema, Clone)]
 pub enum PlayMode {
+    #[cfg(not(target_arch = "wasm32"))]
     Online {
-        clientpad: u32,
         socket: NetworkMatchSocket,
+        service_type: ServiceType,
     },
     Offline(PlayersInfo),
 }
@@ -153,21 +152,29 @@ impl SessionPlugin for PlayPlugin {
     }
 }
 
+/// The minimal requirements for the [`PLAY`] session.
+///
+/// Includes the runner selection, input resources, and entity spawning.
+/// Also handles camera sizing and path2d toggling.
 pub struct ScenePlugin {
     pub mode: PlayMode,
 }
 impl SessionPlugin for ScenePlugin {
     fn install(self, session: &mut SessionBuilder) {
         match &self.mode {
-            PlayMode::Offline { .. } => {
-                session.runner = Box::new(OfflineRunner::default());
+            PlayMode::Offline(players_info) => {
+                session.runner = offline_session_runner(players_info.clone());
             }
-            PlayMode::Online { .. } => {
-                unimplemented!();
+            PlayMode::Online {
+                socket,
+                service_type,
+            } => {
+                session.runner = lan_session_runner(socket, service_type);
             }
         };
         session.insert_resource(self.mode);
-        session.init_resource::<PlayInputs>();
+        session.insert_resource(Mapping);
+        session.init_resource::<PlayTeamInputs>();
         session.install_plugin(Path2dTogglePlugin);
         session.add_system_to_stage(First, fix_camera_size);
         session.add_system_to_stage(Update, toggle_debug_lines);
@@ -175,6 +182,78 @@ impl SessionPlugin for ScenePlugin {
         session.add_startup_system(spawn::scene);
         session.add_startup_system(hide_debug_lines);
     }
+}
+
+fn fix_camera_size(root: Root<Data>, window: Res<Window>, mut cameras: CompMut<Camera>) {
+    for camera in cameras.iter_mut() {
+        let size = root.court.size();
+        let ratio = size.x / size.y;
+        let wratio = window.size.x / window.size.y;
+        if wratio > ratio {
+            camera.size = CameraSize::FixedHeight(size.y);
+        } else {
+            camera.size = CameraSize::FixedWidth(size.x);
+        }
+    }
+}
+
+pub fn toggle_debug_lines(inputs: Res<KeyboardInputs>, mut toggles: CompMut<Path2dToggle>) {
+    for input in inputs.key_events.iter() {
+        if input.button_state == ButtonState::Pressed && input.key_code == Set(KeyCode::F3) {
+            for toggle in toggles.iter_mut() {
+                toggle.hide = !toggle.hide;
+            }
+        }
+    }
+}
+
+pub fn hide_debug_lines(mut toggles: CompMut<Path2dToggle>) {
+    for toggle in toggles.iter_mut() {
+        toggle.hide = true;
+    }
+}
+
+pub fn lan_session_runner(
+    socket: &bones_framework::networking::NetworkMatchSocket,
+    service_type: &ServiceType,
+) -> Box<dyn SessionRunner> {
+    use bones_framework::networking::{GgrsSessionRunner, GgrsSessionRunnerInfo};
+
+    let mut runner = GgrsSessionRunner::<PlayTeamNetworkInputConfig>::new(
+        Some(30.0),
+        GgrsSessionRunnerInfo::new(socket.ggrs_socket(), Some(7), Some(2), 0),
+    );
+    match service_type {
+        ServiceType::OnePlayer(p1) => {
+            runner
+                .input_collector
+                .set_source(TeamSource::OnePlayer(*p1));
+        }
+        ServiceType::TwoPlayer(p1, p2) => {
+            runner
+                .input_collector
+                .set_source(TeamSource::TwoPlayer(*p1, *p2));
+        }
+    }
+    Box::new(runner)
+}
+pub fn offline_session_runner(players_info: PlayersInfo) -> Box<dyn SessionRunner> {
+    let PlayersInfo { team_a, team_b } = players_info;
+    Box::new(OfflineRunner {
+        collectors: [
+            PlayTeamInputCollector::new(if team_a.primary().dual_stick {
+                TeamSource::OnePlayer(team_a.primary().gamepad)
+            } else {
+                TeamSource::TwoPlayer(team_a.primary().gamepad, team_a.secondary().gamepad)
+            }),
+            PlayTeamInputCollector::new(if team_b.primary().dual_stick {
+                TeamSource::OnePlayer(team_b.primary().gamepad)
+            } else {
+                TeamSource::TwoPlayer(team_b.primary().gamepad, team_b.secondary().gamepad)
+            }),
+        ],
+        ..Default::default()
+    })
 }
 
 pub struct BehaviorsPlugin;
@@ -209,32 +288,15 @@ impl SessionPlugin for FlowPlugin {
             target: 7,
             ..Default::default()
         });
-        session.add_startup_system(|root: Root<Data>, mut audio: ResMut<AudioCenter>| {
-            if let Some(kira::sound::PlaybackState::Playing) = audio.music_state() {
-                return;
-            }
-            audio.play_music_advanced(
-                *root.sound.menu_music,
-                root.sound.menu_music.volume(),
-                true,
-                false,
-                0.0,
-                1.0,
-                true,
-            );
-        });
-        session.add_system_to_stage(First, |world: &World| {
-            let state = *world.resource::<PlayState>();
-            match state {
-                PlayState::Countdown => countdown_update(world),
-                PlayState::WaitForScore => wait_for_score_update(world),
-                PlayState::ScoreDisplay => world.run_system(score_display_update, ()),
-                PlayState::Podium => podium_update(world),
-                PlayState::MatchDone => match_done_update(world),
-            }
-        });
+        #[cfg(not(target_arch = "wasm32"))]
+        session.add_single_success_system(handle_disconnections);
+
+        session.add_startup_system(play_music);
+
+        session.add_system_to_stage(First, update_flow);
     }
 }
+
 #[derive(HasSchema, Clone, Default)]
 pub struct Score {
     pub target: u8,
@@ -265,6 +327,17 @@ impl Score {
             return Some(Team::A);
         }
         None
+    }
+}
+
+fn update_flow(world: &World) {
+    let state = *world.resource::<PlayState>();
+    match state {
+        PlayState::Countdown => countdown_update(world),
+        PlayState::WaitForScore => wait_for_score_update(world),
+        PlayState::ScoreDisplay => world.run_system(score_display_update, ()),
+        PlayState::Podium => podium_update(world),
+        PlayState::MatchDone => match_done_update(world),
     }
 }
 
@@ -361,8 +434,27 @@ fn podium_update(play: &World) {
     if winner.timer.just_finished() {
         tracing::info!("showing match done ui");
         winner.visual.hide();
-        play.resource_mut::<MatchDone>().visual.show();
-        *play.resource_mut() = PlayState::MatchDone;
+
+        #[cfg(target_arch = "wasm32")]
+        let is_network_game = false;
+        let is_network_game = play.get_resource::<SyncingInfo>().is_some();
+
+        if is_network_game {
+            // TODO: Add `NetworkMatchDone.show()` and rematch option.
+            let mut sessions = play.resource_mut::<Sessions>();
+            let ui = sessions.get_world(session::UI).unwrap();
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: play_leave,
+                    prep: lan_ui_prep,
+                    finish: lan_ui_finish,
+                },
+            );
+        } else {
+            play.resource_mut::<MatchDone>().visual.show();
+            *play.resource_mut() = PlayState::MatchDone;
+        }
     }
 }
 
@@ -378,7 +470,7 @@ fn match_done_update(play: &World) {
         start_fade(
             ui,
             FadeTransition {
-                hide: play_hide,
+                hide: play_leave,
                 prep: team_select_prep,
                 finish: team_select_finish,
             },
@@ -390,9 +482,9 @@ fn match_done_update(play: &World) {
         start_fade(
             ui,
             FadeTransition {
-                hide: play_hide,
-                prep: play_prep,
-                finish: play_finish,
+                hide: play_reset,
+                prep: play_offline_prep,
+                finish: play_offline_finish,
             },
         );
     };
@@ -402,7 +494,7 @@ fn match_done_update(play: &World) {
         start_fade(
             ui,
             FadeTransition {
-                hide: play_hide,
+                hide: play_leave,
                 prep: splash_prep,
                 finish: splash_finish,
             },
@@ -429,6 +521,7 @@ fn match_done_update(play: &World) {
     }
 }
 
+// TODO: Use PlayerEntSigns on the three functions below.
 pub fn set_player_states_scored_a(
     entities: Res<Entities>,
     players: Comp<Player>,
@@ -464,31 +557,38 @@ pub fn set_player_states_free(
     }
 }
 
-pub fn toggle_debug_lines(inputs: Res<KeyboardInputs>, mut toggles: CompMut<Path2dToggle>) {
-    for input in inputs.key_events.iter() {
-        if input.button_state == ButtonState::Pressed && input.key_code == Set(KeyCode::F3) {
-            for toggle in toggles.iter_mut() {
-                toggle.hide = !toggle.hide;
-            }
-        }
+fn play_music(root: Root<Data>, mut audio: ResMut<AudioCenter>) {
+    if let Some(kira::sound::PlaybackState::Playing) = audio.music_state() {
+        return;
     }
+    audio.play_music_advanced(
+        *root.sound.menu_music,
+        root.sound.menu_music.volume(),
+        true,
+        false,
+        0.0,
+        1.0,
+        true,
+    );
 }
 
-pub fn hide_debug_lines(mut toggles: CompMut<Path2dToggle>) {
-    for toggle in toggles.iter_mut() {
-        toggle.hide = true;
-    }
-}
-
-fn fix_camera_size(root: Root<Data>, window: Res<Window>, mut cameras: CompMut<Camera>) {
-    for camera in cameras.iter_mut() {
-        let size = root.court.size();
-        let ratio = size.x / size.y;
-        let wratio = window.size.x / window.size.y;
-        if wratio > ratio {
-            camera.size = CameraSize::FixedHeight(size.y);
-        } else {
-            camera.size = CameraSize::FixedWidth(size.x);
+#[cfg(not(target_arch = "wasm32"))]
+fn handle_disconnections(play: &World) -> Option<()> {
+    use bones_framework::networking::*;
+    if let Some(disconnects) = play.get_resource::<DisconnectedPlayers>() {
+        if !disconnects.disconnected_players.is_empty() {
+            let mut sessions = play.resource_mut::<Sessions>();
+            let ui = sessions.get_world(session::UI).unwrap();
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: play_leave,
+                    prep: lan_ui_prep,
+                    finish: lan_ui_finish,
+                },
+            );
+            return Some(());
         }
     }
+    None
 }

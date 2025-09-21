@@ -8,6 +8,27 @@ pub fn default_uv() -> egui::Rect {
     Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0))
 }
 
+pub trait EguiCtxExt {
+    fn clicked_rect(&self, rect: Rect) -> bool;
+    fn hovered_rect(&self, rect: Rect) -> bool;
+}
+impl EguiCtxExt for egui::Context {
+    fn clicked_rect(&self, rect: Rect) -> bool {
+        if let Some(pos2) = self.pointer_hover_pos() {
+            rect.contains(pos2) && self.input(|r| r.pointer.primary_clicked())
+        } else {
+            false
+        }
+    }
+    fn hovered_rect(&self, rect: Rect) -> bool {
+        if let Some(pos2) = self.pointer_hover_pos() {
+            rect.contains(pos2)
+        } else {
+            false
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct ImagePainter {
     pub image: Handle<bones::Image>,

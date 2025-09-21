@@ -32,13 +32,19 @@ pub struct OfflineRunner {
     pub accumulator: f64,
     pub last_run: Option<Instant>,
     pub disable_local_input: bool,
+    pub collectors: [PlayTeamInputCollector; 2],
 }
 impl SessionRunner for OfflineRunner {
     fn step(&mut self, frame_start: Instant, world: &mut World, stages: &mut SystemStages) {
-        pub const STEP: f64 = 1.0 / TARGET_FPS;
+        pub const STEP: f64 = TARGET_STEP;
 
         let last_run = self.last_run.unwrap_or(frame_start);
         let delta = (frame_start - last_run).as_secs_f64();
+
+        for collector in &mut self.collectors {
+            collector.apply_inputs(&world.resource(), &world.resource(), &world.resource());
+            collector.update_just_pressed();
+        }
 
         self.accumulator += delta;
 
@@ -49,11 +55,25 @@ impl SessionRunner for OfflineRunner {
                 .resource_mut::<Time>()
                 .advance_exact(std::time::Duration::from_secs_f64(STEP));
 
-            *world.resource_mut::<PlayInputs>() = if self.disable_local_input {
-                PlayInputs::default()
+            if self.disable_local_input {
+                for client in world.resource_mut::<PlayTeamInputs>().clients.iter_mut() {
+                    *client = default();
+                }
             } else {
-                PlayInputs::from_world(world)
+                for (i, client) in world
+                    .resource_mut::<PlayTeamInputs>()
+                    .clients
+                    .iter_mut()
+                    .enumerate()
+                {
+                    *client = *self.collectors[i].get_control(i, Default::default());
+                }
             };
+
+            for collector in &mut self.collectors {
+                collector.advance_frame();
+            }
+
             stages.run(world);
         }
 

@@ -7,6 +7,8 @@ pub struct SplashAssets {
     pub bg: Handle<Image>,
     pub title: SizedImageAsset,
     pub button_bg: SizedImageAsset,
+    pub lan: SizedImageAsset,
+    pub lan_blink: SizedImageAsset,
     pub offline: SizedImageAsset,
     pub offline_blink: SizedImageAsset,
     pub how_to_play: SizedImageAsset,
@@ -19,36 +21,45 @@ pub struct SplashSlots {
     pub title: Vec2,
     pub selection: Vec2,
     pub offline: Vec2,
+    pub lan: Vec2,
     pub how_to_play: Vec2,
 }
 
-#[derive(HasSchema, Clone, Default, PartialEq, Eq)]
-pub enum Splash {
+#[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq)]
+pub enum SplashState {
     #[default]
-    Hidden,
     PressGamepad,
     Offline,
-    // Online,
+    Lan,
     HowToPlay,
 }
-impl Splash {
+impl SplashState {
     pub fn cycle_up(&mut self) {
-        match self {
-            Splash::Offline => *self = /* Self::Online */Self::HowToPlay,
-            // Splash::Online => *self = Self::Offline,
-            Splash::HowToPlay => *self = Self::Offline,
-            Splash::Hidden | Splash::PressGamepad => {}
+        *self = match self {
+            Self::Offline => Self::HowToPlay,
+            Self::Lan => Self::Offline,
+            Self::HowToPlay => Self::Lan,
+            Self::PressGamepad => *self,
         }
     }
     pub fn cycle_down(&mut self) {
-        match self {
-            Splash::Offline => *self = /* Self::Online */Self::HowToPlay,
-            // Splash::Online => *self = Self::HowToPlay,
-            Splash::HowToPlay => *self = Self::Offline,
-            Splash::Hidden | Splash::PressGamepad => {}
+        *self = match self {
+            Self::Offline => Self::Lan,
+            Self::Lan => Self::HowToPlay,
+            Self::HowToPlay => Self::Offline,
+            Self::PressGamepad => *self,
         }
     }
 }
+
+#[derive(HasSchema, Clone, Default, Deref, DerefMut)]
+pub struct Splash {
+    #[deref]
+    pub state: SplashState,
+    pub interact: Option<SplashState>,
+    pub visual: Visual,
+}
+
 impl SessionPlugin for Splash {
     fn install(self, session: &mut SessionBuilder) {
         session.insert_resource(self);
@@ -59,8 +70,11 @@ fn foreground() -> egui::LayerId {
     LayerId::new(Order::Foreground, Id::new("splash_foreground"))
 }
 pub fn show(world: &World) {
-    let splash = world.resource::<Splash>();
-    if Splash::Hidden == *splash {
+    let mut splash = world.resource_mut::<Splash>();
+
+    splash.interact = None;
+
+    if !splash.visual.shown() {
         return;
     }
 
@@ -78,6 +92,8 @@ pub fn show(world: &World) {
         offline_blink,
         how_to_play,
         how_to_play_blink,
+        lan,
+        lan_blink,
         ..
     } = root.menu.splash;
 
@@ -104,7 +120,7 @@ pub fn show(world: &World) {
         .offset(slots.title.to_array().into())
         .paint(&painter, &textures);
 
-    if let Splash::PressGamepad = *splash {
+    if let SplashState::PressGamepad = splash.state {
         let inner_font = asset_server
             .get(root.font.primary_inner)
             .family_name
@@ -120,12 +136,15 @@ pub fn show(world: &World) {
             .align2(Align2::CENTER_CENTER)
             .pos(area.response.rect.center() + vec2(0., 40.));
 
-        let rect = builder.clone().paint(&painter);
+        let rect = builder.clone().paint(&painter).expand(6.0);
 
         painter.add(
-            BorderedFrame::new(&root.menu.bframe)
-                .paint(textures.get(root.menu.bframe.image), rect.expand(6.0)),
+            BorderedFrame::new(&root.menu.bframe).paint(textures.get(root.menu.bframe.image), rect),
         );
+
+        if ctx.clicked_rect(rect) {
+            splash.interact = Some(SplashState::PressGamepad);
+        }
 
         builder.clone().paint(&painter);
         builder
@@ -147,27 +166,63 @@ pub fn show(world: &World) {
         .offset(slots.selection.to_array().into())
         .paint(&painter, &textures);
 
-    let image = if splash == Splash::Offline {
+    let image = if splash.state == SplashState::Offline {
         offline_blink
     } else {
         offline
     };
-    builder
+    let offline_rect = builder
         .clone()
         .image(*image)
         .size(image.egui_size())
         .offset(slots.offline.to_array().into())
-        .paint(&painter, &textures);
+        .paint(&painter, &textures)
+        .expand(2.0);
 
-    let image = if splash == Splash::HowToPlay {
+    if ctx.clicked_rect(offline_rect) {
+        splash.interact = Some(SplashState::Offline);
+    }
+    if ctx.hovered_rect(offline_rect) {
+        splash.state = SplashState::Offline;
+    }
+
+    let image = if splash.state == SplashState::HowToPlay {
         how_to_play_blink
     } else {
         how_to_play
     };
-    builder
+    let howtoplay_rect = builder
         .clone()
         .image(*image)
         .size(image.egui_size())
         .offset(slots.how_to_play.to_array().into())
-        .paint(&painter, &textures);
+        .paint(&painter, &textures)
+        .expand(2.0);
+
+    if ctx.clicked_rect(howtoplay_rect) {
+        splash.interact = Some(SplashState::HowToPlay);
+    }
+    if ctx.hovered_rect(howtoplay_rect) {
+        splash.state = SplashState::HowToPlay;
+    }
+
+    let image = if splash.state == SplashState::Lan {
+        lan_blink
+    } else {
+        lan
+    };
+    let lan_rect = builder
+        .clone()
+        .image(*image)
+        .size(image.egui_size())
+        .offset(slots.lan.to_array().into())
+        .paint(&painter, &textures)
+        .expand(2.0);
+
+    if ctx.clicked_rect(lan_rect) {
+        splash.interact = Some(SplashState::Lan);
+    }
+    if ctx.hovered_rect(lan_rect) {
+        splash.state = SplashState::Lan;
+    }
 }

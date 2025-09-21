@@ -3,6 +3,7 @@ use super::*;
 pub mod countdown;
 pub mod fade;
 pub mod howtoplay;
+pub mod lan_ui;
 pub mod match_done;
 pub mod pause;
 pub mod score_display;
@@ -13,6 +14,7 @@ pub mod winner;
 pub use countdown::*;
 pub use fade::*;
 pub use howtoplay::*;
+pub use lan_ui::*;
 pub use match_done::*;
 pub use pause::*;
 pub use score_display::*;
@@ -37,6 +39,7 @@ pub fn show_ui(world: &World) {
     team_select::show(world);
     pause::show(world);
     howtoplay::show(world);
+    lan_ui::show(world);
 
     if let Some(world) = world.resource_mut::<Sessions>().get_world(session::PLAY) {
         fade::show(world);
