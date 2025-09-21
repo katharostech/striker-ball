@@ -190,7 +190,11 @@ pub fn fade_transition(ui: &World) {
     }
 }
 pub fn start_fade(world: &World, transition: FadeTransition) {
-    world.resource_mut::<Fade>().restart();
+    let mut fade = world.resource_mut::<Fade>();
+    if !fade.finished() {
+        tracing::warn!("fade interupted, restarting.");
+    }
+    fade.restart();
     *world.resource_mut() = MenuState::FadeTransition;
     *world.resource_mut() = transition;
 }

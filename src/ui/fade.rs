@@ -52,6 +52,9 @@ impl Fade {
         self.fade_in.reset();
         self.fade_in.pause();
     }
+    pub fn finished(&self) -> bool {
+        self.fade_out.finished() && self.fade_wait.finished() && self.fade_in.finished()
+    }
 }
 impl SessionPlugin for Fade {
     fn install(self, session: &mut SessionBuilder) {
