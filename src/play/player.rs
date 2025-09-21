@@ -2,8 +2,8 @@ use super::*;
 
 pub mod prelude {
     pub use super::{
-        AimArrow, AimCone, Player, PlayerShadowSprite, PlayerSlot, PlayerSprite, StickIndicator,
-        Team,
+        AimArrow, AimCone, Player, PlayerEntSigns, PlayerShadowSprite, PlayerSlot, PlayerSprite,
+        StickIndicator, Team,
     };
 }
 pub mod state {
@@ -13,6 +13,33 @@ pub mod state {
 }
 
 pub const SPREAD: f32 = 45.;
+
+#[derive(HasSchema, Clone)]
+#[schema(no_default)]
+pub struct PlayerEntSigns {
+    pub a1: Entity,
+    pub a2: Entity,
+    pub b1: Entity,
+    pub b2: Entity,
+}
+impl PlayerEntSigns {
+    pub fn partner(&self, entity: Entity) -> Entity {
+        if entity == self.a1 {
+            self.a2
+        } else if entity == self.a2 {
+            self.a1
+        } else if entity == self.b1 {
+            self.b2
+        } else if entity == self.b2 {
+            self.b1
+        } else {
+            panic!("controller is not assigned to a player")
+        }
+    }
+    pub fn entities(&self) -> [Entity; 4] {
+        [self.a1, self.a2, self.b1, self.b2]
+    }
+}
 
 #[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq, Debug)]
 #[repr(u8)]
