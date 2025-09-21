@@ -25,13 +25,13 @@ pub struct PlayersInfo {
 impl Default for PlayersInfo {
     fn default() -> Self {
         Self {
-            team_a: TeamInfo::Single(PlayerInfo {
+            team_a: TeamInfo::SinglePlayer(PlayerInfo {
                 number: 0,
                 gamepad: 0,
                 dual_stick: true,
                 slot: PlayerSlot::A1,
             }),
-            team_b: TeamInfo::Single(PlayerInfo {
+            team_b: TeamInfo::SinglePlayer(PlayerInfo {
                 number: 0,
                 gamepad: 0,
                 dual_stick: true,
@@ -59,30 +59,32 @@ pub struct PlayerInfo {
 
 #[derive(HasSchema, Debug, Clone)]
 pub enum TeamInfo {
-    Single(PlayerInfo),
-    Double(PlayerInfo, PlayerInfo),
+    SinglePlayer(PlayerInfo),
+    TwoPlayer(PlayerInfo, PlayerInfo),
 }
 impl Default for TeamInfo {
     fn default() -> Self {
-        TeamInfo::Double(default(), default())
+        TeamInfo::TwoPlayer(default(), default())
     }
 }
 impl TeamInfo {
     pub fn is_dual_stick(&self) -> bool {
-        matches!(self, Self::Single(..))
+        matches!(self, Self::SinglePlayer(..))
     }
     pub fn primary(&self) -> PlayerInfo {
         match self.clone() {
-            TeamInfo::Single(player_sign) | TeamInfo::Double(player_sign, _) => player_sign,
+            TeamInfo::SinglePlayer(player_sign) | TeamInfo::TwoPlayer(player_sign, _) => {
+                player_sign
+            }
         }
     }
     pub fn secondary(&self) -> PlayerInfo {
         match self.clone() {
-            TeamInfo::Single(player_info) => PlayerInfo {
+            TeamInfo::SinglePlayer(player_info) => PlayerInfo {
                 slot: player_info.slot.partner(),
                 ..player_info
             },
-            TeamInfo::Double(_, player_sign) => player_sign,
+            TeamInfo::TwoPlayer(_, player_sign) => player_sign,
         }
     }
 }

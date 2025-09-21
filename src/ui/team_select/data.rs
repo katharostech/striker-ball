@@ -383,14 +383,17 @@ enum TeamInfoBuilder {
     Empty,
     Primary(PlayerInfo),
     Secondary(PlayerInfo),
-    Single(PlayerInfo),
-    Double(PlayerInfo, PlayerInfo),
+    SinglePlayer(PlayerInfo),
+    TwoPlayer(PlayerInfo, PlayerInfo),
 }
 impl TeamInfoBuilder {
     fn insert_dual_stick(&mut self, player: PlayerInfo) {
         *self = match *self {
-            Self::Empty => Self::Single(player),
-            Self::Secondary(..) | Self::Primary(..) | Self::Single(..) | Self::Double(..) => {
+            Self::Empty => Self::SinglePlayer(player),
+            Self::Secondary(..)
+            | Self::Primary(..)
+            | Self::SinglePlayer(..)
+            | Self::TwoPlayer(..) => {
                 panic!("team slot taken twice")
             }
         }
@@ -398,8 +401,8 @@ impl TeamInfoBuilder {
     fn insert_primary(&mut self, player: PlayerInfo) {
         *self = match *self {
             Self::Empty => Self::Primary(player),
-            Self::Secondary(secondary) => Self::Double(player, secondary),
-            Self::Primary(..) | Self::Single(..) | Self::Double(..) => {
+            Self::Secondary(secondary) => Self::TwoPlayer(player, secondary),
+            Self::Primary(..) | Self::SinglePlayer(..) | Self::TwoPlayer(..) => {
                 panic!("team slot taken twice")
             }
         }
@@ -407,8 +410,8 @@ impl TeamInfoBuilder {
     fn insert_secondary(&mut self, player: PlayerInfo) {
         *self = match *self {
             Self::Empty => Self::Secondary(player),
-            Self::Primary(primary) => Self::Double(primary, player),
-            Self::Secondary(..) | Self::Single(..) | Self::Double(..) => {
+            Self::Primary(primary) => Self::TwoPlayer(primary, player),
+            Self::Secondary(..) | Self::SinglePlayer(..) | Self::TwoPlayer(..) => {
                 panic!("team slot taken twice")
             }
         }
@@ -418,9 +421,9 @@ impl TeamInfoBuilder {
             TeamInfoBuilder::Empty
             | TeamInfoBuilder::Primary(..)
             | TeamInfoBuilder::Secondary(..) => None,
-            TeamInfoBuilder::Single(primary) => TeamInfo::Single(primary).into(),
-            TeamInfoBuilder::Double(primary, secondary) => {
-                TeamInfo::Double(primary, secondary).into()
+            TeamInfoBuilder::SinglePlayer(primary) => TeamInfo::SinglePlayer(primary).into(),
+            TeamInfoBuilder::TwoPlayer(primary, secondary) => {
+                TeamInfo::TwoPlayer(primary, secondary).into()
             }
         }
     }
