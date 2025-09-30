@@ -21,7 +21,7 @@ impl SessionPlugin for MenuPlugin {
 
         #[cfg(not(target_arch = "wasm32"))]
         session.install_plugin(
-            Matchmaker::new(MATCHMAKER_SERVICE_NAME_ONEPLAYER)
+            MatchmakerPlugin::new(MATCHMAKER_SERVICE_NAME_ONEPLAYER)
                 .refresh(1.0)
                 .player_count(2),
         );
@@ -255,9 +255,7 @@ pub fn lan_ui_hide(world: &World) {
 }
 pub fn lan_ui_leave(world: &World) {
     #[cfg(not(target_arch = "wasm32"))]
-    world.resource_mut::<Matchmaker>().lan_host_cancel();
-    #[cfg(not(target_arch = "wasm32"))]
-    world.resource_mut::<Matchmaker>().lan_join_cancel();
+    world.resource_mut::<Matchmaker>().lan_cancel();
     world.resource_mut::<LanUI>().visible = false;
 }
 pub fn lan_ui_prep(world: &World) {
@@ -268,9 +266,7 @@ pub fn lan_ui_finish(world: &World) {
 }
 pub fn play_leave(ui: &World) {
     #[cfg(not(target_arch = "wasm32"))]
-    ui.resource_mut::<Matchmaker>().lan_host_cancel();
-    #[cfg(not(target_arch = "wasm32"))]
-    ui.resource_mut::<Matchmaker>().lan_join_cancel();
+    ui.resource_mut::<Matchmaker>().lan_cancel();
 
     let mut sessions = ui.resource_mut::<Sessions>();
     sessions.delete_play();
@@ -590,7 +586,7 @@ pub fn lan_update(ui: &World) {
         match state {
             LanUIState::Host => {
                 if matchmaker.is_hosting() {
-                    matchmaker.lan_host_cancel();
+                    matchmaker.lan_cancel();
                 } else {
                     matchmaker.lan_host();
                 }
@@ -615,7 +611,7 @@ pub fn lan_update(ui: &World) {
         }
         if matchmaker.is_hosting() {
             if input.west.just_pressed() {
-                matchmaker.lan_host_cancel();
+                matchmaker.lan_cancel();
                 return;
             }
         } else {
