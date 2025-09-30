@@ -174,6 +174,8 @@ fn match_done_update(play: &World) {
         );
     };
     let play_again = || {
+        // We can use the ui session here for convenience since
+        // this isn't in a network game.
         let mut sessions = play.resource_mut::<Sessions>();
         let ui = sessions.get_world(session::UI).unwrap();
         start_fade(
