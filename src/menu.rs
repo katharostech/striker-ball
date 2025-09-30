@@ -9,6 +9,8 @@ pub enum MenuState {
     TeamSelect,
     InGame,
     #[cfg(not(target_arch = "wasm32"))]
+    LanSelect,
+    #[cfg(not(target_arch = "wasm32"))]
     Lan,
     #[cfg(not(target_arch = "wasm32"))]
     InNetworkGame,
@@ -32,6 +34,7 @@ impl SessionPlugin for MenuPlugin {
         session.install_plugin(HowToPlay::default());
         session.install_plugin(Fade::new(0.5, 0.5, Color::BLACK, egui::Order::Tooltip));
         session.install_plugin(TeamSelect::default());
+        session.install_plugin(LanSelect::default());
         session.install_plugin(LanUI::default());
         session.install_plugin(Pause::default());
         session.add_startup_system(|root: Root<Data>, mut audio: ResMut<AudioCenter>| {
@@ -165,8 +168,14 @@ pub fn update_pause(ui: &World) {
 }
 
 pub fn update_menu(world: &World) {
-    let game_state = *world.resource::<MenuState>();
-    match game_state {
+    // Each ui element has an output returned that we may use if the element
+    // controls are active depending on the game state in this scenario.
+    let lan_select = world.resource_mut::<LanSelect>().process_ui(world);
+    // TODO: use the `LanSelect` pattern for rendering and processing all the ui elements
+    //...
+
+    let menu_state = *world.resource::<MenuState>();
+    match menu_state {
         MenuState::FadeTransition => fade_transition(world),
         MenuState::Splash => splash_update(world),
         MenuState::HowToPlay => how_to_play_update(world),
@@ -175,7 +184,42 @@ pub fn update_menu(world: &World) {
         #[cfg(not(target_arch = "wasm32"))]
         MenuState::InNetworkGame => {}
         #[cfg(not(target_arch = "wasm32"))]
-        MenuState::Lan => lan_update(world),
+        MenuState::LanSelect => {
+            if let Some(output) = world
+                .resource_mut::<LanSelect>()
+                .process_input(world)
+                .or(lan_select)
+            {
+                lan_select_transition(world, output);
+            }
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        MenuState::Lan => lan_ui_update(world),
+    }
+}
+pub fn lan_select_transition(world: &World, output: LanSelectOutput) {
+    match output {
+        LanSelectOutput::Exit => {
+            start_fade(
+                world,
+                FadeTransition {
+                    hide: lan_select_hide,
+                    prep: splash_prep,
+                    finish: splash_finish,
+                },
+            );
+        }
+        LanSelectOutput::ServiceType(service) => {
+            world.resource_mut::<LanUI>().service = service;
+            start_fade(
+                world,
+                FadeTransition {
+                    hide: lan_select_hide,
+                    prep: lan_ui_prep,
+                    finish: lan_ui_finish,
+                },
+            );
+        }
     }
 }
 
@@ -249,6 +293,15 @@ pub fn how_to_play_prep(world: &World) {
 }
 pub fn how_to_play_finish(world: &World) {
     *world.resource_mut() = MenuState::HowToPlay;
+}
+pub fn lan_select_hide(world: &World) {
+    world.resource_mut::<LanSelect>().visible = false;
+}
+pub fn lan_select_prep(world: &World) {
+    world.resource_mut::<LanSelect>().visible = true;
+}
+pub fn lan_select_finish(world: &World) {
+    *world.resource_mut() = MenuState::LanSelect;
 }
 pub fn lan_ui_hide(world: &World) {
     world.resource_mut::<LanUI>().visible = false;
@@ -353,7 +406,7 @@ pub fn splash_update(ui: &World) {
         return;
     }
 
-    let proceed = move |state: SplashState, gamepad: Option<u32>| match state {
+    let proceed = move |state: SplashState| match state {
         SplashState::Offline => start_fade(
             ui,
             FadeTransition {
@@ -363,15 +416,14 @@ pub fn splash_update(ui: &World) {
             },
         ),
         SplashState::Lan => {
-            ui.resource_mut::<LanUI>().service = ServiceType::OnePlayer(gamepad.unwrap_or(0)); // TODO: add keyboard controls to lan
             start_fade(
                 ui,
                 FadeTransition {
                     hide: splash_hide,
-                    prep: lan_ui_prep,
-                    finish: lan_ui_finish,
+                    prep: lan_select_prep,
+                    finish: lan_select_finish,
                 },
-            )
+            );
         }
         SplashState::HowToPlay => {
             start_fade(
@@ -387,11 +439,11 @@ pub fn splash_update(ui: &World) {
     };
 
     if let Some(interact) = splash.interact {
-        proceed(interact, None);
+        proceed(interact);
         return;
     }
 
-    for (gamepad, input) in inputs.iter() {
+    for (_gamepad, input) in inputs.iter() {
         if input.up.just_pressed() {
             splash.cycle_up();
             return;
@@ -401,7 +453,7 @@ pub fn splash_update(ui: &World) {
             return;
         }
         if input.south.just_pressed() {
-            proceed(splash.state, Some(*gamepad));
+            proceed(splash.state);
             return;
         }
     }
@@ -547,10 +599,51 @@ pub fn team_select_update(ui: &World) {
     }
 }
 
-pub fn lan_update(ui: &World) {
-    let mut lan_ui = ui.resource_mut::<LanUI>();
+pub fn lan_select_update(ui: &World) {
+    if let Some(output) = ui.resource_mut::<LanSelect>().process(ui) {
+        match output {
+            LanSelectOutput::Exit => {
+                start_fade(
+                    ui,
+                    FadeTransition {
+                        hide: lan_select_hide,
+                        prep: splash_prep,
+                        finish: splash_finish,
+                    },
+                );
+            }
+            LanSelectOutput::ServiceType(service) => {
+                ui.resource_mut::<LanUI>().service = service;
+                start_fade(
+                    ui,
+                    FadeTransition {
+                        hide: lan_select_hide,
+                        prep: lan_ui_prep,
+                        finish: lan_ui_finish,
+                    },
+                );
+            }
+        }
+    }
+}
+
+pub fn lan_ui_update(ui: &World) {
+    let lan_ui = ui.resource_mut::<LanUI>();
     let local_inputs = ui.resource::<LocalInputs>();
     let mut matchmaker = ui.resource_mut::<Matchmaker>();
+
+    if matchmaker.network_match_socket().is_some() {
+        ui.resources.insert(lan_ui.service);
+        start_fade(
+            ui,
+            FadeTransition {
+                hide: lan_ui_hide,
+                prep: play_online_prep,
+                finish: play_online_finish,
+            },
+        );
+        return;
+    }
 
     let keyboard = ui.resource::<KeyboardInputs>();
 
@@ -567,19 +660,6 @@ pub fn lan_update(ui: &World) {
                 );
             }
         }
-    }
-
-    if matchmaker.network_match_socket().is_some() {
-        ui.resources.insert(lan_ui.service);
-        start_fade(
-            ui,
-            FadeTransition {
-                hide: lan_ui_hide,
-                prep: play_online_prep,
-                finish: play_online_finish,
-            },
-        );
-        return;
     }
 
     fn lan_ui_action(state: &LanUIState, matchmaker: &mut Matchmaker) {
@@ -604,38 +684,21 @@ pub fn lan_update(ui: &World) {
         return;
     }
 
-    for (gamepad, input) in local_inputs.iter() {
+    for (_gamepad, input) in local_inputs.iter() {
         if input.south.just_pressed() {
             lan_ui_action(&lan_ui, &mut matchmaker);
             return;
         }
-        if matchmaker.is_hosting() {
-            if input.west.just_pressed() {
-                matchmaker.lan_cancel();
-                return;
-            }
-        } else {
-            if input.west.just_pressed() {
-                if let ServiceType::OnePlayer(p1) = lan_ui.service {
-                    if p1 == *gamepad {
-                        start_fade(
-                            ui,
-                            FadeTransition {
-                                hide: lan_ui_hide,
-                                prep: splash_prep,
-                                finish: splash_finish,
-                            },
-                        );
-                        return;
-                    }
-                }
-            }
-            if input.up.just_pressed() {
-                lan_ui.cycle_up();
-            }
-            if input.down.just_pressed() {
-                lan_ui.cycle_down();
-            }
+        if input.west.just_pressed() {
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: lan_ui_leave,
+                    prep: splash_prep,
+                    finish: splash_finish,
+                },
+            );
+            return;
         }
     }
 }

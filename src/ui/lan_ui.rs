@@ -3,7 +3,7 @@ use super::*;
 pub const MATCHMAKER_SERVICE_NAME_ONEPLAYER: &str = "sb1player";
 pub const MATCHMAKER_SERVICE_NAME_TWOPLAYER: &str = "sb2player";
 
-#[derive(HasSchema, Clone, Copy, PartialEq, Eq)]
+#[derive(HasSchema, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ServiceType {
     OnePlayer(u32),
     TwoPlayer(u32, u32),
@@ -11,6 +11,14 @@ pub enum ServiceType {
 impl Default for ServiceType {
     fn default() -> Self {
         Self::OnePlayer(0)
+    }
+}
+impl ServiceType {
+    pub fn service_name(&self) -> &str {
+        match self {
+            ServiceType::OnePlayer(_) => MATCHMAKER_SERVICE_NAME_ONEPLAYER,
+            ServiceType::TwoPlayer(_, _) => MATCHMAKER_SERVICE_NAME_TWOPLAYER,
+        }
     }
 }
 
@@ -49,14 +57,6 @@ pub struct LanUI {
     pub state: LanUIState,
     pub output: Option<LanUIState>,
 }
-impl LanUI {
-    pub fn service_name(&self) -> &str {
-        match self.service {
-            ServiceType::OnePlayer(_) => MATCHMAKER_SERVICE_NAME_ONEPLAYER,
-            ServiceType::TwoPlayer(_, _) => MATCHMAKER_SERVICE_NAME_TWOPLAYER,
-        }
-    }
-}
 
 impl SessionPlugin for LanUI {
     fn install(self, session: &mut SessionBuilder) {
@@ -67,11 +67,11 @@ pub fn show(world: &World) {
     let LanUI {
         visible,
         state,
-        output: interact,
+        output,
         service,
     } = &mut *world.resource_mut::<LanUI>();
 
-    *interact = None;
+    *output = None;
 
     if !*visible {
         return;
@@ -83,11 +83,6 @@ pub fn show(world: &World) {
     let root = asset_server.root::<Data>();
     let locale = &asset_server.get(root.localization);
     let mut matchmaker = world.resource_mut::<Matchmaker>();
-
-    // if lan_ui.service_name() != matchmaker.service_name {
-    //     matchmaker.service_name = lan_ui.service_name().to_string();
-    //     // TODO: stop hosts and joins here I think
-    // }
 
     let inner_font = asset_server
         .get(root.font.primary_inner)
@@ -117,7 +112,32 @@ pub fn show(world: &World) {
                 root.screen_size.to_array(),
             ));
         });
-
+    Area::new("lan_service")
+        .anchor(Align2::CENTER_CENTER, [0., -70.0])
+        .show(&ctx, |ui| {
+            BorderedFrame::new(&root.menu.bframe)
+                .padding(Margin::same(5.0))
+                .show(ui, |ui| {
+                    let text = match &service {
+                        ServiceType::OnePlayer(..) => "1 Vs 1 Twin-Stick Controls",
+                        ServiceType::TwoPlayer(..) => "2 Vs 2 Cooperative",
+                    };
+                    let response = ui.label(
+                        RichText::new(text)
+                            .font(FontId {
+                                size: 7.0,
+                                family: FontFamily::Name(inner_font.clone()),
+                            })
+                            .color(Color32::WHITE),
+                    );
+                    TextPainter::new(text)
+                        .size(7.0)
+                        .pos(response.rect.min)
+                        .family(outer_font.clone())
+                        .color(Color32::BLACK)
+                        .paint(ui.painter())
+                });
+        });
     Area::new("lan_servers")
         .anchor(Align2::CENTER_CENTER, [0., 0.])
         .show(&ctx, |ui| {
@@ -163,11 +183,11 @@ pub fn show(world: &World) {
                                 ui.allocate_rect(rect.expand(6.0), Sense::click());
                             });
                             if ctx.clicked_rect(response.response.rect) {
-                                *interact = Some(LanUIState::Host);
+                                *output = Some(LanUIState::Host);
                             }
                             // This wasn't working for some reason.
                             if response.response.clicked() {
-                                *interact = Some(LanUIState::Host);
+                                *output = Some(LanUIState::Host);
                             }
                             if response.response.hovered() {
                                 *state = LanUIState::Host;
@@ -329,7 +349,7 @@ pub fn show(world: &World) {
                             });
                             let rect = irsp.response.rect;
                             if ctx.clicked_rect(rect) {
-                                *interact = Some(LanUIState::Server(i));
+                                *output = Some(LanUIState::Server(i));
                             }
                             if ctx.hovered_rect(rect) {
                                 *state = LanUIState::Server(i);
