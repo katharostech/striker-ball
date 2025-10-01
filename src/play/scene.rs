@@ -119,6 +119,9 @@ impl SessionPlugin for ScenePlugin {
 
         session.add_startup_system(spawn::scene);
         session.add_startup_system(hide_debug_lines);
+        session.add_system_to_stage(Last, |mut inputs: ResMut<PlayTeamInputs>| {
+            inputs.advance_frame()
+        });
     }
 }
 

@@ -60,6 +60,14 @@ impl PlayTeamInputs {
             PlayerSlot::B2 => &self.clients[1].p2,
         }
     }
+    pub fn advance_frame(&mut self) {
+        for client in &mut self.clients {
+            client.p1.shoot.advance();
+            client.p2.shoot.advance();
+            client.p1.pass.advance();
+            client.p2.pass.advance();
+        }
+    }
 }
 impl PlayerControls<'_, PlayTeamInput> for PlayTeamInputs {
     type InputCollector = PlayTeamInputCollector;
