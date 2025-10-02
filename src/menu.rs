@@ -304,14 +304,20 @@ pub fn lan_select_finish(world: &World) {
     *world.resource_mut() = MenuState::LanSelect;
 }
 pub fn lan_ui_hide(world: &World) {
+    #[cfg(not(target_arch = "wasm32"))]
+    world.resource_mut::<Matchmaker>().disable_search();
     world.resource_mut::<LanUI>().visible = false;
 }
 pub fn lan_ui_leave(world: &World) {
     #[cfg(not(target_arch = "wasm32"))]
     world.resource_mut::<Matchmaker>().lan_cancel();
+    #[cfg(not(target_arch = "wasm32"))]
+    world.resource_mut::<Matchmaker>().disable_search();
     world.resource_mut::<LanUI>().visible = false;
 }
 pub fn lan_ui_prep(world: &World) {
+    #[cfg(not(target_arch = "wasm32"))]
+    world.resource_mut::<Matchmaker>().enable_search();
     world.resource_mut::<LanUI>().visible = true;
 }
 pub fn lan_ui_finish(world: &World) {

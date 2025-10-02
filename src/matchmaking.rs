@@ -26,6 +26,7 @@ pub struct Matchmaker {
     joined_players: usize,
 
     // Search
+    pub search_enabled: bool,
     refresh: Timer,
     lan_servers: Vec<lan::ServerInfo>,
     lan_discovery: Option<lan::ServiceDiscoveryReceiver>,
@@ -58,6 +59,12 @@ impl Matchmaker {
     }
     pub fn network_match_socket(&self) -> Option<NetworkMatchSocket> {
         self.socket.clone()
+    }
+    pub fn disable_search(&mut self) {
+        self.search_enabled = false;
+    }
+    pub fn enable_search(&mut self) {
+        self.search_enabled = true;
     }
     pub fn update_service_name(&mut self, name: &str) {
         if self.service_name != name {
@@ -108,8 +115,10 @@ impl Matchmaker {
 
         if !self.is_hosting() && !self.is_joined() && self.refresh.finished() {
             tracing::debug!("matchmaker refresh...");
-            self.lan_search();
-            self.refresh.reset();
+            if self.search_enabled {
+                self.lan_search();
+                self.refresh.reset();
+            }
         }
         if !self.is_joined() {
             self.socket =
@@ -130,6 +139,7 @@ pub struct MatchmakerPlugin {
     pub host_name: String,
     pub player_count: u32,
     pub refresh: f32,
+    pub start_searching: bool,
 }
 impl MatchmakerPlugin {
     pub fn new(service_name: &str) -> Self {
@@ -138,6 +148,7 @@ impl MatchmakerPlugin {
             host_name: String::from("default_host"),
             player_count: 2,
             refresh: 2.0,
+            start_searching: false,
         }
     }
     pub fn service_name(mut self, service_name: String) -> Self {
@@ -156,10 +167,15 @@ impl MatchmakerPlugin {
         self.refresh = seconds;
         self
     }
+    pub fn start_searching(mut self) -> Self {
+        self.start_searching = true;
+        self
+    }
 }
 impl From<MatchmakerPlugin> for Matchmaker {
     fn from(plugin: MatchmakerPlugin) -> Self {
         Matchmaker {
+            search_enabled: plugin.start_searching,
             refresh: Timer::from_seconds(plugin.refresh, TimerMode::Once),
             service_name: plugin.service_name,
             host_name: plugin.host_name,
