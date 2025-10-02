@@ -231,6 +231,7 @@ pub fn show(world: &World) {
                                                     Color32::YELLOW;
 
                                                 let egui::widgets::text_edit::TextEditOutput {
+                                                    response,
                                                     text_draw_pos,
                                                     ..
                                                 } = TextEdit::singleline(&mut matchmaker.host_name)
@@ -239,6 +240,22 @@ pub fn show(world: &World) {
                                                     .text_color(Color32::TRANSPARENT)
                                                     .frame(false)
                                                     .show(ui);
+
+                                                if response.changed() {
+                                                    let mut new = String::new();
+                                                    for char in
+                                                        matchmaker.host_name.as_str().chars()
+                                                    {
+                                                        if allowed_character(&char) {
+                                                            new.push(char);
+                                                        } else if char == ' ' {
+                                                            new.push('_')
+                                                        } else {
+                                                            new.push('?');
+                                                        }
+                                                    }
+                                                    matchmaker.host_name = new;
+                                                }
 
                                                 ui.painter().text(
                                                     text_draw_pos,
@@ -358,4 +375,70 @@ pub fn show(world: &World) {
                     });
                 });
         });
+}
+
+pub fn allowed_character(char: &char) -> bool {
+    matches!(
+        char,
+        'a' | 'b'
+            | 'c'
+            | 'd'
+            | 'e'
+            | 'f'
+            | 'g'
+            | 'h'
+            | 'i'
+            | 'j'
+            | 'k'
+            | 'l'
+            | 'm'
+            | 'n'
+            | 'o'
+            | 'p'
+            | 'q'
+            | 'r'
+            | 's'
+            | 't'
+            | 'u'
+            | 'v'
+            | 'w'
+            | 'A'
+            | 'B'
+            | 'C'
+            | 'D'
+            | 'E'
+            | 'F'
+            | 'G'
+            | 'H'
+            | 'I'
+            | 'J'
+            | 'K'
+            | 'L'
+            | 'M'
+            | 'N'
+            | 'O'
+            | 'P'
+            | 'Q'
+            | 'R'
+            | 'S'
+            | 'T'
+            | 'U'
+            | 'V'
+            | 'W'
+            | 'X'
+            | 'Y'
+            | 'Z'
+            | '1'
+            | '2'
+            | '3'
+            | '4'
+            | '5'
+            | '6'
+            | '7'
+            | '8'
+            | '9'
+            | '0'
+            | '?'
+            | '_'
+    )
 }
