@@ -60,10 +60,10 @@ pub fn scene(world: &World) {
             let is_team_b = team == Team::B;
             match service_type {
                 ServiceType::OnePlayer(..) => PlayerEntSigns {
-                    a1: self::player(world, is_team_a.then_some(0), true, PlayerSlot::A1),
-                    a2: self::player(world, is_team_a.then_some(0), true, PlayerSlot::A2),
-                    b1: self::player(world, is_team_b.then_some(0), true, PlayerSlot::B1),
-                    b2: self::player(world, is_team_b.then_some(0), true, PlayerSlot::B2),
+                    a1: self::player(world, is_team_a.then_some(0), is_team_a, PlayerSlot::A1),
+                    a2: self::player(world, is_team_a.then_some(0), is_team_a, PlayerSlot::A2),
+                    b1: self::player(world, is_team_b.then_some(0), is_team_b, PlayerSlot::B1),
+                    b2: self::player(world, is_team_b.then_some(0), is_team_b, PlayerSlot::B2),
                 },
                 ServiceType::TwoPlayer(..) => PlayerEntSigns {
                     a1: self::player(world, is_team_a.then_some(0), false, PlayerSlot::A1),
