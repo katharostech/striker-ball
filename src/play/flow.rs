@@ -278,6 +278,7 @@ fn handle_disconnections(play: &World) -> Option<()> {
         if !disconnects.disconnected_players.is_empty() {
             let mut sessions = play.resource_mut::<Sessions>();
             let ui = sessions.get_world(session::UI).unwrap();
+            ui.resource_mut::<LanUI>().state = LanUIState::Disconnected;
             start_fade(
                 ui,
                 FadeTransition {

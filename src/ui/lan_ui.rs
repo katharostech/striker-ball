@@ -26,11 +26,13 @@ impl ServiceType {
 pub enum LanUIState {
     #[default]
     Host,
+    Disconnected,
     Server(usize),
 }
 impl LanUIState {
     pub fn cycle_up(&mut self) {
         match self {
+            Self::Disconnected => {}
             Self::Host => {}
             Self::Server(i) => {
                 if let Some(reduced) = i.checked_sub(1) {
@@ -43,17 +45,17 @@ impl LanUIState {
     }
     pub fn cycle_down(&mut self) {
         match self {
+            Self::Disconnected => {}
             Self::Host => *self = Self::Server(0),
             Self::Server(i) => *i = i.saturating_add(1), // This is capped in the `show` function
         }
     }
 }
 
-#[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq, Deref, DerefMut)]
+#[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq)]
 pub struct LanUI {
     pub visible: bool,
     pub service: ServiceType,
-    #[deref]
     pub state: LanUIState,
     pub output: Option<LanUIState>,
 }
@@ -112,6 +114,32 @@ pub fn show(world: &World) {
                 root.screen_size.to_array(),
             ));
         });
+
+    if let LanUIState::Disconnected = state {
+        Area::new("disconnected-popup")
+            .anchor(Align2::CENTER_CENTER, [0., 0.])
+            .order(Order::Foreground)
+            .show(&world.resource::<EguiCtx>(), |ui| {
+                BorderedFrame::new(&root.menu.bframe)
+                    .padding(Margin::same(50.0))
+                    .show(ui, |ui| {
+                        let text = "A Player Disconnected...";
+                        let response =
+                            ui.label(RichText::new(text).color(Color32::WHITE).font(FontId {
+                                size: 7.0,
+                                family: FontFamily::Name(inner_font.clone()),
+                            }));
+                        TextPainter::new(text)
+                            .size(7.0)
+                            .pos(response.rect.min)
+                            .family(outer_font.clone())
+                            .color(Color32::BLACK)
+                            .paint(ui.painter())
+                    })
+            });
+        return;
+    }
+
     Area::new("lan_service")
         .anchor(Align2::CENTER_CENTER, [0., -70.0])
         .show(&ctx, |ui| {

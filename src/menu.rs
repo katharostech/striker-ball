@@ -634,7 +634,7 @@ pub fn lan_select_update(ui: &World) {
 }
 
 pub fn lan_ui_update(ui: &World) {
-    let lan_ui = ui.resource_mut::<LanUI>();
+    let mut lan_ui = ui.resource_mut::<LanUI>();
     let local_inputs = ui.resource::<LocalInputs>();
     let mut matchmaker = ui.resource_mut::<Matchmaker>();
 
@@ -668,8 +668,12 @@ pub fn lan_ui_update(ui: &World) {
         }
     }
 
-    fn lan_ui_action(state: &LanUIState, matchmaker: &mut Matchmaker) {
-        match state {
+    fn lan_ui_action(
+        output: LanUIState,
+        matchmaker: &mut RefMut<'_, Matchmaker>,
+        lan_ui: &mut RefMut<'_, LanUI>,
+    ) {
+        match output {
             LanUIState::Host => {
                 if matchmaker.is_hosting() {
                     matchmaker.lan_cancel();
@@ -678,21 +682,24 @@ pub fn lan_ui_update(ui: &World) {
                 }
             }
             LanUIState::Server(i) => {
-                if let Some(server) = matchmaker.lan_servers().get(*i).cloned() {
+                if let Some(server) = matchmaker.lan_servers().get(i).cloned() {
                     matchmaker.lan_join(&server);
                 }
+            }
+            LanUIState::Disconnected => {
+                lan_ui.state = LanUIState::Host;
             }
         }
     }
 
-    if let Some(state) = &lan_ui.output {
-        lan_ui_action(state, &mut matchmaker);
+    if let Some(state) = lan_ui.output {
+        lan_ui_action(state, &mut matchmaker, &mut lan_ui);
         return;
     }
 
     for (_gamepad, input) in local_inputs.iter() {
         if input.south.just_pressed() {
-            lan_ui_action(&lan_ui, &mut matchmaker);
+            lan_ui_action(lan_ui.state, &mut matchmaker, &mut lan_ui);
             return;
         }
         if input.west.just_pressed() {
