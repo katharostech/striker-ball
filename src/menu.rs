@@ -37,6 +37,7 @@ impl SessionPlugin for MenuPlugin {
         session.install_plugin(LanSelect::default());
         session.install_plugin(LanUI::default());
         session.install_plugin(Pause::default());
+        session.install_plugin(NetworkQuit::default());
         session.add_startup_system(|root: Root<Data>, mut audio: ResMut<AudioCenter>| {
             audio.play_music_advanced(
                 *root.sound.menu_music,
@@ -49,6 +50,8 @@ impl SessionPlugin for MenuPlugin {
             );
         });
         session.add_system_to_stage(First, update_menu);
+
+        #[cfg(not(target_arch = "wasm32"))]
         session.add_system_to_stage(First, update_pause);
     }
 }
@@ -171,6 +174,7 @@ pub fn update_menu(world: &World) {
     // Each ui element has an output returned that we may use if the element
     // controls are active depending on the game state in this scenario.
     let lan_select = world.resource_mut::<LanSelect>().process_ui(world);
+    let network_quit = world.resource_mut::<NetworkQuit>().process_ui(world);
     // TODO: use the `LanSelect` pattern for rendering and processing all the ui elements
     //...
 
@@ -182,7 +186,15 @@ pub fn update_menu(world: &World) {
         MenuState::TeamSelect => team_select_update(world),
         MenuState::InGame => {}
         #[cfg(not(target_arch = "wasm32"))]
-        MenuState::InNetworkGame => {}
+        MenuState::InNetworkGame => {
+            if let Some(output) = world
+                .resource_mut::<NetworkQuit>()
+                .process_input(world)
+                .or(network_quit)
+            {
+                network_quit_transition(world, output)
+            }
+        }
         #[cfg(not(target_arch = "wasm32"))]
         MenuState::LanSelect => {
             if let Some(output) = world
@@ -195,6 +207,60 @@ pub fn update_menu(world: &World) {
         }
         #[cfg(not(target_arch = "wasm32"))]
         MenuState::Lan => lan_ui_update(world),
+    }
+}
+pub fn network_quit_transition(world: &World, output: NetworkQuitOutput) {
+    match output {
+        NetworkQuitOutput::Quit => {
+            start_fade(
+                world,
+                FadeTransition {
+                    hide: play_leave,
+                    prep: splash_prep,
+                    finish: splash_finish,
+                },
+            );
+        }
+        NetworkQuitOutput::Show => {
+            let mut sessions = world.resource_mut::<Sessions>();
+            let session = sessions.get_mut(session::PLAY).unwrap();
+            session.world.resource_mut::<Countdown>().visual.add_hide();
+            session.world.resource_mut::<MatchDone>().visual.add_hide();
+            session
+                .world
+                .resource_mut::<ScoreDisplay>()
+                .visual
+                .add_hide();
+            session
+                .world
+                .resource_mut::<WinnerBanner>()
+                .visual
+                .add_hide();
+        }
+        NetworkQuitOutput::Hide => {
+            let mut sessions = world.resource_mut::<Sessions>();
+            let session = sessions.get_mut(session::PLAY).unwrap();
+            session
+                .world
+                .resource_mut::<Countdown>()
+                .visual
+                .remove_hide();
+            session
+                .world
+                .resource_mut::<MatchDone>()
+                .visual
+                .remove_hide();
+            session
+                .world
+                .resource_mut::<ScoreDisplay>()
+                .visual
+                .remove_hide();
+            session
+                .world
+                .resource_mut::<WinnerBanner>()
+                .visual
+                .remove_hide();
+        }
     }
 }
 pub fn lan_select_transition(world: &World, output: LanSelectOutput) {
@@ -326,7 +392,10 @@ pub fn lan_ui_finish(world: &World) {
 pub fn play_leave(ui: &World) {
     #[cfg(not(target_arch = "wasm32"))]
     ui.resource_mut::<Matchmaker>().lan_cancel();
-
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        ui.resource_mut::<NetworkQuit>().visible = false;
+    }
     let mut sessions = ui.resource_mut::<Sessions>();
     sessions.delete_play();
 }
