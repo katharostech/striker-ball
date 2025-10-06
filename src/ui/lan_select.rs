@@ -32,13 +32,6 @@ fn foreground() -> egui::LayerId {
     LayerId::new(Order::Foreground, Id::new("lan_select_foreground"))
 }
 impl LanSelect {
-    pub fn process(&mut self, world: &World) -> Option<LanSelectOutput> {
-        if self.visible {
-            self.process_input(world).or(self.process_ui(world))
-        } else {
-            None
-        }
-    }
     pub fn process_input(&mut self, world: &World) -> Option<LanSelectOutput> {
         let mut output = None;
 
