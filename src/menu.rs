@@ -605,34 +605,6 @@ pub fn team_select_update(ui: &World) {
     }
 }
 
-pub fn lan_select_update(ui: &World) {
-    if let Some(output) = ui.resource_mut::<LanSelect>().process(ui) {
-        match output {
-            LanSelectOutput::Exit => {
-                start_fade(
-                    ui,
-                    FadeTransition {
-                        hide: lan_select_hide,
-                        prep: splash_prep,
-                        finish: splash_finish,
-                    },
-                );
-            }
-            LanSelectOutput::ServiceType(service) => {
-                ui.resource_mut::<LanUI>().service = service;
-                start_fade(
-                    ui,
-                    FadeTransition {
-                        hide: lan_select_hide,
-                        prep: lan_ui_prep,
-                        finish: lan_ui_finish,
-                    },
-                );
-            }
-        }
-    }
-}
-
 pub fn lan_ui_update(ui: &World) {
     let mut lan_ui = ui.resource_mut::<LanUI>();
     let local_inputs = ui.resource::<LocalInputs>();
