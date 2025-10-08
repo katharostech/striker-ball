@@ -113,12 +113,11 @@ impl Matchmaker {
     pub fn update(&mut self, delta: std::time::Duration) {
         self.refresh.tick(delta);
 
-        if !self.is_hosting() && !self.is_joined() && self.refresh.finished() {
+        if self.search_enabled && !self.is_hosting() && !self.is_joined() && self.refresh.finished()
+        {
             tracing::debug!("matchmaker refresh...");
-            if self.search_enabled {
-                self.lan_search();
-                self.refresh.reset();
-            }
+            self.lan_search();
+            self.refresh.reset();
         }
         if !self.is_joined() {
             self.socket =
