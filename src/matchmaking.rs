@@ -97,9 +97,6 @@ impl Matchmaker {
         self.socket = None;
         self.lan_discovery = None;
         self.lan_servers = Vec::new();
-
-        // Assurance that the matchmaker will search after canceling.
-        assert!(!self.is_hosting() && !self.is_joined());
     }
     pub fn lan_search(&mut self) {
         let service_type = self.service_type();
