@@ -276,6 +276,9 @@ pub fn lan_select_transition(world: &World, output: LanSelectOutput) {
             );
         }
         LanSelectOutput::ServiceType(service) => {
+            world
+                .resource_mut::<Matchmaker>()
+                .update_service_name(service.service_name());
             world.resource_mut::<LanUI>().service = service;
             start_fade(
                 world,
