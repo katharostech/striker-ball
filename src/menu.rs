@@ -50,30 +50,16 @@ impl SessionPlugin for MenuPlugin {
             );
         });
         session.add_system_to_stage(First, update_menu);
-
-        #[cfg(not(target_arch = "wasm32"))]
         session.add_system_to_stage(First, update_pause);
     }
 }
 
 pub fn update_pause(ui: &World) {
-    if *ui.resource::<MenuState>() == MenuState::FadeTransition
-        || ui
-            .resource_mut::<Sessions>()
-            .get_mut(session::PLAY)
-            .is_none()
-        || ui
-            .resource_mut::<Sessions>()
-            .get_session_resource::<MatchDone>(session::PLAY)
-            .unwrap()
-            .visual
-            .shown()
-        || *ui.resource::<MenuState>() == MenuState::InNetworkGame
-    // TODO: Remove these and add enabled bool to the Pause struct
-    {
-        return;
-    };
     let mut pause = ui.resource_mut::<Pause>();
+
+    if pause == Pause::Disabled {
+        return;
+    }
     let local_inputs = ui.resource::<LocalInputs>();
 
     let unpause = || {
@@ -134,6 +120,7 @@ pub fn update_pause(ui: &World) {
                     unpause();
                     *pause = Pause::Hidden;
                 }
+                Pause::Disabled => unreachable!(),
             }
         }
         if input.south.just_pressed() {
@@ -151,7 +138,7 @@ pub fn update_pause(ui: &World) {
                             finish: play_offline_finish,
                         },
                     );
-                    *pause = Pause::Hidden;
+                    *pause = Pause::Disabled;
                 }
                 Pause::Quit => {
                     start_fade(
@@ -162,9 +149,9 @@ pub fn update_pause(ui: &World) {
                             finish: splash_finish,
                         },
                     );
-                    *pause = Pause::Hidden;
+                    *pause = Pause::Disabled;
                 }
-                Pause::Hidden => {}
+                Pause::Hidden | Pause::Disabled => {}
             }
         }
     }
@@ -393,6 +380,8 @@ pub fn lan_ui_finish(world: &World) {
     *world.resource_mut() = MenuState::Lan;
 }
 pub fn play_leave(ui: &World) {
+    *ui.resource_mut() = Pause::Disabled;
+
     #[cfg(not(target_arch = "wasm32"))]
     ui.resource_mut::<Matchmaker>().lan_cancel();
     #[cfg(not(target_arch = "wasm32"))]
@@ -403,6 +392,8 @@ pub fn play_leave(ui: &World) {
     sessions.delete_play();
 }
 pub fn play_reset(ui: &World) {
+    *ui.resource_mut() = Pause::Disabled;
+
     let mut sessions = ui.resource_mut::<Sessions>();
     sessions
         .get_mut(PLAY)
@@ -450,6 +441,7 @@ pub fn play_online_finish(ui: &World) {
 }
 pub fn play_offline_finish(ui: &World) {
     *ui.resource_mut() = MenuState::InGame;
+    *ui.resource_mut() = Pause::Hidden;
     let mut sessions = ui.resource_mut::<Sessions>();
     tracing::info!("fade_in, starting countdown");
     sessions

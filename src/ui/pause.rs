@@ -13,6 +13,7 @@ pub struct PauseAssets {
 #[derive(HasSchema, Clone, Default, Copy, PartialEq, Eq)]
 pub enum Pause {
     #[default]
+    Disabled,
     Hidden,
     Continue,
     Restart,
@@ -21,7 +22,7 @@ pub enum Pause {
 impl Pause {
     pub fn cycle(&mut self) {
         match self {
-            Pause::Hidden => {}
+            Pause::Disabled | Pause::Hidden => {}
             Pause::Continue => *self = Pause::Restart,
             Pause::Restart => *self = Pause::Quit,
             Pause::Quit => *self = Pause::Continue,
@@ -36,7 +37,7 @@ impl SessionPlugin for Pause {
 pub fn show(world: &World) {
     let pause = world.resource::<Pause>();
 
-    if let Pause::Hidden = *pause {
+    if matches!(*pause, Pause::Hidden | Pause::Disabled) {
         return;
     }
     let asset_server = world.resource::<AssetServer>();
@@ -66,7 +67,7 @@ pub fn show(world: &World) {
                     Pause::Continue => continue_pos,
                     Pause::Restart => restart_pos,
                     Pause::Quit => team_select_pos,
-                    Pause::Hidden => unreachable!(),
+                    Pause::Disabled | Pause::Hidden => unreachable!(),
                 };
                 ui.painter().image(
                     textures.get(*cursor),
