@@ -153,5 +153,11 @@ pub fn lan_ui_update(ui: &World) {
             );
             return;
         }
+        if input.up.just_pressed() {
+            lan_ui.state.cycle_up();
+        }
+        if input.down.just_pressed() {
+            lan_ui.state.cycle_down();
+        }
     }
 }
