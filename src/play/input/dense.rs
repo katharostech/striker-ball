@@ -1,6 +1,6 @@
 use super::*;
+use bones_framework::networking::input::*;
 
-#[cfg(not(target_arch = "wasm32"))]
 bitfield::bitfield! {
     #[derive(bytemuck::Pod, bytemuck::Zeroable, Default, Clone, Copy, PartialEq, Eq)]
     #[repr(transparent)]

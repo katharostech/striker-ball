@@ -132,11 +132,8 @@ fn podium_update(play: &World) {
         tracing::info!("showing match done ui");
         winner.visual.hide();
 
-        #[cfg(target_arch = "wasm32")]
-        let is_network_game = false;
-        let is_network_game = play.get_resource::<SyncingInfo>().is_some();
-
-        if is_network_game {
+        #[cfg(not(target_arch = "wasm32"))]
+        if play.get_resource::<SyncingInfo>().is_some() {
             // TODO: Add `NetworkMatchDone.show()` and rematch option.
             let mut sessions = play.resource_mut::<Sessions>();
             let ui = sessions.get_world(session::UI).unwrap();
@@ -149,6 +146,11 @@ fn podium_update(play: &World) {
                 },
             );
         } else {
+            play.resource_mut::<MatchDone>().visual.show();
+            *play.resource_mut() = PlayState::MatchDone;
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
             play.resource_mut::<MatchDone>().visual.show();
             *play.resource_mut() = PlayState::MatchDone;
         }

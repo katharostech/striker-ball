@@ -47,6 +47,7 @@ pub fn scene(world: &World) {
 
     // Players
     let ent_signs = match &*world.resource::<PlayMode>() {
+        #[cfg(not(target_arch = "wasm32"))]
         PlayMode::Online {
             socket,
             service_type,

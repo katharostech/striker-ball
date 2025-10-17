@@ -1,5 +1,10 @@
 use super::*;
 
+#[cfg(not(target_arch = "wasm32"))]
+mod network;
+#[cfg(not(target_arch = "wasm32"))]
+pub use network::*;
+
 #[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq)]
 pub enum MenuState {
     #[default]
@@ -21,12 +26,6 @@ impl SessionPlugin for MenuPlugin {
         session.init_resource::<MenuState>();
         session.init_resource::<FadeTransition>();
 
-        #[cfg(not(target_arch = "wasm32"))]
-        session.install_plugin(
-            MatchmakerPlugin::new(MATCHMAKER_SERVICE_NAME_ONEPLAYER)
-                .refresh(1.0)
-                .player_count(2),
-        );
         session.install_plugin(Splash {
             visual: Visual::new_shown(),
             ..Default::default()
@@ -34,10 +33,20 @@ impl SessionPlugin for MenuPlugin {
         session.install_plugin(HowToPlay::default());
         session.install_plugin(Fade::new(0.5, 0.5, Color::BLACK, egui::Order::Tooltip));
         session.install_plugin(TeamSelect::default());
-        session.install_plugin(LanSelect::default());
-        session.install_plugin(LanUI::default());
         session.install_plugin(Pause::default());
-        session.install_plugin(NetworkQuit::default());
+
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            session.install_plugin(
+                MatchmakerPlugin::new(MATCHMAKER_SERVICE_NAME_ONEPLAYER)
+                    .refresh(1.0)
+                    .player_count(2),
+            );
+            session.install_plugin(LanSelect::default());
+            session.install_plugin(LanUI::default());
+            session.install_plugin(NetworkQuit::default());
+        }
+
         session.add_startup_system(|root: Root<Data>, mut audio: ResMut<AudioCenter>| {
             audio.play_music_advanced(
                 *root.sound.menu_music,
@@ -160,7 +169,9 @@ pub fn update_pause(ui: &World) {
 pub fn update_menu(world: &World) {
     // Each ui element has an output returned that we may use if the element
     // controls are active depending on the game state in this scenario.
+    #[cfg(not(target_arch = "wasm32"))]
     let lan_select = world.resource_mut::<LanSelect>().process_ui(world);
+    #[cfg(not(target_arch = "wasm32"))]
     let network_quit = world.resource_mut::<NetworkQuit>().process_ui(world);
     // TODO: use the `LanSelect` pattern for rendering and processing all the ui elements
     //...
@@ -250,34 +261,6 @@ pub fn network_quit_transition(world: &World, output: NetworkQuitOutput) {
         }
     }
 }
-pub fn lan_select_transition(world: &World, output: LanSelectOutput) {
-    match output {
-        LanSelectOutput::Exit => {
-            start_fade(
-                world,
-                FadeTransition {
-                    hide: lan_select_hide,
-                    prep: splash_prep,
-                    finish: splash_finish,
-                },
-            );
-        }
-        LanSelectOutput::ServiceType(service) => {
-            world
-                .resource_mut::<Matchmaker>()
-                .update_service_name(service.service_name());
-            world.resource_mut::<LanUI>().service = service;
-            start_fade(
-                world,
-                FadeTransition {
-                    hide: lan_select_hide,
-                    prep: lan_ui_prep,
-                    finish: lan_ui_finish,
-                },
-            );
-        }
-    }
-}
 
 #[derive(HasSchema, Clone)]
 pub struct FadeTransition {
@@ -350,42 +333,12 @@ pub fn how_to_play_prep(world: &World) {
 pub fn how_to_play_finish(world: &World) {
     *world.resource_mut() = MenuState::HowToPlay;
 }
-pub fn lan_select_hide(world: &World) {
-    world.resource_mut::<LanSelect>().visible = false;
-}
-pub fn lan_select_prep(world: &World) {
-    world.resource_mut::<LanSelect>().visible = true;
-}
-pub fn lan_select_finish(world: &World) {
-    *world.resource_mut() = MenuState::LanSelect;
-}
-pub fn lan_ui_hide(world: &World) {
-    #[cfg(not(target_arch = "wasm32"))]
-    world.resource_mut::<Matchmaker>().disable_search();
-    world.resource_mut::<LanUI>().visible = false;
-}
-pub fn lan_ui_leave(world: &World) {
-    #[cfg(not(target_arch = "wasm32"))]
-    world.resource_mut::<Matchmaker>().lan_cancel();
-    #[cfg(not(target_arch = "wasm32"))]
-    world.resource_mut::<Matchmaker>().disable_search();
-    world.resource_mut::<LanUI>().visible = false;
-}
-pub fn lan_ui_prep(world: &World) {
-    #[cfg(not(target_arch = "wasm32"))]
-    world.resource_mut::<Matchmaker>().enable_search();
-    world.resource_mut::<LanUI>().visible = true;
-}
-pub fn lan_ui_finish(world: &World) {
-    *world.resource_mut() = MenuState::Lan;
-}
 pub fn play_leave(ui: &World) {
     *ui.resource_mut() = Pause::Disabled;
 
     #[cfg(not(target_arch = "wasm32"))]
-    ui.resource_mut::<Matchmaker>().lan_cancel();
-    #[cfg(not(target_arch = "wasm32"))]
     {
+        ui.resource_mut::<Matchmaker>().lan_cancel();
         ui.resource_mut::<NetworkQuit>().visible = false;
     }
     let mut sessions = ui.resource_mut::<Sessions>();
@@ -418,26 +371,6 @@ pub fn play_offline_prep(ui: &World) {
     tracing::info!("fade_out, recreating PLAY session; assignments:{player_signs:?}");
 
     sessions.create_play(PlayMode::Offline(player_signs));
-}
-pub fn play_online_prep(ui: &World) {
-    let socket = ui.resource::<Matchmaker>().network_match_socket().unwrap();
-    let service_type = *ui.resource::<ServiceType>();
-    let mut sessions = ui.resource_mut::<Sessions>();
-
-    sessions.create_play(PlayMode::Online {
-        socket,
-        service_type,
-    });
-}
-pub fn play_online_finish(ui: &World) {
-    *ui.resource_mut() = MenuState::InNetworkGame;
-    let mut sessions = ui.resource_mut::<Sessions>();
-    tracing::info!("fade_in, starting countdown");
-    sessions
-        .get_world(session::PLAY)
-        .unwrap()
-        .resource_mut::<Countdown>()
-        .restart();
 }
 pub fn play_offline_finish(ui: &World) {
     *ui.resource_mut() = MenuState::InGame;
@@ -485,6 +418,7 @@ pub fn splash_update(ui: &World) {
                 finish: team_select_finish,
             },
         ),
+        #[cfg(not(target_arch = "wasm32"))]
         SplashState::Lan => {
             start_fade(
                 ui,
@@ -662,89 +596,6 @@ pub fn team_select_update(ui: &World) {
                     hide: team_select_hide,
                     prep: play_offline_prep,
                     finish: play_offline_finish,
-                },
-            );
-            return;
-        }
-    }
-}
-
-pub fn lan_ui_update(ui: &World) {
-    let mut lan_ui = ui.resource_mut::<LanUI>();
-    let local_inputs = ui.resource::<LocalInputs>();
-    let mut matchmaker = ui.resource_mut::<Matchmaker>();
-
-    if matchmaker.network_match_socket().is_some() {
-        ui.resources.insert(lan_ui.service);
-        start_fade(
-            ui,
-            FadeTransition {
-                hide: lan_ui_hide,
-                prep: play_online_prep,
-                finish: play_online_finish,
-            },
-        );
-        return;
-    }
-
-    let keyboard = ui.resource::<KeyboardInputs>();
-
-    for event in &keyboard.key_events {
-        if let Maybe::Set(key_code) = event.key_code {
-            if key_code == KeyCode::Escape && event.button_state == ButtonState::Pressed {
-                start_fade(
-                    ui,
-                    FadeTransition {
-                        hide: lan_ui_leave,
-                        prep: splash_prep,
-                        finish: splash_finish,
-                    },
-                );
-            }
-        }
-    }
-
-    fn lan_ui_action(
-        output: LanUIState,
-        matchmaker: &mut RefMut<'_, Matchmaker>,
-        lan_ui: &mut RefMut<'_, LanUI>,
-    ) {
-        match output {
-            LanUIState::Host => {
-                if matchmaker.is_hosting() {
-                    matchmaker.lan_cancel();
-                } else {
-                    matchmaker.lan_host();
-                }
-            }
-            LanUIState::Server(i) => {
-                if let Some(server) = matchmaker.lan_servers().get(i).cloned() {
-                    matchmaker.lan_join(&server);
-                }
-            }
-            LanUIState::Disconnected => {
-                lan_ui.state = LanUIState::Host;
-            }
-        }
-    }
-
-    if let Some(state) = lan_ui.output {
-        lan_ui_action(state, &mut matchmaker, &mut lan_ui);
-        return;
-    }
-
-    for (_gamepad, input) in local_inputs.iter() {
-        if input.south.just_pressed() {
-            lan_ui_action(lan_ui.state, &mut matchmaker, &mut lan_ui);
-            return;
-        }
-        if input.west.just_pressed() {
-            start_fade(
-                ui,
-                FadeTransition {
-                    hide: lan_ui_leave,
-                    prep: splash_prep,
-                    finish: splash_finish,
                 },
             );
             return;

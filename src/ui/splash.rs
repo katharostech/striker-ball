@@ -7,6 +7,7 @@ pub struct SplashAssets {
     pub bg: Handle<Image>,
     pub title: SizedImageAsset,
     pub button_bg: SizedImageAsset,
+    pub button_bg_web: SizedImageAsset,
     pub lan: SizedImageAsset,
     pub lan_blink: SizedImageAsset,
     pub offline: SizedImageAsset,
@@ -18,11 +19,11 @@ pub struct SplashAssets {
 #[derive(HasSchema, Clone, Copy, Default)]
 #[repr(C)]
 pub struct SplashSlots {
-    pub title: Vec2,
-    pub selection: Vec2,
-    pub offline: Vec2,
-    pub lan: Vec2,
-    pub how_to_play: Vec2,
+    pub title: f32,
+    pub selection: f32,
+    pub button_1: f32,
+    pub button_2: f32,
+    pub button_3: f32,
 }
 
 #[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq)]
@@ -30,10 +31,12 @@ pub enum SplashState {
     #[default]
     PressGamepad,
     Offline,
+    #[cfg(not(target_arch = "wasm32"))]
     Lan,
     HowToPlay,
 }
 impl SplashState {
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn cycle_up(&mut self) {
         *self = match self {
             Self::Offline => Self::HowToPlay,
@@ -42,10 +45,27 @@ impl SplashState {
             Self::PressGamepad => *self,
         }
     }
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn cycle_down(&mut self) {
         *self = match self {
             Self::Offline => Self::Lan,
             Self::Lan => Self::HowToPlay,
+            Self::HowToPlay => Self::Offline,
+            Self::PressGamepad => *self,
+        }
+    }
+    #[cfg(target_arch = "wasm32")]
+    pub fn cycle_up(&mut self) {
+        *self = match self {
+            Self::Offline => Self::HowToPlay,
+            Self::HowToPlay => Self::Offline,
+            Self::PressGamepad => *self,
+        }
+    }
+    #[cfg(target_arch = "wasm32")]
+    pub fn cycle_down(&mut self) {
+        *self = match self {
+            Self::Offline => Self::HowToPlay,
             Self::HowToPlay => Self::Offline,
             Self::PressGamepad => *self,
         }
@@ -87,12 +107,18 @@ pub fn show(world: &World) {
         slots,
         bg,
         title,
+        #[cfg(not(target_arch = "wasm32"))]
         button_bg,
+        #[cfg(target_arch = "wasm32")]
+            button_bg_web: button_bg,
         offline,
         offline_blink,
         how_to_play,
         how_to_play_blink,
+
+        #[cfg(not(target_arch = "wasm32"))]
         lan,
+        #[cfg(not(target_arch = "wasm32"))]
         lan_blink,
         ..
     } = root.menu.splash;
@@ -111,13 +137,15 @@ pub fn show(world: &World) {
 
     painter.set_clip_rect(area.response.rect);
 
-    let builder = ImagePainter::new(*title).pos(area.response.rect.left_top());
+    let builder = ImagePainter::new(*title)
+        .align2(Align2::CENTER_TOP)
+        .pos(area.response.rect.center_top());
 
     builder
         .clone()
         .image(*title)
         .size(title.egui_size())
-        .offset(slots.title.to_array().into())
+        .offset(pos2(0.0, slots.title))
         .paint(&painter, &textures);
 
     if let SplashState::PressGamepad = splash.state {
@@ -163,7 +191,7 @@ pub fn show(world: &World) {
         .clone()
         .image(*button_bg)
         .size(button_bg.egui_size())
-        .offset(slots.selection.to_array().into())
+        .offset(pos2(0.0, slots.selection))
         .paint(&painter, &textures);
 
     let image = if splash.state == SplashState::Offline {
@@ -175,7 +203,7 @@ pub fn show(world: &World) {
         .clone()
         .image(*image)
         .size(image.egui_size())
-        .offset(slots.offline.to_array().into())
+        .offset(pos2(0.0, slots.button_1))
         .paint(&painter, &textures)
         .expand(2.0);
 
@@ -191,11 +219,16 @@ pub fn show(world: &World) {
     } else {
         how_to_play
     };
+    #[cfg(target_arch = "wasm32")]
+    let offset = slots.button_2;
+    #[cfg(not(target_arch = "wasm32"))]
+    let offset = slots.button_3;
+
     let howtoplay_rect = builder
         .clone()
         .image(*image)
         .size(image.egui_size())
-        .offset(slots.how_to_play.to_array().into())
+        .offset(pos2(0.0, offset))
         .paint(&painter, &textures)
         .expand(2.0);
 
@@ -206,23 +239,26 @@ pub fn show(world: &World) {
         splash.state = SplashState::HowToPlay;
     }
 
-    let image = if splash.state == SplashState::Lan {
-        lan_blink
-    } else {
-        lan
-    };
-    let lan_rect = builder
-        .clone()
-        .image(*image)
-        .size(image.egui_size())
-        .offset(slots.lan.to_array().into())
-        .paint(&painter, &textures)
-        .expand(2.0);
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let image = if splash.state == SplashState::Lan {
+            lan_blink
+        } else {
+            lan
+        };
+        let lan_rect = builder
+            .clone()
+            .image(*image)
+            .size(image.egui_size())
+            .offset(pos2(0.0, slots.button_2))
+            .paint(&painter, &textures)
+            .expand(2.0);
 
-    if ctx.clicked_rect(lan_rect) {
-        splash.interact = Some(SplashState::Lan);
-    }
-    if ctx.hovered_rect(lan_rect) {
-        splash.state = SplashState::Lan;
+        if ctx.clicked_rect(lan_rect) {
+            splash.interact = Some(SplashState::Lan);
+        }
+        if ctx.hovered_rect(lan_rect) {
+            splash.state = SplashState::Lan;
+        }
     }
 }

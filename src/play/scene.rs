@@ -102,6 +102,7 @@ impl SessionPlugin for ScenePlugin {
             PlayMode::Offline(players_info) => {
                 session.runner = offline_session_runner(players_info.clone());
             }
+            #[cfg(not(target_arch = "wasm32"))]
             PlayMode::Online {
                 socket,
                 service_type,
@@ -154,6 +155,7 @@ pub fn hide_debug_lines(mut toggles: CompMut<Path2dToggle>) {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn lan_session_runner(
     socket: &bones_framework::networking::NetworkMatchSocket,
     service_type: &ServiceType,

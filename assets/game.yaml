@@ -93,14 +93,15 @@ menu:
 
   splash:
     slots:
-      title: [129, 30]
-      selection: [140, 122]
-      offline: [146, 131]
-      lan: [154, 144]
-      how_to_play: [159, 157]
+      title: 30
+      selection: 122
+      button_1: 131
+      button_2: 144
+      button_3: 157
     bg: ui/main_menu/mainMenuBackground.png
     title: [ui/main_menu/titleText.png, 117, 66]
     button_bg: [ui/main_menu/modeSelectBackground.png, 95, 51]
+    button_bg_web: [ui/main_menu/modeSelectBackgroundWeb.png, 95, 38]
     offline: [ui/main_menu/offlineButton.png, 84, 7]
     offline_blink: [ui/main_menu/offlineButtonBlink.png, 84, 7]
     lan: [ui/main_menu/LANButton.png, 68, 7]

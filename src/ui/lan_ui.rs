@@ -1,27 +1,5 @@
 use super::*;
 
-pub const MATCHMAKER_SERVICE_NAME_ONEPLAYER: &str = "sb1player";
-pub const MATCHMAKER_SERVICE_NAME_TWOPLAYER: &str = "sb2player";
-
-#[derive(HasSchema, Clone, Copy, PartialEq, Eq, Debug)]
-pub enum ServiceType {
-    OnePlayer(u32),
-    TwoPlayer(u32, u32),
-}
-impl Default for ServiceType {
-    fn default() -> Self {
-        Self::OnePlayer(0)
-    }
-}
-impl ServiceType {
-    pub fn service_name(&self) -> &str {
-        match self {
-            ServiceType::OnePlayer(_) => MATCHMAKER_SERVICE_NAME_ONEPLAYER,
-            ServiceType::TwoPlayer(_, _) => MATCHMAKER_SERVICE_NAME_TWOPLAYER,
-        }
-    }
-}
-
 #[derive(HasSchema, Default, Clone, Copy, PartialEq, Eq)]
 pub enum LanUIState {
     #[default]
