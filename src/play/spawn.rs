@@ -166,7 +166,7 @@ pub fn new_player_transform(player_id: PlayerSlot, root: &Data) -> Transform {
         PlayerSlot::B2 => pos *= vec2(1., -1.),
     }
 
-    Transform::from_translation(Vec3::new(pos.x, pos.y, layers::HITO))
+    Transform::from_translation(Vec3::new(pos.x, pos.y, layers::PLAYER))
 }
 
 pub fn player(world: &World, number: Option<usize>, dual_stick: bool, slot: PlayerSlot) -> Entity {
@@ -216,7 +216,7 @@ pub fn player(world: &World, number: Option<usize>, dual_stick: bool, slot: Play
             target: player.id(),
             offset: Vec2::new(0., sprite_offset),
         })
-        .insert(Transform::from_z(layers::HITO));
+        .insert(Transform::from_z(layers::PLAYER));
 
     world
         .spawn()
@@ -232,7 +232,7 @@ pub fn player(world: &World, number: Option<usize>, dual_stick: bool, slot: Play
             target: player.id(),
             offset: Vec2::new(0., -4.),
         })
-        .insert(Transform::from_z(layers::HITO_SHADOW));
+        .insert(Transform::from_z(layers::PLAYER_SHADOW));
 
     // dual stick left or right indicator
     if dual_stick {
@@ -250,7 +250,7 @@ pub fn player(world: &World, number: Option<usize>, dual_stick: bool, slot: Play
                 target: player.id(),
                 offset: Vec2::new(0., 22.),
             })
-            .insert(Transform::from_z(layers::HITO_SHADOW));
+            .insert(Transform::from_z(layers::PLAYER_SHADOW));
     }
     if let Some(number) = number {
         world
@@ -264,7 +264,7 @@ pub fn player(world: &World, number: Option<usize>, dual_stick: bool, slot: Play
                 offset: Vec2::new(0., -18.),
             })
             .insert(Lifetime::seconds(3.0))
-            .insert(Transform::from_z(layers::HITO_SHADOW));
+            .insert(Transform::from_z(layers::PLAYER_SHADOW));
     }
 
     world
