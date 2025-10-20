@@ -8,7 +8,7 @@ pub mod prelude {
 }
 pub mod state {
     crate::states![
-        free, tackle, tackled, grab, ball, shoot, pass, turn, recieve, kick, lose, win, wait
+        free, tackle, tackled, grab, dribble, shoot, pass, turn, recieve, kick, lose, win, wait
     ];
 }
 
@@ -143,7 +143,7 @@ impl Default for Player {
 }
 pub fn plugin(session: &mut SessionBuilder) {
     session
-        .add_system_to_stage(StateStage, ball_transition)
+        .add_system_to_stage(StateStage, dribble_transition)
         .add_system_to_stage(StateStage, free_transition)
         .add_system_to_stage(StateStage, recieve_transition)
         .add_system_to_stage(StateStage, shoot_transition)
@@ -169,7 +169,7 @@ pub fn plugin(session: &mut SessionBuilder) {
             timed_transition::<Player>(state::recieve(), state::free(), seconds(0.5)),
         )
         .add_system_to_stage(PreUpdate, free_update)
-        .add_system_to_stage(PreUpdate, ball_update)
+        .add_system_to_stage(PreUpdate, dribble_update)
         .add_system_to_stage(PreUpdate, shoot_update)
         .add_system_to_stage(PreUpdate, tackle_update)
         .add_system_to_stage(Update, aim_arrows_update)
@@ -209,21 +209,21 @@ fn free_transition(world: &World) {
     for player_e in world.resource::<PlayerEntSigns>().entities() {
         if world.component::<State>().get(player_e).unwrap().current == state::free() {
             world.run_system(to_tackle_transition, player_e);
-            world.run_system(to_ball_transition, player_e);
+            world.run_system(to_dribble_transition, player_e);
         }
     }
 }
 fn recieve_transition(world: &World) {
     for player_e in world.resource::<PlayerEntSigns>().entities() {
         if world.component::<State>().get(player_e).unwrap().current == state::recieve() {
-            world.run_system(to_ball_transition, player_e);
+            world.run_system(to_dribble_transition, player_e);
         }
     }
 }
-fn ball_transition(world: &World) {
+fn dribble_transition(world: &World) {
     for player_e in world.resource::<PlayerEntSigns>().entities() {
-        if world.component::<State>().get(player_e).unwrap().current == state::ball() {
-            world.run_system(ball_out_transition, player_e);
+        if world.component::<State>().get(player_e).unwrap().current == state::dribble() {
+            world.run_system(dribble_out_transition, player_e);
             world.run_system(to_tackled_transition, player_e);
         }
     }
@@ -271,7 +271,7 @@ fn turn_out_transition(
     }
 }
 
-fn to_ball_transition(
+fn to_dribble_transition(
     In(player_e): In<Entity>,
     entities: Res<Entities>,
     transforms: Comp<Transform>,
@@ -302,11 +302,11 @@ fn to_ball_transition(
         ball.velocity = default();
         ball.owner = Maybe::Set(player_e);
         ball.dribble_pos = player.angle * player_radius;
-        state.current = state::ball();
+        state.current = state::dribble();
     }
 }
 
-fn ball_out_transition(
+fn dribble_out_transition(
     In(player_e): In<Entity>,
     inputs: Res<PlayTeamInputs>,
     player_ent_signs: Res<PlayerEntSigns>,
@@ -460,9 +460,9 @@ fn free_update(world: &World) {
         }
     }
 }
-fn ball_update(world: &World) {
+fn dribble_update(world: &World) {
     for player_e in world.resource::<PlayerEntSigns>().entities() {
-        if world.component::<State>().get(player_e).unwrap().current == state::ball() {
+        if world.component::<State>().get(player_e).unwrap().current == state::dribble() {
             world.run_system(walk, player_e);
         }
     }
@@ -583,7 +583,7 @@ fn walk(In(player_e): In<Entity>, world: &World) {
 
         let speed = match state.current {
             id if id == state::free() => root.constant.run_speed,
-            id if id == state::ball() => root.constant.dribble_speed,
+            id if id == state::dribble() => root.constant.dribble_speed,
             _ => return,
         };
         let control = inputs.get_character_control(player.id);
@@ -802,7 +802,7 @@ fn player_graphics(
                 player.animation = ustr("grab");
                 **path_color = path2d::color::KICK_GRAB
             }
-            s if s == state::ball() => **path_color = path2d::color::DRIBBLE,
+            s if s == state::dribble() => **path_color = path2d::color::DRIBBLE,
             s if s == state::shoot() => {
                 player.animation = ustr("shoot");
                 **path_color = path2d::color::SHOOT
