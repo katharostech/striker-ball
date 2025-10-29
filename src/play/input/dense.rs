@@ -46,35 +46,37 @@ impl From<PlayInputDense> for u32 {
         dense.0
     }
 }
-impl From<u64> for DenseAngle {
+impl From<u64> for PlayInputDense {
     fn from(bits: u64) -> Self {
         let bits_32 = bits as u32;
         bits_32.into()
     }
 }
-impl From<DenseAngle> for u64 {
-    fn from(dir: DenseAngle) -> Self {
+impl From<PlayInputDense> for u64 {
+    fn from(dir: PlayInputDense) -> Self {
         let bits_16 = u32::from(dir);
         bits_16 as u64
     }
 }
 
-#[derive(bytemuck::Pod, bytemuck::Zeroable, Debug, Default, Clone, Copy, PartialEq, Eq)]
-#[repr(C)]
-pub struct PlayTeamInputDense {
-    pub p1: PlayInputDense,
-    pub p2: PlayInputDense,
+bitfield::bitfield! {
+    #[derive(bytemuck::Pod, bytemuck::Zeroable, Default, Clone, Copy, PartialEq, Eq)]
+    #[repr(transparent)]
+    pub struct PlayTeamInputDense(u64);
+    impl Debug;
+    pub from into PlayInputDense, p1, set_p1: 31, 0;
+    pub from into PlayInputDense, p2, set_p2: 63, 32;
 }
 impl NetworkPlayerControl<PlayTeamInputDense> for PlayTeamInput {
     fn get_dense_input(&self) -> PlayTeamInputDense {
-        PlayTeamInputDense {
-            p1: self.p1.get_dense_input(),
-            p2: self.p2.get_dense_input(),
-        }
+        let mut dense = PlayTeamInputDense::default();
+        dense.set_p1(self.p1.get_dense_input());
+        dense.set_p2(self.p2.get_dense_input());
+        dense
     }
     fn update_from_dense(&mut self, new_control: &PlayTeamInputDense) {
-        self.p1.update_from_dense(&new_control.p1);
-        self.p2.update_from_dense(&new_control.p2);
+        self.p1.update_from_dense(&new_control.p1());
+        self.p2.update_from_dense(&new_control.p2());
     }
 }
 
@@ -103,6 +105,18 @@ impl From<DenseAngle> for u32 {
     fn from(dir: DenseAngle) -> Self {
         let bits_16 = u16::from(dir);
         bits_16 as u32
+    }
+}
+impl From<u64> for DenseAngle {
+    fn from(bits: u64) -> Self {
+        let bits_32 = bits as u32;
+        bits_32.into()
+    }
+}
+impl From<DenseAngle> for u64 {
+    fn from(dir: DenseAngle) -> Self {
+        let bits_16 = u32::from(dir);
+        bits_16 as u64
     }
 }
 
