@@ -3,6 +3,7 @@ use super::*;
 #[derive(HasSchema, Clone, Copy, Default)]
 pub enum PlayState {
     #[default]
+    FadeIn,
     Countdown,
     WaitForScore,
     ScoreDisplay,
@@ -30,11 +31,19 @@ impl SessionPlugin for FlowPlugin {
 fn update_flow(world: &World) {
     let state = *world.resource::<PlayState>();
     match state {
+        PlayState::FadeIn => fade_in_update(world),
         PlayState::Countdown => countdown_update(world),
         PlayState::WaitForScore => wait_for_score_update(world),
         PlayState::ScoreDisplay => world.run_system(score_display_update, ()),
         PlayState::Podium => podium_update(world),
         PlayState::MatchDone => match_done_update(world),
+    }
+}
+
+pub fn fade_in_update(play: &World) {
+    if play.resource::<Fade>().finished() {
+        *play.resource_mut() = PlayState::Countdown;
+        play.resource_mut::<Countdown>().restart();
     }
 }
 

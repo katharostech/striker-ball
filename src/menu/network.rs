@@ -34,16 +34,7 @@ pub fn play_online_prep(ui: &World) {
         socket,
         service_type,
     });
-}
-pub fn play_online_finish(ui: &World) {
     *ui.resource_mut() = MenuState::InNetworkGame;
-    let mut sessions = ui.resource_mut::<Sessions>();
-    tracing::info!("fade_in, starting countdown");
-    sessions
-        .get_world(session::PLAY)
-        .unwrap()
-        .resource_mut::<Countdown>()
-        .restart();
 }
 pub fn lan_select_transition(world: &World, output: LanSelectOutput) {
     match output {
@@ -85,7 +76,7 @@ pub fn lan_ui_update(ui: &World) {
             FadeTransition {
                 hide: lan_ui_hide,
                 prep: play_online_prep,
-                finish: play_online_finish,
+                finish: |_| {},
             },
         );
         return;
