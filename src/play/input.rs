@@ -48,7 +48,7 @@ pub struct PlayTeamInput {
     pub p2: PlayInput,
 }
 
-#[derive(HasSchema, Clone, Default, Deref, DerefMut)]
+#[derive(HasSchema, Clone, Default, Debug, Deref, DerefMut)]
 pub struct PlayTeamInputs {
     pub clients: [PlayTeamInput; 2usize],
 }
