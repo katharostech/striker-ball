@@ -10,39 +10,45 @@ pub struct Fade {
 }
 impl Default for Fade {
     fn default() -> Self {
-        Self::new(3., 1., Color::BLACK, egui::Order::Foreground)
+        Self::new(3., 0.15, 1., Color::BLACK, egui::Order::Foreground)
     }
 }
 impl Fade {
-    pub fn new(secs_out: f32, secs_in: f32, color: Color, order: egui::Order) -> Self {
+    pub fn new(
+        secs_out: f32,
+        secs_wait: f32,
+        secs_in: f32,
+        color: Color,
+        order: egui::Order,
+    ) -> Self {
         let mut fade_out = Timer::from_seconds(secs_out, TimerMode::Once);
+        let mut fade_wait = Timer::from_seconds(secs_wait, TimerMode::Once);
         let mut fade_in = Timer::from_seconds(secs_in, TimerMode::Once);
         fade_out.pause();
+        fade_wait.pause();
         fade_in.pause();
         Self {
             fade_out,
-            fade_wait: Timer::from_seconds(0.15, TimerMode::Once),
+            fade_wait,
             fade_in,
             color,
             order,
         }
     }
-    pub fn in_out(&mut self, secs_out: f32, secs_in: f32) -> &mut Self {
-        let mut fade_out = Timer::from_seconds(secs_out, TimerMode::Once);
-        let mut fade_in = Timer::from_seconds(secs_in, TimerMode::Once);
-        fade_out.pause();
-        fade_in.pause();
-        self.fade_out = fade_out;
-        self.fade_in = fade_in;
-        self
-    }
     pub fn color(&mut self, color: Color) -> &mut Self {
-        self.color = color;
+        self.color.set_r(color.r());
+        self.color.set_g(color.r());
+        self.color.set_b(color.r());
         self
     }
     pub fn order(&mut self, order: egui::Order) -> &mut Self {
         self.order = order;
         self
+    }
+    /// Restarts the `Fade` with the `fade_out` timer already finished.
+    pub fn restart_at_wait(&mut self) {
+        self.restart();
+        self.fade_out.set_elapsed(self.fade_out.duration());
     }
     pub fn restart(&mut self) {
         self.fade_out.reset();
@@ -64,40 +70,36 @@ impl SessionPlugin for Fade {
                 fade_out,
                 fade_wait,
                 fade_in,
+                color,
                 ..
             } = &mut (*world.resource_mut::<Self>());
 
             fade_out.tick(time.delta());
             fade_wait.tick(time.delta());
             fade_in.tick(time.delta());
+
+            if !fade_out.finished() {
+                color.set_a(fade_out.percent());
+            } else if !fade_wait.finished() {
+                fade_wait.unpause();
+                color.set_a(1.0);
+            } else {
+                fade_in.unpause();
+                color.set_a(fade_in.percent_left());
+            }
         });
     }
 }
 pub fn show(world: &World) {
-    let Fade {
-        fade_out,
-        fade_wait,
-        fade_in,
-        color,
-        order,
-    } = &mut *world.resource_mut::<Fade>();
-    if !fade_out.finished() {
-        color.set_a(fade_out.percent());
-    } else if !fade_wait.finished() {
-        fade_wait.unpause();
-        color.set_a(1.0);
-    } else {
-        fade_in.unpause();
-        color.set_a(fade_in.percent_left());
-    }
+    let Fade { color, order, .. } = *world.resource_mut::<Fade>();
 
     use egui::*;
     world
         .resource::<EguiCtx>()
-        .layer_painter(LayerId::new(*order, Id::new("FADE_OVERLAY")))
+        .layer_painter(LayerId::new(order, Id::new("FADE_OVERLAY")))
         .rect_filled(
             Rect::from_min_size(Pos2::ZERO, Vec2::INFINITY),
             Rounding::ZERO,
-            *color,
+            color,
         );
 }

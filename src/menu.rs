@@ -31,7 +31,13 @@ impl SessionPlugin for MenuPlugin {
             ..Default::default()
         });
         session.install_plugin(HowToPlay::default());
-        session.install_plugin(Fade::new(0.5, 0.5, Color::BLACK, egui::Order::Tooltip));
+        session.install_plugin(Fade::new(
+            0.5,
+            0.15,
+            0.5,
+            Color::BLACK,
+            egui::Order::Tooltip,
+        ));
         session.install_plugin(TeamSelect::default());
         session.install_plugin(Pause::default());
 

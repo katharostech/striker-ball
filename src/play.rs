@@ -51,7 +51,11 @@ impl SessionPlugin for BehaviorsPlugin {
 pub struct PlayUIPlugin;
 impl SessionPlugin for PlayUIPlugin {
     fn install(self, session: &mut SessionBuilder) {
-        session.install_plugin(Fade::new(3., 1., Color::BLACK, egui::Order::Middle));
+        session.install_plugin({
+            let mut fade = Fade::new(3., 0.15, 1., Color::BLACK, egui::Order::Middle);
+            fade.restart_at_wait();
+            fade
+        });
         session.install_plugin(Countdown::new(4.0, 1.2));
         session.install_plugin(ScoreDisplay::new(3.65));
         session.install_plugin(WinnerBanner::default());
