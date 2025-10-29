@@ -10,9 +10,12 @@ pub struct Countdown {
 
 impl Countdown {
     pub fn new(seconds: f32, speed: f32) -> Self {
+        let mut timer = Timer::from_seconds(seconds, TimerMode::Once);
+        timer.pause();
+
         Self {
             speed,
-            timer: Timer::from_seconds(seconds, TimerMode::Once),
+            timer,
             visual: Visual::default(),
             sound_marker: -1.0,
         }
@@ -20,6 +23,7 @@ impl Countdown {
     pub fn restart(&mut self) {
         self.visual.show();
         self.timer.reset();
+        self.timer.unpause();
     }
     pub fn tick(&mut self, delta: std::time::Duration) {
         self.timer.tick(delta.mul_f32(self.speed));
