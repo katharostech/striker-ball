@@ -194,7 +194,7 @@ fn match_done_update(play: &World) {
             FadeTransition {
                 hide: play_reset,
                 prep: play_offline_prep,
-                finish: play_offline_finish,
+                finish: |_| {},
             },
         );
     };

@@ -150,7 +150,7 @@ pub fn update_pause(ui: &World) {
                         FadeTransition {
                             hide: play_reset,
                             prep: play_offline_prep,
-                            finish: play_offline_finish,
+                            finish: |_| {},
                         },
                     );
                     *pause = Pause::Disabled;
@@ -379,17 +379,8 @@ pub fn play_offline_prep(ui: &World) {
     tracing::info!("fade_out, recreating PLAY session; assignments:{player_signs:?}");
 
     sessions.create_play(PlayMode::Offline(player_signs));
-}
-pub fn play_offline_finish(ui: &World) {
     *ui.resource_mut() = MenuState::InGame;
     *ui.resource_mut() = Pause::Hidden;
-    let mut sessions = ui.resource_mut::<Sessions>();
-    tracing::info!("fade_in, starting countdown");
-    sessions
-        .get_world(session::PLAY)
-        .unwrap()
-        .resource_mut::<Countdown>()
-        .restart();
 }
 
 pub fn splash_update(ui: &World) {
@@ -555,7 +546,7 @@ pub fn team_select_update(ui: &World) {
                 FadeTransition {
                     hide: team_select_hide,
                     prep: play_offline_prep,
-                    finish: play_offline_finish,
+                    finish: |_| {},
                 },
             );
             return;
@@ -603,7 +594,7 @@ pub fn team_select_update(ui: &World) {
                 FadeTransition {
                     hide: team_select_hide,
                     prep: play_offline_prep,
-                    finish: play_offline_finish,
+                    finish: |_| {},
                 },
             );
             return;
