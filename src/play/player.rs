@@ -23,6 +23,14 @@ pub struct PlayerEntSigns {
     pub b2: Entity,
 }
 impl PlayerEntSigns {
+    pub fn get(&self, player_slot: PlayerSlot) -> Entity {
+        match player_slot {
+            PlayerSlot::A1 => self.a1,
+            PlayerSlot::A2 => self.a2,
+            PlayerSlot::B1 => self.b1,
+            PlayerSlot::B2 => self.b2,
+        }
+    }
     pub fn partner(&self, entity: Entity) -> Entity {
         if entity == self.a1 {
             self.a2
@@ -47,6 +55,16 @@ pub enum Team {
     #[default]
     A,
     B,
+}
+impl Team {
+    /// Returns a float of either `1.0` or `-1.0` for attacking direction
+    /// of the team on the `x` axis.
+    pub fn direction(&self) -> f32 {
+        match self {
+            Team::A => 1.0,
+            Team::B => -1.0,
+        }
+    }
 }
 
 #[derive(HasSchema, Clone, Default, Copy, PartialEq, Eq, Hash, Debug)]
