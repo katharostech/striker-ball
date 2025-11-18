@@ -31,7 +31,7 @@ impl PlayerEntSigns {
             PlayerSlot::B2 => self.b2,
         }
     }
-    pub fn partner(&self, entity: Entity) -> Entity {
+    pub fn get_partner(&self, entity: Entity) -> Entity {
         if entity == self.a1 {
             self.a2
         } else if entity == self.a2 {
@@ -42,6 +42,12 @@ impl PlayerEntSigns {
             self.b1
         } else {
             panic!("controller is not assigned to a player")
+        }
+    }
+    pub fn get_enemies(&self, player_slot: PlayerSlot) -> [Entity; 2] {
+        match player_slot.team() {
+            Team::A => [self.b1, self.b2],
+            Team::B => [self.a1, self.a2],
         }
     }
     pub fn entities(&self) -> [Entity; 4] {
@@ -336,7 +342,7 @@ fn dribble_out_transition(
 
     // pass
     if control.pass.just_pressed() {
-        let partner_e = player_ent_signs.partner(player_e);
+        let partner_e = player_ent_signs.get_partner(player_e);
         let partner_state = states.get_mut(partner_e).unwrap();
 
         if partner_state.current == state::free() {

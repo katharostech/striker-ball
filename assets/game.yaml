@@ -150,6 +150,9 @@ menu:
       number_icon_offset: [11, -13]
       ready_btn_offset: [12, 20]
       ready_text_offset: [19, 34]
+      partner_select_offset_right: [50, &partner_select_y 5]
+      partner_select_offset_left: [-25, *partner_select_y]
+      cpu_icon_offset: [2, 6]
       pad_bg_offset: [20, 14]
       start_offset: [151, 120]
       back_btn_offset: [2, 192]
@@ -168,6 +171,8 @@ menu:
       39,
       28,
     ]
+    partner_select_arrow: [ui/team_select/partnerSelectArrow.png, 14, 14]
+    cpu_icon: [ui/team_select/CPUIcon.png, 35, 17]
     player1_icon: [ui/team_select/player1Icon.png, 17, 11]
     player2_icon: [ui/team_select/player2Icon.png, 17, 11]
     player3_icon: [ui/team_select/player3Icon.png, 17, 11]

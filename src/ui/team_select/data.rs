@@ -4,6 +4,21 @@ use super::*;
 use crate::play::*;
 use crate::player::*;
 
+#[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq)]
+pub enum PartnerSetting {
+    #[default]
+    CPU,
+    TwinStick,
+}
+impl PartnerSetting {
+    pub fn cycle(&mut self) {
+        match self {
+            Self::CPU => *self = Self::TwinStick,
+            Self::TwinStick => *self = Self::CPU,
+        }
+    }
+}
+
 #[derive(HasSchema, Clone, Default)]
 pub enum Join {
     #[default]
@@ -11,14 +26,19 @@ pub enum Join {
     Joined {
         gamepad: u32,
     },
-    Set {
+    Hover {
         gamepad: u32,
         slot: PlayerSlot,
     },
-    Ready {
+    Single {
         gamepad: u32,
         slot: PlayerSlot,
-        dual_stick: bool,
+        partner_setting: PartnerSetting,
+    },
+    Double {
+        gamepad: u32,
+        slot: PlayerSlot,
+        partner_setting: PartnerSetting,
     },
 }
 impl Join {
@@ -38,55 +58,65 @@ impl Join {
             panic!("un-enforced join state ordering");
         }
     }
-    pub fn set(&mut self, slot: PlayerSlot) {
+    pub fn hover(&mut self, slot: PlayerSlot) {
         if let Self::Joined { gamepad } = *self {
-            *self = Self::Set { gamepad, slot }
+            *self = Self::Hover { gamepad, slot }
         } else {
             panic!("un-enforced join state ordering");
         }
     }
-    pub fn unset(&mut self) {
-        if let Self::Set { gamepad, .. } = *self {
+    pub fn unhover(&mut self) {
+        if let Self::Hover { gamepad, .. } = *self {
             *self = Self::Joined { gamepad }
         } else {
             panic!("un-enforced join state ordering");
         }
     }
-    pub fn ready(&mut self) {
-        if let Self::Set { gamepad, slot } = *self {
-            *self = Self::Ready {
+    pub fn single(&mut self) {
+        if let Self::Hover { gamepad, slot } = *self {
+            *self = Self::Single {
                 gamepad,
                 slot,
-                dual_stick: false,
+                partner_setting: PartnerSetting::default(),
             }
         } else {
             panic!("un-enforced join state ordering");
         }
     }
-    pub fn unready(&mut self) {
-        if let Self::Ready { gamepad, slot, .. } = *self {
-            *self = Self::Set { gamepad, slot }
+    pub fn unsingle(&mut self) {
+        if let Self::Single { gamepad, slot, .. } = *self {
+            *self = Self::Hover { gamepad, slot }
         } else {
             panic!("un-enforced join state ordering");
         }
     }
-    pub fn dual_stick_ready(&mut self) {
-        if let Self::Ready { gamepad, slot, .. } = *self {
-            *self = Self::Ready {
+    pub fn double(&mut self) {
+        if let Self::Single {
+            gamepad,
+            slot,
+            partner_setting,
+        } = *self
+        {
+            *self = Self::Double {
                 gamepad,
                 slot,
-                dual_stick: true,
+                partner_setting,
             }
         } else {
             panic!("un-enforced join state ordering");
         }
     }
-    pub fn un_dual_stick(&mut self) {
-        if let Self::Ready { gamepad, slot, .. } = *self {
-            *self = Self::Ready {
+    pub fn undouble(&mut self) {
+        if let Self::Double {
+            gamepad,
+            slot,
+            partner_setting,
+        } = *self
+        {
+            *self = Self::Single {
                 gamepad,
                 slot,
-                dual_stick: false,
+                partner_setting,
             }
         } else {
             panic!("un-enforced join state ordering");
@@ -95,36 +125,51 @@ impl Join {
     pub fn get_player_slot(&self) -> Option<PlayerSlot> {
         match &self {
             Join::Empty | Join::Joined { .. } => None,
-            Join::Set { slot, .. } | Join::Ready { slot, .. } => Some(*slot),
+            Join::Hover { slot, .. } | Join::Single { slot, .. } | Join::Double { slot, .. } => {
+                Some(*slot)
+            }
         }
     }
     pub fn is_gamepad_id(&self, gamepad_id: u32) -> bool {
         matches!(self,
             Join::Joined { gamepad }
-            | Join::Set { gamepad, .. }
-            | Join::Ready { gamepad, .. } if *gamepad == gamepad_id,
+            | Join::Hover {gamepad, ..}
+            | Join::Single { gamepad, .. }
+            | Join::Double { gamepad, .. } if *gamepad == gamepad_id,
         )
     }
     pub fn is_player_id(&self, id: PlayerSlot) -> bool {
-        matches!(self, Join::Set { slot, .. } | Join::Ready { slot, .. } if *slot == id)
+        matches!(self, Join::Hover {slot, ..} | Join::Single { slot, .. } | Join::Double { slot, .. } if *slot == id)
+    }
+    pub fn is_empty(&self) -> bool {
+        matches!(self, Join::Empty)
     }
     pub fn is_joined(&self) -> bool {
         matches!(
             self,
-            Join::Joined { .. } | Join::Set { .. } | Join::Ready { .. }
+            Join::Joined { .. } | Join::Hover { .. } | Join::Single { .. } | Join::Double { .. }
         )
     }
-    pub fn is_set(&self) -> bool {
-        matches!(self, Join::Set { .. } | Join::Ready { .. })
+    pub fn is_hovered(&self) -> bool {
+        matches!(
+            self,
+            Join::Hover { .. } | Join::Single { .. } | Join::Double { .. }
+        )
     }
-    pub fn is_ready(&self) -> bool {
-        matches!(self, Self::Ready { .. })
+    pub fn is_single(&self) -> bool {
+        matches!(self, Join::Single { .. } | Join::Double { .. })
+    }
+    pub fn is_double(&self) -> bool {
+        matches!(self, Self::Double { .. })
     }
     pub fn is_dual_stick(&self) -> bool {
         matches!(
             self,
-            Self::Ready {
-                dual_stick: true,
+            Self::Single {
+                partner_setting: PartnerSetting::TwinStick,
+                ..
+            } | Self::Double {
+                partner_setting: PartnerSetting::TwinStick,
                 ..
             }
         )
@@ -155,6 +200,12 @@ impl TeamSelect {
             }
         }
     }
+    pub fn get_join_from_slot(&self, slot: PlayerSlot) -> Option<&Join> {
+        self.joins.iter().find(|join| join.is_player_id(slot))
+    }
+    pub fn get_mut_join_from_slot(&mut self, slot: PlayerSlot) -> Option<&mut Join> {
+        self.joins.iter_mut().find(|join| join.is_player_id(slot))
+    }
     pub fn get_index_from_gamepad(&self, id: u32) -> Option<usize> {
         for (index, join) in self.joins.iter().enumerate() {
             if join.is_gamepad_id(id) {
@@ -170,48 +221,29 @@ impl TeamSelect {
         let Some(slot) = self.joins[index].get_player_slot() else {
             return;
         };
-        let dual_able = !self.is_player_slot_set(slot.partner());
+        let dual_able = !self.is_player_slot_hovered(slot.partner());
 
         let join = &mut self.joins[index];
 
         if join.is_gamepad_id(id) {
-            if join.is_set() && !join.is_ready() {
-                join.ready();
-            } else if join.is_ready() && dual_able {
-                join.dual_stick_ready();
+            if join.is_hovered() && !join.is_single() {
+                join.single();
+            } else if join.is_single() && !join.is_double() && dual_able {
+                join.double();
             }
         }
     }
     pub fn reverse_gamepad(&mut self, id: u32) {
         for join in &mut self.joins {
             if join.is_gamepad_id(id) {
-                if join.is_dual_stick() {
-                    join.un_dual_stick()
-                } else if join.is_ready() {
-                    join.unready();
-                } else if join.is_set() {
-                    join.unset();
+                if join.is_double() {
+                    join.undouble();
+                } else if join.is_single() {
+                    join.unsingle();
+                } else if join.is_hovered() {
+                    join.unhover();
                 } else if join.is_joined() {
                     join.unjoin();
-                }
-            }
-        }
-    }
-    pub fn dual_ready(&mut self, id: u32) {
-        let mut player_id = None;
-        let mut index = None;
-
-        for (i, join) in self.joins.iter_mut().enumerate() {
-            if join.is_gamepad_id(id) {
-                player_id = join.get_player_slot();
-                index = Some(i);
-            }
-        }
-        if let Some(player_id) = player_id {
-            if !self.is_player_slot_set(player_id.partner()) {
-                let join = &mut self.joins[index.unwrap()];
-                if join.is_ready() {
-                    join.dual_stick_ready()
                 }
             }
         }
@@ -220,15 +252,16 @@ impl TeamSelect {
         let mut a1 = false;
         let mut a2 = false;
         for join in &self.joins {
-            if join.is_set() {
-                if join.is_player_id(PlayerSlot::A1) {
-                    a1 = true;
-                    if join.is_dual_stick() {
-                        a2 = true
-                    }
+            if join.is_player_id(PlayerSlot::A1) {
+                a1 = true;
+                if join.is_double() {
+                    a2 = true
                 }
-                if join.is_player_id(PlayerSlot::A2) {
-                    a2 = true;
+            }
+            if join.is_player_id(PlayerSlot::A2) {
+                a2 = true;
+                if join.is_double() {
+                    a1 = true
                 }
             }
         }
@@ -244,15 +277,16 @@ impl TeamSelect {
         let mut b1 = false;
         let mut b2 = false;
         for join in &self.joins {
-            if join.is_set() {
-                if join.is_player_id(PlayerSlot::B1) {
-                    b1 = true;
-                    if join.is_dual_stick() {
-                        b2 = true
-                    }
+            if join.is_player_id(PlayerSlot::B1) {
+                b1 = true;
+                if join.is_double() {
+                    b2 = true
                 }
-                if join.is_player_id(PlayerSlot::B2) {
-                    b2 = true;
+            }
+            if join.is_player_id(PlayerSlot::B2) {
+                b2 = true;
+                if join.is_double() {
+                    b1 = true
                 }
             }
         }
@@ -266,165 +300,181 @@ impl TeamSelect {
     }
     pub fn left_gamepad(&mut self, id: u32) {
         let next_slot_a = self.next_slot_a();
-        for join in &mut self.joins {
-            if let Join::Set {
-                gamepad,
-                slot: player_id,
-            } = join
-            {
-                if *gamepad == id && player_id.team() == Team::B {
-                    join.unset();
-                }
-            } else if let Join::Joined { gamepad } = join {
-                if *gamepad == id {
-                    if let Some(player_id) = next_slot_a {
-                        join.set(player_id);
+        let cycle = 'cycle: {
+            for join in &mut self.joins {
+                if join.is_gamepad_id(id) {
+                    if let Join::Single { .. } = join {
+                        break 'cycle Some(join.get_player_slot().unwrap());
+                    } else if let Join::Hover { slot, .. } = join {
+                        if slot.team() == Team::B {
+                            join.unhover();
+                        }
+                    } else if let Join::Joined { .. } = join {
+                        if let Some(player_id) = next_slot_a {
+                            join.hover(player_id);
+                        }
                     }
                 }
+            }
+            None
+        };
+        if let Some(player_slot) = cycle {
+            if !self.is_player_slot_hovered(player_slot.partner()) {
+                let Some(Join::Single {
+                    partner_setting, ..
+                }) = self.get_mut_join_from_slot(player_slot)
+                else {
+                    unreachable!()
+                };
+                partner_setting.cycle();
             }
         }
     }
     pub fn right_gamepad(&mut self, id: u32) {
         let next_slot_b = self.next_slot_b();
-        for join in &mut self.joins {
-            if let Join::Set {
-                gamepad,
-                slot: player_id,
-            } = join
-            {
-                if *gamepad == id && player_id.team() == Team::A {
-                    join.unset();
-                }
-            } else if let Join::Joined { gamepad } = join {
-                if *gamepad == id {
-                    if let Some(player_id) = next_slot_b {
-                        join.set(player_id);
+        let cycle = 'cycle: {
+            for join in &mut self.joins {
+                if join.is_gamepad_id(id) {
+                    if let Join::Single { .. } = join {
+                        break 'cycle Some(join.get_player_slot().unwrap());
+                    } else if let Join::Hover { slot, .. } = join {
+                        if slot.team() == Team::A {
+                            join.unhover();
+                        }
+                    } else if let Join::Joined { .. } = join {
+                        if let Some(player_id) = next_slot_b {
+                            join.hover(player_id);
+                        }
                     }
                 }
             }
+            None
+        };
+        if let Some(player_slot) = cycle {
+            if !self.is_player_slot_hovered(player_slot.partner()) {
+                let Some(Join::Single {
+                    partner_setting, ..
+                }) = self.get_mut_join_from_slot(player_slot)
+                else {
+                    unreachable!()
+                };
+                partner_setting.cycle();
+            }
         }
     }
-    pub fn is_ready(&self, id: u32) -> bool {
+    pub fn is_double(&self, id: u32) -> bool {
         for join in &self.joins {
             if join.is_gamepad_id(id) {
-                return join.is_ready();
+                return join.is_double();
             }
         }
         false
+    }
+    pub fn is_player_slot_empty(&self, slot: PlayerSlot) -> bool {
+        !self
+            .joins
+            .iter()
+            .any(|join| join.is_hovered() && join.is_player_id(slot))
     }
     pub fn is_player_slot_dual_stick(&self, id: PlayerSlot) -> bool {
         self.joins
             .iter()
             .any(|join| join.is_player_id(id) && join.is_dual_stick())
     }
-    pub fn is_player_id_ready(&self, id: PlayerSlot) -> bool {
+    pub fn is_player_slot_double(&self, id: PlayerSlot) -> bool {
         self.joins.iter().any(|join| {
-            join.is_player_id(id) && join.is_ready()
-                || join.is_player_id(id.partner()) && join.is_dual_stick()
+            join.is_player_id(id) && join.is_double()
+                || join.is_player_id(id.partner()) && join.is_double()
         })
     }
     pub fn is_player_slot_set(&self, id: PlayerSlot) -> bool {
         self.joins
             .iter()
-            .any(|join| join.is_player_id(id) && join.is_set())
+            .any(|join| join.is_player_id(id) && join.is_single())
+    }
+    pub fn is_player_slot_hovered(&self, id: PlayerSlot) -> bool {
+        self.joins
+            .iter()
+            .any(|join| join.is_player_id(id) && join.is_hovered())
     }
     pub fn get_player_signs(&self) -> Option<PlayersInfo> {
-        let mut builder = PlayerInfoBuilder::default();
+        if self.joins.iter().all(Join::is_empty) {
+            return None;
+        }
+        let mut builder: HashMap<PlayerSlot, PlayerInfo> = HashMap::default();
 
         for (number, join) in self.joins.iter().enumerate() {
-            if let Join::Ready {
-                gamepad,
-                slot,
-                dual_stick,
-            } = *join
-            {
-                builder.insert(PlayerInfo {
-                    number,
+            match join {
+                Join::Single { gamepad, slot, .. } => {
+                    if self.get_join_from_slot(slot.partner()).is_none() {
+                        return None;
+                    } else {
+                        builder.insert(
+                            *slot,
+                            PlayerInfo::Local {
+                                number,
+                                gamepad: *gamepad,
+                                dual_stick: false,
+                            },
+                        );
+                    }
+                }
+                Join::Double {
                     gamepad,
-                    dual_stick,
                     slot,
-                });
+                    partner_setting,
+                } => match partner_setting {
+                    PartnerSetting::CPU => {
+                        builder.insert(
+                            *slot,
+                            PlayerInfo::Local {
+                                number,
+                                gamepad: *gamepad,
+                                dual_stick: false,
+                            },
+                        );
+                        builder.insert(slot.partner(), PlayerInfo::CPU);
+                    }
+                    PartnerSetting::TwinStick => {
+                        builder.insert(
+                            slot.partner(),
+                            PlayerInfo::Local {
+                                number,
+                                gamepad: *gamepad,
+                                dual_stick: true,
+                            },
+                        );
+                        builder.insert(
+                            *slot,
+                            PlayerInfo::Local {
+                                number,
+                                gamepad: *gamepad,
+                                dual_stick: true,
+                            },
+                        );
+                    }
+                },
+                // empty joins will be filled with CPUs
+                Join::Empty => {}
+                // if there is unconfirmed players joined we are not ready yet
+                Join::Joined { .. } | Join::Hover { .. } => return None,
             }
         }
-        builder.finish()
-    }
-}
-
-#[derive(Default)]
-pub struct PlayerInfoBuilder {
-    team_a: TeamInfoBuilder,
-    team_b: TeamInfoBuilder,
-}
-impl PlayerInfoBuilder {
-    fn insert(&mut self, player: PlayerInfo) {
-        let builder = match player.slot.team() {
-            Team::A => &mut self.team_a,
-            Team::B => &mut self.team_b,
-        };
-        if player.dual_stick {
-            builder.insert_dual_stick(player);
-        } else if player.slot.is_primary() {
-            builder.insert_primary(player);
-        } else {
-            builder.insert_secondary(player);
+        for slot in [
+            PlayerSlot::A1,
+            PlayerSlot::A2,
+            PlayerSlot::B1,
+            PlayerSlot::B2,
+        ] {
+            if !builder.contains_key(&slot) {
+                builder.insert(slot, PlayerInfo::CPU);
+            }
         }
-    }
-    fn finish(self) -> Option<PlayersInfo> {
         Some(PlayersInfo {
-            team_a: self.team_a.finish()?,
-            team_b: self.team_b.finish()?,
+            a1: builder.remove(&PlayerSlot::A1).unwrap(),
+            a2: builder.remove(&PlayerSlot::A2).unwrap(),
+            b1: builder.remove(&PlayerSlot::B1).unwrap(),
+            b2: builder.remove(&PlayerSlot::B2).unwrap(),
         })
-    }
-}
-
-#[derive(Clone, Copy, Default)]
-enum TeamInfoBuilder {
-    #[default]
-    Empty,
-    Primary(PlayerInfo),
-    Secondary(PlayerInfo),
-    SinglePlayer(PlayerInfo),
-    TwoPlayer(PlayerInfo, PlayerInfo),
-}
-impl TeamInfoBuilder {
-    fn insert_dual_stick(&mut self, player: PlayerInfo) {
-        *self = match *self {
-            Self::Empty => Self::SinglePlayer(player),
-            Self::Secondary(..)
-            | Self::Primary(..)
-            | Self::SinglePlayer(..)
-            | Self::TwoPlayer(..) => {
-                panic!("team slot taken twice")
-            }
-        }
-    }
-    fn insert_primary(&mut self, player: PlayerInfo) {
-        *self = match *self {
-            Self::Empty => Self::Primary(player),
-            Self::Secondary(secondary) => Self::TwoPlayer(player, secondary),
-            Self::Primary(..) | Self::SinglePlayer(..) | Self::TwoPlayer(..) => {
-                panic!("team slot taken twice")
-            }
-        }
-    }
-    fn insert_secondary(&mut self, player: PlayerInfo) {
-        *self = match *self {
-            Self::Empty => Self::Secondary(player),
-            Self::Primary(primary) => Self::TwoPlayer(primary, player),
-            Self::Secondary(..) | Self::SinglePlayer(..) | Self::TwoPlayer(..) => {
-                panic!("team slot taken twice")
-            }
-        }
-    }
-    fn finish(self) -> Option<TeamInfo> {
-        match self {
-            TeamInfoBuilder::Empty
-            | TeamInfoBuilder::Primary(..)
-            | TeamInfoBuilder::Secondary(..) => None,
-            TeamInfoBuilder::SinglePlayer(primary) => TeamInfo::SinglePlayer(primary).into(),
-            TeamInfoBuilder::TwoPlayer(primary, secondary) => {
-                TeamInfo::TwoPlayer(primary, secondary).into()
-            }
-        }
     }
 }

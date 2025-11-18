@@ -18,6 +18,9 @@ pub struct TeamSelectAssets {
     pub controller_icon: SizedImageAsset,
     pub controller_icon_silhouette: SizedImageAsset,
 
+    pub cpu_icon: SizedImageAsset,
+    pub partner_select_arrow: SizedImageAsset,
+
     pub start: SizedImageAsset,
     pub start_blink: SizedImageAsset,
 
@@ -47,6 +50,9 @@ pub struct TeamSelectSlots {
     pub a2: Vec2,
     pub b1: Vec2,
     pub b2: Vec2,
+    pub partner_select_offset_left: Vec2,
+    pub partner_select_offset_right: Vec2,
+    pub cpu_icon_offset: Vec2,
     pub pad_bg_offset: Vec2,
     pub number_icon_offset: Vec2,
     pub ready_text_offset: Vec2,

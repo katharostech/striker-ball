@@ -17,6 +17,8 @@ pub mod flow;
 pub use flow::*;
 pub mod scene;
 pub use scene::*;
+pub mod cpu_player;
+pub use cpu_player::*;
 
 /// This should be the complete installation for the play session.
 #[derive(Default)]

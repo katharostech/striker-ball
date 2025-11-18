@@ -17,76 +17,30 @@ impl Default for PlayMode {
         Self::Offline(default())
     }
 }
-#[derive(HasSchema, Debug, Clone)]
+#[derive(HasSchema, Debug, Clone, Default)]
 pub struct PlayersInfo {
-    pub team_a: TeamInfo,
-    pub team_b: TeamInfo,
-}
-impl Default for PlayersInfo {
-    fn default() -> Self {
-        Self {
-            team_a: TeamInfo::SinglePlayer(PlayerInfo {
-                number: 0,
-                gamepad: 0,
-                dual_stick: true,
-                slot: PlayerSlot::A1,
-            }),
-            team_b: TeamInfo::SinglePlayer(PlayerInfo {
-                number: 0,
-                gamepad: 0,
-                dual_stick: true,
-                slot: PlayerSlot::B1,
-            }),
-        }
-    }
+    pub a1: PlayerInfo,
+    pub a2: PlayerInfo,
+    pub b1: PlayerInfo,
+    pub b2: PlayerInfo,
 }
 
-/// Represents all the info related to a player in the game.
+/// This is the player spawn information.
 #[derive(HasSchema, Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct PlayerInfo {
-    /// The user join index,
-    /// `0` being P1, `1` being P2,
-    /// and so on.
-    pub number: usize,
-    /// The associated gamepad id of the player.
-    pub gamepad: u32,
-    /// Whether or not this player is being controlled with
-    /// dual stick controls.
-    pub dual_stick: bool,
-    /// The exact character slot.
-    pub slot: PlayerSlot,
-}
-
-#[derive(HasSchema, Debug, Clone)]
-pub enum TeamInfo {
-    SinglePlayer(PlayerInfo),
-    TwoPlayer(PlayerInfo, PlayerInfo),
-}
-impl Default for TeamInfo {
-    fn default() -> Self {
-        TeamInfo::TwoPlayer(default(), default())
-    }
-}
-impl TeamInfo {
-    pub fn is_dual_stick(&self) -> bool {
-        matches!(self, Self::SinglePlayer(..))
-    }
-    pub fn primary(&self) -> PlayerInfo {
-        match self.clone() {
-            TeamInfo::SinglePlayer(player_sign) | TeamInfo::TwoPlayer(player_sign, _) => {
-                player_sign
-            }
-        }
-    }
-    pub fn secondary(&self) -> PlayerInfo {
-        match self.clone() {
-            TeamInfo::SinglePlayer(player_info) => PlayerInfo {
-                slot: player_info.slot.partner(),
-                ..player_info
-            },
-            TeamInfo::TwoPlayer(_, player_sign) => player_sign,
-        }
-    }
+pub enum PlayerInfo {
+    #[default]
+    CPU,
+    Network,
+    Local {
+        /// The user join index for display purposes,
+        /// `0` being P1, `1` being P2, and so on.
+        number: usize,
+        /// The associated gamepad id of the player.
+        gamepad: u32,
+        /// Whether or not this player is being controlled with
+        /// dual stick controls.
+        dual_stick: bool,
+    },
 }
 
 /// The minimal requirements for the [`PLAY`] session.
@@ -181,18 +135,46 @@ pub fn lan_session_runner(
     Box::new(runner)
 }
 pub fn offline_session_runner(players_info: PlayersInfo) -> Box<dyn SessionRunner> {
-    let PlayersInfo { team_a, team_b } = players_info;
+    let PlayersInfo { a1, a2, b1, b2 } = players_info;
     Box::new(OfflineRunner {
         collectors: [
-            PlayTeamInputCollector::new(if team_a.primary().dual_stick {
-                TeamSource::OnePlayer(team_a.primary().gamepad)
-            } else {
-                TeamSource::TwoPlayer(team_a.primary().gamepad, team_a.secondary().gamepad)
+            PlayTeamInputCollector::new(match a1 {
+                PlayerInfo::CPU => TeamSource::TwoCPUs(PlayerSlot::A1, PlayerSlot::A2),
+                PlayerInfo::Local {
+                    gamepad: p1,
+                    dual_stick,
+                    ..
+                } => {
+                    if dual_stick {
+                        TeamSource::OnePlayer(p1)
+                    } else {
+                        match a2 {
+                            PlayerInfo::CPU => TeamSource::OneCPU(p1, PlayerSlot::A2),
+                            PlayerInfo::Local { gamepad: p2, .. } => TeamSource::TwoPlayer(p1, p2),
+                            PlayerInfo::Network => unreachable!(),
+                        }
+                    }
+                }
+                PlayerInfo::Network => unreachable!(),
             }),
-            PlayTeamInputCollector::new(if team_b.primary().dual_stick {
-                TeamSource::OnePlayer(team_b.primary().gamepad)
-            } else {
-                TeamSource::TwoPlayer(team_b.primary().gamepad, team_b.secondary().gamepad)
+            PlayTeamInputCollector::new(match b1 {
+                PlayerInfo::CPU => TeamSource::TwoCPUs(PlayerSlot::B1, PlayerSlot::B2),
+                PlayerInfo::Local {
+                    gamepad: p1,
+                    dual_stick,
+                    ..
+                } => {
+                    if dual_stick {
+                        TeamSource::OnePlayer(p1)
+                    } else {
+                        match b2 {
+                            PlayerInfo::CPU => TeamSource::OneCPU(p1, PlayerSlot::B2),
+                            PlayerInfo::Local { gamepad: p2, .. } => TeamSource::TwoPlayer(p1, p2),
+                            PlayerInfo::Network => unreachable!(),
+                        }
+                    }
+                }
+                PlayerInfo::Network => unreachable!(),
             }),
         ],
         ..Default::default()

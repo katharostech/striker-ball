@@ -42,8 +42,9 @@ impl SessionRunner for OfflineRunner {
         let delta = (frame_start - last_run).as_secs_f64();
 
         for collector in &mut self.collectors {
-            collector.apply_inputs(&world.resource(), &world.resource(), &world.resource());
-            collector.update_just_pressed();
+            collector.offline_apply_inputs(world);
+            // collector.apply_inputs(&world.resource(), &world.resource(), &world.resource());
+            // collector.update_just_pressed();
         }
 
         self.accumulator += delta;

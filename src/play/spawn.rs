@@ -52,53 +52,75 @@ pub fn scene(world: &World) {
             socket,
             service_type,
         } => {
-            let team = match socket.player_idx() {
+            let (dual_stick, number1, number2, gamepad1, gamepad2) = match service_type {
+                ServiceType::OnePlayer(p1) => (true, 0, 0, *p1, *p1),
+                ServiceType::TwoPlayer(p1, p2) => (false, 0, 1, *p1, *p2),
+            };
+            let local_team = match socket.player_idx() {
                 0 => Team::A,
                 1 => Team::B,
                 _ => panic!("index out of player count bounds"),
             };
-            let is_team_a = team == Team::A;
-            let is_team_b = team == Team::B;
-            match service_type {
-                ServiceType::OnePlayer(..) => PlayerEntSigns {
-                    a1: self::player(world, is_team_a.then_some(0), is_team_a, PlayerSlot::A1),
-                    a2: self::player(world, is_team_a.then_some(0), is_team_a, PlayerSlot::A2),
-                    b1: self::player(world, is_team_b.then_some(0), is_team_b, PlayerSlot::B1),
-                    b2: self::player(world, is_team_b.then_some(0), is_team_b, PlayerSlot::B2),
-                },
-                ServiceType::TwoPlayer(..) => PlayerEntSigns {
-                    a1: self::player(world, is_team_a.then_some(0), false, PlayerSlot::A1),
-                    a2: self::player(world, is_team_a.then_some(1), false, PlayerSlot::A2),
-                    b1: self::player(world, is_team_b.then_some(0), false, PlayerSlot::B1),
-                    b2: self::player(world, is_team_b.then_some(1), false, PlayerSlot::B2),
-                },
+            PlayerEntSigns {
+                a1: self::player(
+                    world,
+                    if local_team == Team::A {
+                        PlayerInfo::Local {
+                            number: number1,
+                            gamepad: gamepad1,
+                            dual_stick,
+                        }
+                    } else {
+                        PlayerInfo::Network
+                    },
+                    PlayerSlot::A1,
+                ),
+                a2: self::player(
+                    world,
+                    if local_team == Team::A {
+                        PlayerInfo::Local {
+                            number: number2,
+                            gamepad: gamepad2,
+                            dual_stick,
+                        }
+                    } else {
+                        PlayerInfo::Network
+                    },
+                    PlayerSlot::A2,
+                ),
+                b1: self::player(
+                    world,
+                    if local_team == Team::B {
+                        PlayerInfo::Local {
+                            number: number1,
+                            gamepad: gamepad1,
+                            dual_stick,
+                        }
+                    } else {
+                        PlayerInfo::Network
+                    },
+                    PlayerSlot::B1,
+                ),
+                b2: self::player(
+                    world,
+                    if local_team == Team::B {
+                        PlayerInfo::Local {
+                            number: number2,
+                            gamepad: gamepad2,
+                            dual_stick,
+                        }
+                    } else {
+                        PlayerInfo::Network
+                    },
+                    PlayerSlot::B2,
+                ),
             }
         }
-        PlayMode::Offline(PlayersInfo { team_a, team_b }) => PlayerEntSigns {
-            a1: self::player(
-                world,
-                team_a.primary().number.into(),
-                team_a.primary().dual_stick,
-                PlayerSlot::A1,
-            ),
-            a2: self::player(
-                world,
-                team_a.secondary().number.into(),
-                team_a.secondary().dual_stick,
-                PlayerSlot::A2,
-            ),
-            b1: self::player(
-                world,
-                team_b.primary().number.into(),
-                team_b.primary().dual_stick,
-                PlayerSlot::B1,
-            ),
-            b2: self::player(
-                world,
-                team_b.secondary().number.into(),
-                team_b.secondary().dual_stick,
-                PlayerSlot::B2,
-            ),
+        PlayMode::Offline(PlayersInfo { a1, a2, b1, b2 }) => PlayerEntSigns {
+            a1: self::player(world, *a1, PlayerSlot::A1),
+            a2: self::player(world, *a2, PlayerSlot::A2),
+            b1: self::player(world, *b1, PlayerSlot::B1),
+            b2: self::player(world, *b2, PlayerSlot::B2),
         },
     };
     world.resources.insert(ent_signs);
@@ -169,7 +191,7 @@ pub fn new_player_transform(player_id: PlayerSlot, root: &Data) -> Transform {
     Transform::from_translation(Vec3::new(pos.x, pos.y, layers::PLAYER))
 }
 
-pub fn player(world: &World, number: Option<usize>, dual_stick: bool, slot: PlayerSlot) -> Entity {
+pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entity {
     let asset_server = world.asset_server();
     let root = asset_server.root::<Data>();
     let transform = new_player_transform(slot, &root);
@@ -235,7 +257,10 @@ pub fn player(world: &World, number: Option<usize>, dual_stick: bool, slot: Play
         .insert(Transform::from_z(layers::PLAYER_SHADOW));
 
     // dual stick left or right indicator
-    if dual_stick {
+    if let PlayerInfo::Local {
+        dual_stick: true, ..
+    } = player_info
+    {
         world
             .spawn()
             .insert(StickIndicator)
@@ -252,19 +277,37 @@ pub fn player(world: &World, number: Option<usize>, dual_stick: bool, slot: Play
             })
             .insert(Transform::from_z(layers::PLAYER_SHADOW));
     }
-    if let Some(number) = number {
-        world
-            .spawn()
-            .insert(Sprite {
-                image: **root.menu.team_select.player_icons()[number],
-                ..Default::default()
-            })
-            .insert(Follow::XY {
-                target: player.id(),
-                offset: Vec2::new(0., -18.),
-            })
-            .insert(Lifetime::seconds(3.0))
-            .insert(Transform::from_z(layers::PLAYER_SHADOW));
+    match player_info {
+        PlayerInfo::Network => {}
+        PlayerInfo::Local { number, .. } => {
+            world
+                .spawn()
+                .insert(Sprite {
+                    image: **root.menu.team_select.player_icons()[number],
+                    ..Default::default()
+                })
+                .insert(Follow::XY {
+                    target: player.id(),
+                    offset: Vec2::new(0., -18.),
+                })
+                .insert(Lifetime::seconds(3.0))
+                .insert(Transform::from_z(layers::PLAYER_SHADOW));
+        }
+        PlayerInfo::CPU => {
+            // TODO: spawn "CPU" sprite icon
+            // world
+            //     .spawn()
+            //     .insert(Sprite {
+            //         image: root.sprite.p1_shadow,
+            //         ..Default::default()
+            //     })
+            //     .insert(Follow::XY {
+            //         target: player.id(),
+            //         offset: Vec2::new(0., -18.),
+            //     })
+            //     .insert(Lifetime::seconds(3.0))
+            //     .insert(Transform::from_z(layers::PLAYER_SHADOW));
+        }
     }
 
     world

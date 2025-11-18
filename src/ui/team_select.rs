@@ -39,6 +39,8 @@ pub fn show(world: &World) {
         start_blink,
         back_btn,
         back_buffer,
+        cpu_icon,
+        partner_select_arrow,
         ..
     } = root.menu.team_select;
 
@@ -129,33 +131,74 @@ pub fn show(world: &World) {
         default(),
     );
 
-    // Pad BGs
     for player_slot in [
         PlayerSlot::A1,
         PlayerSlot::A2,
         PlayerSlot::B1,
         PlayerSlot::B2,
     ] {
-        let target = if team_select.joins.iter().any(|join| {
-            join.is_player_id(player_slot) && join.is_set()
-                || join.is_player_id(player_slot.partner()) && join.is_dual_stick()
+        let player_slot_pos = slots.get_player_pos(player_slot).to_array().into();
+
+        // Pad BGs
+        let target_size = if team_select.joins.iter().any(|join| {
+            join.is_player_id(player_slot) && join.is_single()
+                || join.is_player_id(player_slot.partner()) && join.is_double()
         }) {
             pad_slot_bg.egui_size() * 1.2
         } else {
             pad_slot_bg.egui_size()
         };
-        let x =
-            ctx.animate_value_with_time(Id::new("pad_bg_size_x").with(player_slot), target.x, 0.3);
-        let y =
-            ctx.animate_value_with_time(Id::new("pad_bg_size_y").with(player_slot), target.y, 0.3);
+        let x = ctx.animate_value_with_time(
+            Id::new("pad_bg_size_x").with(player_slot),
+            target_size.x,
+            0.3,
+        );
+        let y = ctx.animate_value_with_time(
+            Id::new("pad_bg_size_y").with(player_slot),
+            target_size.y,
+            0.3,
+        );
+        let animated_size = egui::vec2(x, y);
 
         pad_slot_bg
             .image_painter()
             .pos(origin + slots.pad_bg_offset.to_array().into())
-            .size(egui::vec2(x, y))
-            .offset(slots.get_player_pos(player_slot).to_array().into())
+            .size(animated_size)
+            .offset(player_slot_pos)
             .align2(Align2::CENTER_CENTER)
             .paint(&painter, &textures);
+
+        // CPU icons
+        let icon_pos = player_slot_pos + slots.cpu_icon_offset.to_array().into();
+        let target_x = if team_select.is_player_slot_empty(player_slot) {
+            icon_pos.x
+        } else {
+            // The standby position, just off-screen.
+            match player_slot.team() {
+                Team::A => -(cpu_icon.width() as f32),
+                Team::B => root.screen_size.x + cpu_icon.width() as f32,
+            }
+        };
+        let x = ctx.animate_value_with_time(Id::new("cpu_icon_x").with(player_slot), target_x, 0.2);
+        let pos = Vec2::new(x, icon_pos.y);
+
+        if let Some(
+            Join::Single {
+                partner_setting: PartnerSetting::TwinStick,
+                ..
+            }
+            | Join::Double {
+                partner_setting: PartnerSetting::TwinStick,
+                ..
+            },
+        ) = team_select.get_join_from_slot(player_slot.partner())
+        {
+        } else {
+            cpu_icon
+                .image_painter()
+                .pos(origin + pos)
+                .paint(&painter, &textures);
+        }
     }
 
     // Pads
@@ -169,7 +212,7 @@ pub fn show(world: &World) {
             let partner_slot = slots.get_player_pos(player_slot.partner());
 
             // ready text
-            if join.is_ready() {
+            if join.is_single() {
                 let builder = TextPainter::new("Ready!")
                     .size(7.0)
                     .pos(
@@ -209,14 +252,16 @@ pub fn show(world: &World) {
                     .paint(&painter);
             }
             // dual stick ready text
-            if join.is_dual_stick() {
-                player_icon.paint_at(
-                    origin
-                        + partner_slot.to_array().into()
-                        + slots.number_icon_offset.to_array().into(),
-                    &painter,
-                    &textures,
-                );
+            if join.is_double() {
+                if join.is_dual_stick() {
+                    player_icon.paint_at(
+                        origin
+                            + partner_slot.to_array().into()
+                            + slots.number_icon_offset.to_array().into(),
+                        &painter,
+                        &textures,
+                    );
+                }
 
                 let builder = TextPainter::new("Ready!")
                     .size(7.0)
@@ -237,49 +282,81 @@ pub fn show(world: &World) {
                     .color(Color32::BLACK)
                     .paint(&painter);
             }
-            // play both indicator
-            let target = if team_select.is_player_id_ready(player_slot)
-                && !team_select.is_player_slot_set(player_slot.partner())
+            // partner settings
+
+            if let Join::Single {
+                partner_setting, ..
+            }
+            | Join::Double {
+                partner_setting, ..
+            } = join
             {
-                partner_slot.x
-            } else {
-                // The standby position, just off-screen.
-                match player_slot.team() {
-                    Team::A => -(controller_icon_silhouette.width() as f32),
-                    Team::B => root.screen_size.x + controller_icon_silhouette.width() as f32,
+                // partner select arrows
+                if team_select.is_player_slot_set(player_slot)
+                    && !team_select.is_player_slot_double(player_slot)
+                    && !team_select.is_player_slot_hovered(player_slot.partner())
+                {
+                    let pos = origin + partner_slot.to_array().into();
+
+                    partner_select_arrow
+                        .image_painter()
+                        .pos(pos)
+                        .offset(slots.partner_select_offset_right.to_array().into())
+                        .paint(&painter, &textures);
+
+                    partner_select_arrow
+                        .image_painter()
+                        .uv(Rect::from_min_max(pos2(1.0, 0.0), pos2(0.0, 1.0)))
+                        .pos(pos)
+                        .offset(slots.partner_select_offset_left.to_array().into())
+                        .paint(&painter, &textures);
                 }
-            };
-            let x = ctx.animate_value_with_time(
-                Id::new("play_both_indicator").with(player_slot),
-                target,
-                0.2,
-            );
-            let pos = Vec2::new(x, partner_slot.y);
+                // play both indicator
+                let target = if team_select.is_player_slot_set(player_slot)
+                    && !team_select.is_player_slot_hovered(player_slot.partner())
+                {
+                    partner_slot.x
+                } else {
+                    // The standby position, just off-screen.
+                    match player_slot.team() {
+                        Team::A => -(controller_icon_silhouette.width() as f32),
+                        Team::B => root.screen_size.x + controller_icon_silhouette.width() as f32,
+                    }
+                };
+                let x = ctx.animate_value_with_time(
+                    Id::new("play_both_indicator").with(player_slot),
+                    target,
+                    0.2,
+                );
+                let pos = Vec2::new(x, partner_slot.y);
 
-            controller_icon_silhouette
-                .image_painter()
-                .pos(area.response.rect.min + pos)
-                .paint(&painter, &textures);
-
-            // play both text
-            if team_select.is_player_id_ready(player_slot)
-                && !team_select.is_player_slot_dual_stick(player_slot)
-                && !team_select.is_player_slot_set(player_slot.partner())
-            {
-                let builder = TextPainter::new("Play Both")
-                    .size(7.0)
-                    .pos(origin + (partner_slot + slots.ready_text_offset).to_array().into())
-                    .align2(Align2::CENTER_CENTER);
-                builder
-                    .clone()
-                    .family(small_inner_font.clone())
-                    .color(Color32::GRAY)
-                    .paint(&painter);
-                builder
-                    .clone()
-                    .family(small_outer_font.clone())
-                    .color(Color32::BLACK)
-                    .paint(&painter);
+                match partner_setting {
+                    PartnerSetting::CPU => {}
+                    PartnerSetting::TwinStick => {
+                        controller_icon_silhouette
+                            .image_painter()
+                            .pos(origin + pos)
+                            .paint(&painter, &textures);
+                        if !team_select.is_player_slot_hovered(player_slot.partner())
+                            && !join.is_double()
+                        {
+                            let builder = TextPainter::new("Play Both")
+                                .size(7.0)
+                                .pos(origin + pos + slots.ready_text_offset.to_array().into())
+                                .align2(Align2::CENTER_CENTER);
+                            builder
+                                .clone()
+                                .family(small_inner_font.clone())
+                                .color(Color32::GRAY)
+                                .paint(&painter);
+                            builder
+                                .clone()
+                                .family(small_outer_font.clone())
+                                .color(Color32::BLACK)
+                                .paint(&painter);
+                        }
+                    }
+                }
             }
         }
 
@@ -289,12 +366,13 @@ pub fn show(world: &World) {
             .unwrap_or(*center_slot);
         let x = ctx.animate_value_with_time(Id::new("pad_positions_x").with(index), target.x, 0.2);
         let y = ctx.animate_value_with_time(Id::new("pad_positions_y").with(index), target.y, 0.2);
+        let animated_offset = vec2(x, y);
 
         if join.is_joined() {
-            let player_offset = slots.number_icon_offset.to_array().into();
+            let player_icon_offset = slots.number_icon_offset.to_array().into();
 
             // faded controller
-            let rect = controller_icon
+            let faded_controller_rect = controller_icon
                 .image_painter()
                 .pos(origin + center_slot.to_array().into())
                 .tint(Color32::WHITE.gamma_multiply(0.5))
@@ -303,20 +381,20 @@ pub fn show(world: &World) {
             // faded player number
             player_icon
                 .image_painter()
-                .pos(rect.min + player_offset)
+                .pos(faded_controller_rect.min + player_icon_offset)
                 .tint(Color32::WHITE.gamma_multiply(0.5))
                 .paint(&painter, &textures);
 
             // mobile controller
-            let rect = controller_icon
+            let controller_icon_rect = controller_icon
                 .image_painter()
-                .pos(origin + vec2(x, y))
+                .pos(origin + animated_offset)
                 .paint(&painter, &textures);
 
             // mobile player number
             player_icon
                 .image_painter()
-                .pos(rect.min + player_offset)
+                .pos(controller_icon_rect.min + player_icon_offset)
                 .paint(&painter, &textures);
         }
     }
