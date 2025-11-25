@@ -15,6 +15,7 @@ pub struct TeamSelectAssets {
     pub player3_icon: SizedImageAsset,
     pub player4_icon: SizedImageAsset,
 
+    pub keyboard_icon: SizedImageAsset,
     pub controller_icon: SizedImageAsset,
     pub controller_icon_silhouette: SizedImageAsset,
 

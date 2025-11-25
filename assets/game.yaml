@@ -165,6 +165,7 @@ menu:
     b_team_background: [ui/team_select/blueTeamBackground.png, *tbgw, *tbgh]
     center_controller_column: [ui/team_select/centerRow.png, 49, 211]
     pad_slot_bg: [ui/team_select/purpleOrb.png, 57, 57]
+    keyboard_icon: [ui/team_select/keyboardIcon.png, 39, 28]
     controller_icon: [ui/team_select/controller_icon.png, 39, 28]
     controller_icon_silhouette: [
       ui/team_select/controller_icon_silhouette.png,

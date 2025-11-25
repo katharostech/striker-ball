@@ -29,7 +29,6 @@ pub struct SplashSlots {
 #[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq)]
 pub enum SplashState {
     #[default]
-    PressGamepad,
     Offline,
     #[cfg(not(target_arch = "wasm32"))]
     Lan,
@@ -42,7 +41,6 @@ impl SplashState {
             Self::Offline => Self::HowToPlay,
             Self::Lan => Self::Offline,
             Self::HowToPlay => Self::Lan,
-            Self::PressGamepad => *self,
         }
     }
     #[cfg(not(target_arch = "wasm32"))]
@@ -51,7 +49,6 @@ impl SplashState {
             Self::Offline => Self::Lan,
             Self::Lan => Self::HowToPlay,
             Self::HowToPlay => Self::Offline,
-            Self::PressGamepad => *self,
         }
     }
     #[cfg(target_arch = "wasm32")]
@@ -59,7 +56,6 @@ impl SplashState {
         *self = match self {
             Self::Offline => Self::HowToPlay,
             Self::HowToPlay => Self::Offline,
-            Self::PressGamepad => *self,
         }
     }
     #[cfg(target_arch = "wasm32")]
@@ -67,7 +63,6 @@ impl SplashState {
         *self = match self {
             Self::Offline => Self::HowToPlay,
             Self::HowToPlay => Self::Offline,
-            Self::PressGamepad => *self,
         }
     }
 }
@@ -147,45 +142,6 @@ pub fn show(world: &World) {
         .size(title.egui_size())
         .offset(pos2(0.0, slots.title))
         .paint(&painter, &textures);
-
-    if let SplashState::PressGamepad = splash.state {
-        let inner_font = asset_server
-            .get(root.font.primary_inner)
-            .family_name
-            .clone();
-        let outer_font = asset_server
-            .get(root.font.primary_outer)
-            .family_name
-            .clone();
-
-        let builder = TextPainter::new("CONNECT GAMEPAD AND PRESS START")
-            .family(outer_font)
-            .size(7.0)
-            .align2(Align2::CENTER_CENTER)
-            .pos(area.response.rect.center() + vec2(0., 40.));
-
-        let rect = builder.clone().paint(&painter).expand(6.0);
-
-        painter.add(
-            BorderedFrame::new(&root.menu.bframe).paint(textures.get(root.menu.bframe.image), rect),
-        );
-
-        if ctx.clicked_rect(rect) {
-            splash.interact = Some(SplashState::PressGamepad);
-        }
-
-        builder.clone().paint(&painter);
-        builder
-            .clone()
-            .family(inner_font)
-            .color(if world.resource::<Time>().elapsed_seconds() % 1.0 > 0.5 {
-                Color32::WHITE
-            } else {
-                Color32::YELLOW
-            })
-            .paint(&painter);
-        return;
-    }
 
     builder
         .clone()

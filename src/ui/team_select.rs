@@ -32,6 +32,7 @@ pub fn show(world: &World) {
         a_team_background,
         b_team_background,
         center_controller_column,
+        keyboard_icon,
         controller_icon,
         controller_icon_silhouette,
         pad_slot_bg,
@@ -295,6 +296,7 @@ pub fn show(world: &World) {
                 if team_select.is_player_slot_set(player_slot)
                     && !team_select.is_player_slot_double(player_slot)
                     && !team_select.is_player_slot_hovered(player_slot.partner())
+                    && !join.is_source(SingleSource::KeyboardMouse)
                 {
                     let pos = origin + partner_slot.to_array().into();
 
@@ -370,9 +372,14 @@ pub fn show(world: &World) {
 
         if join.is_joined() {
             let player_icon_offset = slots.number_icon_offset.to_array().into();
+            let source_icon = match join.get_source().unwrap() {
+                SingleSource::Gamepad(..) => controller_icon,
+                SingleSource::KeyboardMouse => keyboard_icon,
+                SingleSource::CPU(..) => unreachable!(),
+            };
 
             // faded controller
-            let faded_controller_rect = controller_icon
+            let faded_controller_rect = source_icon
                 .image_painter()
                 .pos(origin + center_slot.to_array().into())
                 .tint(Color32::WHITE.gamma_multiply(0.5))
@@ -386,7 +393,7 @@ pub fn show(world: &World) {
                 .paint(&painter, &textures);
 
             // mobile controller
-            let controller_icon_rect = controller_icon
+            let source_icon_rect = source_icon
                 .image_painter()
                 .pos(origin + animated_offset)
                 .paint(&painter, &textures);
@@ -394,7 +401,7 @@ pub fn show(world: &World) {
             // mobile player number
             player_icon
                 .image_painter()
-                .pos(controller_icon_rect.min + player_icon_offset)
+                .pos(source_icon_rect.min + player_icon_offset)
                 .paint(&painter, &textures);
         }
     }

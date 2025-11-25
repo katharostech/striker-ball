@@ -387,27 +387,6 @@ pub fn splash_update(ui: &World) {
     let mut splash = ui.resource_mut::<Splash>();
     let inputs = ui.resource::<LocalInputs>();
 
-    if let SplashState::PressGamepad = splash.state {
-        if splash.interact == Some(SplashState::PressGamepad) {
-            splash.state = SplashState::Offline;
-        }
-        for (_gamepad, input) in inputs.iter() {
-            if input.north.just_pressed()
-                || input.south.just_pressed()
-                || input.west.just_pressed()
-                || input.east.just_pressed()
-                || input.start.just_pressed()
-                || input.left_bump.just_pressed()
-                || input.right_bump.just_pressed()
-                || input.left_trigger.just_pressed()
-                || input.right_trigger.just_pressed()
-            {
-                splash.state = SplashState::Offline;
-            }
-        }
-        return;
-    }
-
     let proceed = move |state: SplashState| match state {
         SplashState::Offline => start_fade(
             ui,
@@ -438,7 +417,6 @@ pub fn splash_update(ui: &World) {
                 },
             );
         }
-        SplashState::PressGamepad => unreachable!(),
     };
 
     if let Some(interact) = splash.interact {
@@ -525,16 +503,63 @@ pub fn team_select_update(ui: &World) {
     let keyboard = ui.resource::<KeyboardInputs>();
 
     for event in &keyboard.key_events {
-        if let Maybe::Set(key_code) = event.key_code {
-            if key_code == KeyCode::Escape && event.button_state == ButtonState::Pressed {
-                start_fade(
-                    ui,
-                    FadeTransition {
-                        hide: team_select_hide,
-                        prep: splash_prep,
-                        finish: splash_finish,
-                    },
-                );
+        if let KeyboardEvent {
+            key_code: Maybe::Set(key),
+            button_state: ButtonState::Pressed,
+            ..
+        } = event
+        {
+            if !ui
+                .resource::<TeamSelect>()
+                .contains_source(SingleSource::KeyboardMouse)
+            {
+                ui.resource_mut::<TeamSelect>()
+                    .add_source(SingleSource::KeyboardMouse);
+            } else {
+                match key {
+                    KeyCode::Space | KeyCode::Return => {
+                        if assignments.is_some() {
+                            start_fade(
+                                ui,
+                                FadeTransition {
+                                    hide: team_select_hide,
+                                    prep: play_offline_prep,
+                                    finish: |_| {},
+                                },
+                            );
+                            return;
+                        }
+                        ui.resource_mut::<TeamSelect>()
+                            .ready_join(SingleSource::KeyboardMouse);
+                    }
+                    KeyCode::Escape => {
+                        if ui
+                            .resource::<TeamSelect>()
+                            .contains_source(SingleSource::KeyboardMouse)
+                        {
+                            ui.resource_mut::<TeamSelect>()
+                                .reverse_join(SingleSource::KeyboardMouse);
+                        } else {
+                            start_fade(
+                                ui,
+                                FadeTransition {
+                                    hide: team_select_hide,
+                                    prep: splash_prep,
+                                    finish: splash_finish,
+                                },
+                            );
+                        }
+                    }
+                    KeyCode::D => {
+                        ui.resource_mut::<TeamSelect>()
+                            .right_join(SingleSource::KeyboardMouse);
+                    }
+                    KeyCode::A => {
+                        ui.resource_mut::<TeamSelect>()
+                            .left_join(SingleSource::KeyboardMouse);
+                    }
+                    _ => {}
+                }
             }
         }
     }
@@ -559,7 +584,8 @@ pub fn team_select_update(ui: &World) {
             || input.left_bump.just_pressed()
             || input.right_bump.just_pressed()
         {
-            ui.resource_mut::<TeamSelect>().add_gamepad(*gamepad);
+            ui.resource_mut::<TeamSelect>()
+                .add_source(SingleSource::Gamepad(*gamepad));
             ui.resource_mut::<GamepadsRumble>().set_rumble(
                 *gamepad,
                 GamepadRumbleIntensity::LIGHT_BOTH,
@@ -567,10 +593,12 @@ pub fn team_select_update(ui: &World) {
             );
         }
         if input.south.just_pressed() {
-            ui.resource_mut::<TeamSelect>().ready_gamepad(*gamepad);
+            ui.resource_mut::<TeamSelect>()
+                .ready_join(SingleSource::Gamepad(*gamepad));
         }
         if input.west.just_pressed() {
-            ui.resource_mut::<TeamSelect>().reverse_gamepad(*gamepad);
+            ui.resource_mut::<TeamSelect>()
+                .reverse_join(SingleSource::Gamepad(*gamepad));
         }
         if input.west.just_held(root.menu.team_select.back_buffer) {
             start_fade(
@@ -583,10 +611,12 @@ pub fn team_select_update(ui: &World) {
             );
         }
         if input.left.just_pressed() {
-            ui.resource_mut::<TeamSelect>().left_gamepad(*gamepad);
+            ui.resource_mut::<TeamSelect>()
+                .left_join(SingleSource::Gamepad(*gamepad));
         }
         if input.right.just_pressed() {
-            ui.resource_mut::<TeamSelect>().right_gamepad(*gamepad);
+            ui.resource_mut::<TeamSelect>()
+                .right_join(SingleSource::Gamepad(*gamepad));
         }
         if input.right_bump.just_held(20) && input.left_bump.just_held(20) {
             start_fade(

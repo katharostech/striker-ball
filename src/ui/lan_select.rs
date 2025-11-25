@@ -6,7 +6,7 @@ pub const MATCHMAKER_SERVICE_NAME_TWOPLAYER: &str = "sb2player";
 #[derive(HasSchema, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ServiceType {
     OnePlayer(u32),
-    TwoPlayer(u32, u32),
+    TwoPlayer(SingleSource, SingleSource),
 }
 impl Default for ServiceType {
     fn default() -> Self {
@@ -31,11 +31,14 @@ pub struct LanSelect {
 #[derive(HasSchema, Clone, Default, PartialEq, Eq)]
 pub enum LanSelection {
     #[default]
+    /// Focus is on the one player button
     OnePlayer,
+    /// Focus is on the two player button
     TwoPlayer,
-    TwoPlayerBind {
-        player1: u32,
-    },
+    /// Waiting for second player to bind.
+    /// Contains the source of the player that
+    /// selected the two player button.
+    TwoPlayerBind { player1: SingleSource },
     // ThreePlayer,
 }
 
@@ -67,16 +70,27 @@ impl LanSelect {
                             LanSelectOutput::ServiceType(ServiceType::OnePlayer(*gamepad)).into();
                     }
                     LanSelection::TwoPlayer => {
-                        self.selection = LanSelection::TwoPlayerBind { player1: *gamepad };
+                        self.selection = LanSelection::TwoPlayerBind {
+                            player1: SingleSource::Gamepad(*gamepad),
+                        };
                     }
                     LanSelection::TwoPlayerBind { player1 } => {
-                        if *gamepad != player1 {
+                        if let SingleSource::Gamepad(p1_gamepad_id) = player1 {
+                            if p1_gamepad_id == *gamepad {
+                                self.selection = LanSelection::TwoPlayer;
+                            } else {
+                                output = LanSelectOutput::ServiceType(ServiceType::TwoPlayer(
+                                    player1,
+                                    SingleSource::Gamepad(*gamepad),
+                                ))
+                                .into();
+                            }
+                        } else {
                             output = LanSelectOutput::ServiceType(ServiceType::TwoPlayer(
-                                player1, *gamepad,
+                                player1,
+                                SingleSource::Gamepad(*gamepad),
                             ))
                             .into();
-                        } else {
-                            self.selection = LanSelection::TwoPlayer;
                         }
                     }
                 }
@@ -157,9 +171,8 @@ impl LanSelect {
                         if irsp.response.hovered() {
                             self.selection = LanSelection::OnePlayer;
                         }
-                        // TODO: add keyboard controls
                         // if irsp.response.clicked() {
-                        //     output = LanSelectOutput::ServiceType(ServiceType::OnePlayer(keyboard));
+                        // TODO: notify keyboard incompatible
                         // }
                         let irsp = BorderedFrame::new(&root.menu.bframe)
                             .padding(Margin::same(6.0))
@@ -174,10 +187,11 @@ impl LanSelect {
                         if irsp.response.hovered() {
                             self.selection = LanSelection::TwoPlayer;
                         }
-                        // TODO: add keyboard controls
-                        // if irsp.response.clicked() {
-                        //     self.selection = LanSelection::TwoPlayerBind { player1: () };
-                        // }
+                        if irsp.response.clicked() {
+                            self.selection = LanSelection::TwoPlayerBind {
+                                player1: SingleSource::KeyboardMouse,
+                            };
+                        }
                     });
                 });
         } else {
@@ -185,6 +199,7 @@ impl LanSelect {
                 .anchor(Align2::CENTER_CENTER, [0., 0.])
                 .order(Order::Foreground)
                 .show(&world.resource::<EguiCtx>(), |ui| {
+                    // TODO: allow second player join with keyboard
                     BorderedFrame::new(&root.menu.bframe)
                         .padding(Margin::same(50.0))
                         .show(ui, |ui| {

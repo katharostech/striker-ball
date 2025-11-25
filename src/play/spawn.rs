@@ -53,7 +53,13 @@ pub fn scene(world: &World) {
             service_type,
         } => {
             let (dual_stick, number1, number2, gamepad1, gamepad2) = match service_type {
-                ServiceType::OnePlayer(p1) => (true, 0, 0, *p1, *p1),
+                ServiceType::OnePlayer(p1) => (
+                    true,
+                    0,
+                    0,
+                    SingleSource::Gamepad(*p1),
+                    SingleSource::Gamepad(*p1),
+                ),
                 ServiceType::TwoPlayer(p1, p2) => (false, 0, 1, *p1, *p2),
             };
             let local_team = match socket.player_idx() {
@@ -67,7 +73,7 @@ pub fn scene(world: &World) {
                     if local_team == Team::A {
                         PlayerInfo::Local {
                             number: number1,
-                            gamepad: gamepad1,
+                            source: gamepad1,
                             dual_stick,
                         }
                     } else {
@@ -80,7 +86,7 @@ pub fn scene(world: &World) {
                     if local_team == Team::A {
                         PlayerInfo::Local {
                             number: number2,
-                            gamepad: gamepad2,
+                            source: gamepad2,
                             dual_stick,
                         }
                     } else {
@@ -93,7 +99,7 @@ pub fn scene(world: &World) {
                     if local_team == Team::B {
                         PlayerInfo::Local {
                             number: number1,
-                            gamepad: gamepad1,
+                            source: gamepad1,
                             dual_stick,
                         }
                     } else {
@@ -106,7 +112,7 @@ pub fn scene(world: &World) {
                     if local_team == Team::B {
                         PlayerInfo::Local {
                             number: number2,
-                            gamepad: gamepad2,
+                            source: gamepad2,
                             dual_stick,
                         }
                     } else {

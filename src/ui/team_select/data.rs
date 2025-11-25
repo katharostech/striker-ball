@@ -24,29 +24,27 @@ pub enum Join {
     #[default]
     Empty,
     Joined {
-        gamepad: u32,
+        source: SingleSource,
     },
     Hover {
-        gamepad: u32,
+        source: SingleSource,
         slot: PlayerSlot,
     },
     Single {
-        gamepad: u32,
+        source: SingleSource,
         slot: PlayerSlot,
         partner_setting: PartnerSetting,
     },
     Double {
-        gamepad: u32,
+        source: SingleSource,
         slot: PlayerSlot,
         partner_setting: PartnerSetting,
     },
 }
 impl Join {
-    pub fn join(&mut self, gamepad_id: u32) {
+    pub fn join(&mut self, source: SingleSource) {
         if let Self::Empty = *self {
-            *self = Self::Joined {
-                gamepad: gamepad_id,
-            }
+            *self = Self::Joined { source }
         } else {
             panic!("un-enforced join state ordering");
         }
@@ -59,23 +57,23 @@ impl Join {
         }
     }
     pub fn hover(&mut self, slot: PlayerSlot) {
-        if let Self::Joined { gamepad } = *self {
-            *self = Self::Hover { gamepad, slot }
+        if let Self::Joined { source } = *self {
+            *self = Self::Hover { source, slot }
         } else {
             panic!("un-enforced join state ordering");
         }
     }
     pub fn unhover(&mut self) {
-        if let Self::Hover { gamepad, .. } = *self {
-            *self = Self::Joined { gamepad }
+        if let Self::Hover { source, .. } = *self {
+            *self = Self::Joined { source }
         } else {
             panic!("un-enforced join state ordering");
         }
     }
     pub fn single(&mut self) {
-        if let Self::Hover { gamepad, slot } = *self {
+        if let Self::Hover { source, slot } = *self {
             *self = Self::Single {
-                gamepad,
+                source,
                 slot,
                 partner_setting: PartnerSetting::default(),
             }
@@ -84,21 +82,21 @@ impl Join {
         }
     }
     pub fn unsingle(&mut self) {
-        if let Self::Single { gamepad, slot, .. } = *self {
-            *self = Self::Hover { gamepad, slot }
+        if let Self::Single { source, slot, .. } = *self {
+            *self = Self::Hover { source, slot }
         } else {
             panic!("un-enforced join state ordering");
         }
     }
     pub fn double(&mut self) {
         if let Self::Single {
-            gamepad,
+            source,
             slot,
             partner_setting,
         } = *self
         {
             *self = Self::Double {
-                gamepad,
+                source,
                 slot,
                 partner_setting,
             }
@@ -108,13 +106,13 @@ impl Join {
     }
     pub fn undouble(&mut self) {
         if let Self::Double {
-            gamepad,
+            source,
             slot,
             partner_setting,
         } = *self
         {
             *self = Self::Single {
-                gamepad,
+                source,
                 slot,
                 partner_setting,
             }
@@ -130,12 +128,21 @@ impl Join {
             }
         }
     }
-    pub fn is_gamepad_id(&self, gamepad_id: u32) -> bool {
+    pub fn get_source(&self) -> Option<SingleSource> {
+        match &self {
+            Join::Empty => None,
+            Join::Joined { source, .. }
+            | Join::Hover { source, .. }
+            | Join::Single { source, .. }
+            | Join::Double { source, .. } => Some(*source),
+        }
+    }
+    pub fn is_source(&self, source: SingleSource) -> bool {
         matches!(self,
-            Join::Joined { gamepad }
-            | Join::Hover {gamepad, ..}
-            | Join::Single { gamepad, .. }
-            | Join::Double { gamepad, .. } if *gamepad == gamepad_id,
+            Join::Joined { source: eq }
+            | Join::Hover {source: eq, ..}
+            | Join::Single { source: eq, .. }
+            | Join::Double { source: eq, .. } if *eq == source,
         )
     }
     pub fn is_player_id(&self, id: PlayerSlot) -> bool {
@@ -182,19 +189,19 @@ pub struct TeamSelect {
     pub joins: [Join; 4],
 }
 impl TeamSelect {
-    pub fn add_gamepad(&mut self, id: u32) {
-        if !self.joins.iter().any(|join| join.is_gamepad_id(id)) {
+    pub fn add_source(&mut self, source: SingleSource) {
+        if !self.joins.iter().any(|join| join.is_source(source)) {
             for pad in &mut self.joins {
                 if !pad.is_joined() {
-                    pad.join(id);
+                    pad.join(source);
                     return;
                 }
             }
         }
     }
-    pub fn remove_gamepad(&mut self, id: u32) {
+    pub fn remove_gamepad(&mut self, source: SingleSource) {
         for pad in &mut self.joins {
-            if pad.is_gamepad_id(id) {
+            if pad.is_source(source) {
                 *pad = default();
                 break;
             }
@@ -206,16 +213,19 @@ impl TeamSelect {
     pub fn get_mut_join_from_slot(&mut self, slot: PlayerSlot) -> Option<&mut Join> {
         self.joins.iter_mut().find(|join| join.is_player_id(slot))
     }
-    pub fn get_index_from_gamepad(&self, id: u32) -> Option<usize> {
+    pub fn get_index_from_source(&self, source: SingleSource) -> Option<usize> {
         for (index, join) in self.joins.iter().enumerate() {
-            if join.is_gamepad_id(id) {
+            if join.is_source(source) {
                 return Some(index);
             }
         }
         None
     }
-    pub fn ready_gamepad(&mut self, id: u32) {
-        let Some(index) = self.get_index_from_gamepad(id) else {
+    pub fn contains_source(&self, source: SingleSource) -> bool {
+        self.joins.iter().any(|join| join.is_source(source))
+    }
+    pub fn ready_join(&mut self, source: SingleSource) {
+        let Some(index) = self.get_index_from_source(source) else {
             return;
         };
         let Some(slot) = self.joins[index].get_player_slot() else {
@@ -225,17 +235,21 @@ impl TeamSelect {
 
         let join = &mut self.joins[index];
 
-        if join.is_gamepad_id(id) {
+        if join.is_source(source) {
             if join.is_hovered() && !join.is_single() {
                 join.single();
-            } else if join.is_single() && !join.is_double() && dual_able {
+            } else if join.is_single()
+                && !join.is_double()
+                && dual_able
+                && !join.is_source(SingleSource::KeyboardMouse)
+            {
                 join.double();
             }
         }
     }
-    pub fn reverse_gamepad(&mut self, id: u32) {
+    pub fn reverse_join(&mut self, source: SingleSource) {
         for join in &mut self.joins {
-            if join.is_gamepad_id(id) {
+            if join.is_source(source) {
                 if join.is_double() {
                     join.undouble();
                 } else if join.is_single() {
@@ -298,11 +312,11 @@ impl TeamSelect {
         }
         None
     }
-    pub fn left_gamepad(&mut self, id: u32) {
+    pub fn left_join(&mut self, source: SingleSource) {
         let next_slot_a = self.next_slot_a();
         let cycle = 'cycle: {
             for join in &mut self.joins {
-                if join.is_gamepad_id(id) {
+                if join.is_source(source) {
                     if let Join::Single { .. } = join {
                         break 'cycle Some(join.get_player_slot().unwrap());
                     } else if let Join::Hover { slot, .. } = join {
@@ -321,20 +335,24 @@ impl TeamSelect {
         if let Some(player_slot) = cycle {
             if !self.is_player_slot_hovered(player_slot.partner()) {
                 let Some(Join::Single {
-                    partner_setting, ..
+                    partner_setting,
+                    source,
+                    ..
                 }) = self.get_mut_join_from_slot(player_slot)
                 else {
                     unreachable!()
                 };
-                partner_setting.cycle();
+                if *source != SingleSource::KeyboardMouse {
+                    partner_setting.cycle();
+                }
             }
         }
     }
-    pub fn right_gamepad(&mut self, id: u32) {
+    pub fn right_join(&mut self, source: SingleSource) {
         let next_slot_b = self.next_slot_b();
         let cycle = 'cycle: {
             for join in &mut self.joins {
-                if join.is_gamepad_id(id) {
+                if join.is_source(source) {
                     if let Join::Single { .. } = join {
                         break 'cycle Some(join.get_player_slot().unwrap());
                     } else if let Join::Hover { slot, .. } = join {
@@ -353,18 +371,22 @@ impl TeamSelect {
         if let Some(player_slot) = cycle {
             if !self.is_player_slot_hovered(player_slot.partner()) {
                 let Some(Join::Single {
-                    partner_setting, ..
+                    partner_setting,
+                    source,
+                    ..
                 }) = self.get_mut_join_from_slot(player_slot)
                 else {
                     unreachable!()
                 };
-                partner_setting.cycle();
+                if *source != SingleSource::KeyboardMouse {
+                    partner_setting.cycle();
+                }
             }
         }
     }
-    pub fn is_double(&self, id: u32) -> bool {
+    pub fn is_double(&self, source: SingleSource) -> bool {
         for join in &self.joins {
-            if join.is_gamepad_id(id) {
+            if join.is_source(source) {
                 return join.is_double();
             }
         }
@@ -405,22 +427,34 @@ impl TeamSelect {
 
         for (number, join) in self.joins.iter().enumerate() {
             match join {
-                Join::Single { gamepad, slot, .. } => {
+                Join::Single { source, slot, .. } => {
                     if self.get_join_from_slot(slot.partner()).is_none() {
-                        return None;
+                        if let SingleSource::KeyboardMouse = source {
+                            builder.insert(
+                                *slot,
+                                PlayerInfo::Local {
+                                    number,
+                                    source: *source,
+                                    dual_stick: false,
+                                },
+                            );
+                            builder.insert(slot.partner(), PlayerInfo::CPU);
+                        } else {
+                            return None;
+                        }
                     } else {
                         builder.insert(
                             *slot,
                             PlayerInfo::Local {
                                 number,
-                                gamepad: *gamepad,
+                                source: *source,
                                 dual_stick: false,
                             },
                         );
                     }
                 }
                 Join::Double {
-                    gamepad,
+                    source,
                     slot,
                     partner_setting,
                 } => match partner_setting {
@@ -429,7 +463,7 @@ impl TeamSelect {
                             *slot,
                             PlayerInfo::Local {
                                 number,
-                                gamepad: *gamepad,
+                                source: *source,
                                 dual_stick: false,
                             },
                         );
@@ -440,7 +474,7 @@ impl TeamSelect {
                             slot.partner(),
                             PlayerInfo::Local {
                                 number,
-                                gamepad: *gamepad,
+                                source: *source,
                                 dual_stick: true,
                             },
                         );
@@ -448,7 +482,7 @@ impl TeamSelect {
                             *slot,
                             PlayerInfo::Local {
                                 number,
-                                gamepad: *gamepad,
+                                source: *source,
                                 dual_stick: true,
                             },
                         );

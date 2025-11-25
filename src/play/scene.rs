@@ -35,8 +35,10 @@ pub enum PlayerInfo {
         /// The user join index for display purposes,
         /// `0` being P1, `1` being P2, and so on.
         number: usize,
-        /// The associated gamepad id of the player.
-        gamepad: u32,
+        /// The input source of the player.
+        // TODO: Check if this field should be separated from this struct since
+        // it is not used in the player spawning.
+        source: SingleSource,
         /// Whether or not this player is being controlled with
         /// dual stick controls.
         dual_stick: bool,
@@ -124,12 +126,10 @@ pub fn lan_session_runner(
         ServiceType::OnePlayer(p1) => {
             runner
                 .input_collector
-                .set_source(TeamSource::OnePlayer(*p1));
+                .set_sources(SingleSource::Gamepad(*p1), SingleSource::Gamepad(*p1));
         }
         ServiceType::TwoPlayer(p1, p2) => {
-            runner
-                .input_collector
-                .set_source(TeamSource::TwoPlayer(*p1, *p2));
+            runner.input_collector.set_sources(*p1, *p2);
         }
     }
     Box::new(runner)
@@ -138,44 +138,30 @@ pub fn offline_session_runner(players_info: PlayersInfo) -> Box<dyn SessionRunne
     let PlayersInfo { a1, a2, b1, b2 } = players_info;
     Box::new(OfflineRunner {
         collectors: [
-            PlayTeamInputCollector::new(match a1 {
-                PlayerInfo::CPU => TeamSource::TwoCPUs(PlayerSlot::A1, PlayerSlot::A2),
-                PlayerInfo::Local {
-                    gamepad: p1,
-                    dual_stick,
-                    ..
-                } => {
-                    if dual_stick {
-                        TeamSource::OnePlayer(p1)
-                    } else {
-                        match a2 {
-                            PlayerInfo::CPU => TeamSource::OneCPU(p1, PlayerSlot::A2),
-                            PlayerInfo::Local { gamepad: p2, .. } => TeamSource::TwoPlayer(p1, p2),
-                            PlayerInfo::Network => unreachable!(),
-                        }
-                    }
-                }
-                PlayerInfo::Network => unreachable!(),
-            }),
-            PlayTeamInputCollector::new(match b1 {
-                PlayerInfo::CPU => TeamSource::TwoCPUs(PlayerSlot::B1, PlayerSlot::B2),
-                PlayerInfo::Local {
-                    gamepad: p1,
-                    dual_stick,
-                    ..
-                } => {
-                    if dual_stick {
-                        TeamSource::OnePlayer(p1)
-                    } else {
-                        match b2 {
-                            PlayerInfo::CPU => TeamSource::OneCPU(p1, PlayerSlot::B2),
-                            PlayerInfo::Local { gamepad: p2, .. } => TeamSource::TwoPlayer(p1, p2),
-                            PlayerInfo::Network => unreachable!(),
-                        }
-                    }
-                }
-                PlayerInfo::Network => unreachable!(),
-            }),
+            PlayTeamInputCollector::new(
+                match a1 {
+                    PlayerInfo::CPU => SingleSource::CPU(PlayerSlot::A1),
+                    PlayerInfo::Local { source, .. } => source,
+                    PlayerInfo::Network => unreachable!(),
+                },
+                match a2 {
+                    PlayerInfo::CPU => SingleSource::CPU(PlayerSlot::A2),
+                    PlayerInfo::Local { source, .. } => source,
+                    PlayerInfo::Network => unreachable!(),
+                },
+            ),
+            PlayTeamInputCollector::new(
+                match b1 {
+                    PlayerInfo::CPU => SingleSource::CPU(PlayerSlot::B1),
+                    PlayerInfo::Local { source, .. } => source,
+                    PlayerInfo::Network => unreachable!(),
+                },
+                match b2 {
+                    PlayerInfo::CPU => SingleSource::CPU(PlayerSlot::B2),
+                    PlayerInfo::Local { source, .. } => source,
+                    PlayerInfo::Network => unreachable!(),
+                },
+            ),
         ],
         ..Default::default()
     })
