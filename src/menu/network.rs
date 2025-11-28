@@ -129,11 +129,11 @@ pub fn lan_ui_update(ui: &World) {
     }
 
     for (_gamepad, input) in local_inputs.iter() {
-        if input.south.just_pressed() {
+        if input.menu_select.just_pressed() {
             lan_ui_action(lan_ui.state, &mut matchmaker, &mut lan_ui);
             return;
         }
-        if input.west.just_pressed() {
+        if input.menu_back.just_pressed() {
             start_fade(
                 ui,
                 FadeTransition {
@@ -144,10 +144,10 @@ pub fn lan_ui_update(ui: &World) {
             );
             return;
         }
-        if input.up.just_pressed() {
+        if input.menu_up.just_pressed() {
             lan_ui.state.cycle_up();
         }
-        if input.down.just_pressed() {
+        if input.menu_down.just_pressed() {
             lan_ui.state.cycle_down();
         }
     }

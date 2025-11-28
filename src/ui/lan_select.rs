@@ -33,6 +33,9 @@ pub enum LanSelection {
     #[default]
     /// Focus is on the one player button
     OnePlayer,
+    /// Waiting for a gamepad to bind because
+    /// a keyboard selected one player.
+    OnePlayerBind,
     /// Focus is on the two player button
     TwoPlayer,
     /// Waiting for second player to bind.
@@ -62,54 +65,56 @@ impl LanSelect {
 
         let local_inputs = world.resource::<LocalInputs>();
 
-        for (gamepad, input) in local_inputs.iter() {
-            if input.south.just_pressed() {
+        for (source, input) in local_inputs.iter() {
+            if input.menu_select.just_pressed() {
                 match self.selection {
-                    LanSelection::OnePlayer => {
-                        output =
-                            LanSelectOutput::ServiceType(ServiceType::OnePlayer(*gamepad)).into();
-                    }
+                    LanSelection::OnePlayer => match *source {
+                        SingleSource::Gamepad(gamepad_id) => {
+                            output =
+                                LanSelectOutput::ServiceType(ServiceType::OnePlayer(gamepad_id))
+                                    .into();
+                        }
+                        SingleSource::KeyboardMouse => self.selection = LanSelection::OnePlayerBind,
+                        SingleSource::CPU(..) => unreachable!(),
+                    },
+                    LanSelection::OnePlayerBind => match *source {
+                        SingleSource::Gamepad(gamepad_id) => {
+                            output =
+                                LanSelectOutput::ServiceType(ServiceType::OnePlayer(gamepad_id))
+                                    .into();
+                        }
+                        SingleSource::KeyboardMouse => self.selection = LanSelection::OnePlayer,
+                        SingleSource::CPU(..) => unreachable!(),
+                    },
                     LanSelection::TwoPlayer => {
-                        self.selection = LanSelection::TwoPlayerBind {
-                            player1: SingleSource::Gamepad(*gamepad),
-                        };
+                        self.selection = LanSelection::TwoPlayerBind { player1: *source };
                     }
                     LanSelection::TwoPlayerBind { player1 } => {
-                        if let SingleSource::Gamepad(p1_gamepad_id) = player1 {
-                            if p1_gamepad_id == *gamepad {
-                                self.selection = LanSelection::TwoPlayer;
-                            } else {
-                                output = LanSelectOutput::ServiceType(ServiceType::TwoPlayer(
-                                    player1,
-                                    SingleSource::Gamepad(*gamepad),
-                                ))
-                                .into();
-                            }
+                        if *source == player1 {
+                            self.selection = LanSelection::TwoPlayer;
                         } else {
                             output = LanSelectOutput::ServiceType(ServiceType::TwoPlayer(
-                                player1,
-                                SingleSource::Gamepad(*gamepad),
+                                player1, *source,
                             ))
                             .into();
                         }
                     }
                 }
             }
-            if input.west.just_pressed() {
+            if input.menu_back.just_pressed() {
                 match self.selection {
                     LanSelection::OnePlayer | LanSelection::TwoPlayer => {
-                        output = LanSelectOutput::Exit.into();
+                        output = LanSelectOutput::Exit.into()
                     }
-                    LanSelection::TwoPlayerBind { .. } => {
-                        self.selection = LanSelection::TwoPlayer;
-                    }
+                    LanSelection::OnePlayerBind => self.selection = LanSelection::OnePlayer,
+                    LanSelection::TwoPlayerBind { .. } => self.selection = LanSelection::TwoPlayer,
                 }
             }
-            if input.left.just_pressed() || input.right.just_pressed() {
+            if input.menu_left.just_pressed() || input.menu_right.just_pressed() {
                 match self.selection {
                     LanSelection::OnePlayer => self.selection = LanSelection::TwoPlayer,
                     LanSelection::TwoPlayer => self.selection = LanSelection::OnePlayer,
-                    LanSelection::TwoPlayerBind { .. } => {}
+                    LanSelection::OnePlayerBind | LanSelection::TwoPlayerBind { .. } => {}
                 }
             }
         }
@@ -149,74 +154,105 @@ impl LanSelect {
             .family_name
             .clone();
 
-        if matches!(
-            self.selection,
-            LanSelection::OnePlayer | LanSelection::TwoPlayer
-        ) {
-            Area::new("lan_select_buttons")
-                .anchor(Align2::CENTER_CENTER, [0., 0.])
-                .order(Order::Foreground)
-                .show(&world.resource::<EguiCtx>(), |ui| {
-                    ui.horizontal(|ui| {
-                        let irsp = BorderedFrame::new(&root.menu.bframe)
-                            .padding(Margin::same(6.0))
-                            .show(ui, |ui| {
-                                super::primary_text(
-                                    "1 Player",
-                                    self.selection == LanSelection::OnePlayer,
-                                    &asset_server,
-                                    ui,
-                                );
-                            });
-                        if irsp.response.hovered() {
-                            self.selection = LanSelection::OnePlayer;
-                        }
-                        // if irsp.response.clicked() {
-                        // TODO: notify keyboard incompatible
-                        // }
-                        let irsp = BorderedFrame::new(&root.menu.bframe)
-                            .padding(Margin::same(6.0))
-                            .show(ui, |ui| {
-                                super::primary_text(
-                                    "2 Player",
-                                    self.selection == LanSelection::TwoPlayer,
-                                    &asset_server,
-                                    ui,
-                                );
-                            });
-                        if irsp.response.hovered() {
-                            self.selection = LanSelection::TwoPlayer;
-                        }
-                        if irsp.response.clicked() {
-                            self.selection = LanSelection::TwoPlayerBind {
-                                player1: SingleSource::KeyboardMouse,
-                            };
-                        }
+        match self.selection {
+            LanSelection::OnePlayer | LanSelection::TwoPlayer => {
+                Area::new("lan_select_buttons")
+                    .anchor(Align2::CENTER_CENTER, [0., 0.])
+                    .order(Order::Foreground)
+                    .show(&world.resource::<EguiCtx>(), |ui| {
+                        ui.horizontal(|ui| {
+                            let irsp = BorderedFrame::new(&root.menu.bframe)
+                                .padding(Margin::same(6.0))
+                                .show(ui, |ui| {
+                                    super::primary_text(
+                                        "1 Player",
+                                        self.selection == LanSelection::OnePlayer,
+                                        &asset_server,
+                                        ui,
+                                    );
+                                });
+                            if irsp.response.hovered() {
+                                self.selection = LanSelection::OnePlayer;
+                            }
+                            if ctx.clicked_rect(irsp.response.rect) {
+                                self.selection = LanSelection::OnePlayerBind;
+                            }
+                            let irsp = BorderedFrame::new(&root.menu.bframe)
+                                .padding(Margin::same(6.0))
+                                .show(ui, |ui| {
+                                    super::primary_text(
+                                        "2 Player",
+                                        self.selection == LanSelection::TwoPlayer,
+                                        &asset_server,
+                                        ui,
+                                    );
+                                });
+                            if irsp.response.hovered() {
+                                self.selection = LanSelection::TwoPlayer;
+                            }
+                            // `irsp.response.clicked()` doesn't work for some reason (maybe a layering problem)
+                            if ctx.clicked_rect(irsp.response.rect) {
+                                self.selection = LanSelection::TwoPlayerBind {
+                                    player1: SingleSource::KeyboardMouse,
+                                };
+                            }
+                        });
                     });
-                });
-        } else {
-            Area::new("popup")
-                .anchor(Align2::CENTER_CENTER, [0., 0.])
-                .order(Order::Foreground)
-                .show(&world.resource::<EguiCtx>(), |ui| {
-                    // TODO: allow second player join with keyboard
-                    BorderedFrame::new(&root.menu.bframe)
-                        .padding(Margin::same(50.0))
-                        .show(ui, |ui| {
-                            let text = "Player 2, Press South";
-                            let response =
-                                ui.label(RichText::new(text).color(Color32::WHITE).font(FontId {
-                                    size: 7.0,
-                                    family: FontFamily::Name(inner_font),
-                                }));
-                            TextPainter::new(text)
-                                .size(7.0)
-                                .pos(response.rect.min)
-                                .family(outer_font)
-                                .color(Color32::BLACK)
-                                .paint(ui.painter())
-                        })
-                });
+            }
+            LanSelection::OnePlayerBind => {
+                let irsp = Area::new("one_player_bind_popup")
+                    .anchor(Align2::CENTER_CENTER, [0., 0.])
+                    .order(Order::Foreground)
+                    .show(&world.resource::<EguiCtx>(), |ui| {
+                        BorderedFrame::new(&root.menu.bframe)
+                            .padding(Margin::same(50.0))
+                            .show(ui, |ui| {
+                                let text = "Player 1, Press Select On A Gamepad";
+                                let response = ui.label(
+                                    RichText::new(text).color(Color32::WHITE).font(FontId {
+                                        size: 7.0,
+                                        family: FontFamily::Name(inner_font),
+                                    }),
+                                );
+                                TextPainter::new(text)
+                                    .size(7.0)
+                                    .pos(response.rect.min)
+                                    .family(outer_font)
+                                    .color(Color32::BLACK)
+                                    .paint(ui.painter())
+                            })
+                    });
+                if ctx.clicked_rect(irsp.response.rect) {
+                    self.selection = LanSelection::OnePlayer;
+                }
+            }
+            LanSelection::TwoPlayerBind { .. } => {
+                let irsp = Area::new("two_player_bind_popup")
+                    .anchor(Align2::CENTER_CENTER, [0., 0.])
+                    .order(Order::Foreground)
+                    .show(&world.resource::<EguiCtx>(), |ui| {
+                        BorderedFrame::new(&root.menu.bframe)
+                            .padding(Margin::same(50.0))
+                            .show(ui, |ui| {
+                                let text = "Player 2, Press Select";
+                                let response = ui.label(
+                                    RichText::new(text).color(Color32::WHITE).font(FontId {
+                                        size: 7.0,
+                                        family: FontFamily::Name(inner_font),
+                                    }),
+                                );
+                                TextPainter::new(text)
+                                    .size(7.0)
+                                    .pos(response.rect.min)
+                                    .family(outer_font)
+                                    .color(Color32::BLACK)
+                                    .paint(ui.painter())
+                            })
+                    });
+                if ctx.clicked_rect(irsp.response.rect) {
+                    self.selection = LanSelection::TwoPlayer;
+                }
+            }
         }
         output
     }

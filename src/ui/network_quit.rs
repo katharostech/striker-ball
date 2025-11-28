@@ -79,20 +79,20 @@ impl NetworkQuit {
         }
 
         for (_gamepad, input) in local_inputs.iter() {
-            if input.start.just_pressed() {
+            if input.pause.just_pressed() {
                 if self.visible {
                     output = output.or_else(|| self.output_hide());
                 } else {
                     output = output.or_else(|| self.output_show());
                 }
             }
-            if input.south.just_pressed() && self.visible {
+            if input.menu_select.just_pressed() && self.visible {
                 match self.state {
                     NetworkQuitState::Yes => output = output.or_else(|| self.output_quit()),
                     NetworkQuitState::No => output = output.or_else(|| self.output_hide()),
                 };
             }
-            if input.left.just_pressed() || input.right.just_pressed() && self.visible {
+            if input.menu_left.just_pressed() || input.menu_right.just_pressed() && self.visible {
                 match self.state {
                     NetworkQuitState::No => self.state = NetworkQuitState::Yes,
                     NetworkQuitState::Yes => self.state = NetworkQuitState::No,

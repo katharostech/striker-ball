@@ -214,7 +214,7 @@ fn match_done_update(play: &World) {
     let inputs = play.resource::<LocalInputs>();
 
     for (_id, input) in inputs.iter() {
-        if input.south.just_pressed() {
+        if input.menu_select.just_pressed() {
             match match_done.state {
                 MatchDoneState::TeamSelect => to_team_select(),
                 MatchDoneState::PlayAgain => play_again(),
@@ -222,10 +222,10 @@ fn match_done_update(play: &World) {
             }
             play.resource_mut::<MatchDone>().visual.hide();
         }
-        if input.up.just_pressed() {
+        if input.menu_up.just_pressed() {
             play.resource_mut::<MatchDone>().cycle_up();
         }
-        if input.down.just_pressed() {
+        if input.menu_down.just_pressed() {
             play.resource_mut::<MatchDone>().cycle_down();
         }
     }

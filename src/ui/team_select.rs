@@ -410,7 +410,7 @@ pub fn show(world: &World) {
     let inputs = world.resource::<LocalInputs>();
     let press_input = inputs
         .values()
-        .find_map(|btn| btn.west.pressed().then_some(btn.west))
+        .find_map(|input| input.menu_back.pressed().then_some(input.menu_back))
         .unwrap_or_default();
     let cap = back_buffer;
     let frames = if press_input.pressed() {
@@ -428,6 +428,7 @@ pub fn show(world: &World) {
         .index(index)
         .pos(origin + slots.back_btn_offset.to_array().into())
         .paint(&painter, &textures);
+    // TODO: allow click hold on back button
 
     // press start text
     if team_select.get_player_signs().is_some() {
