@@ -1,12 +1,10 @@
 use super::*;
 
 pub fn apply_cpu_input(world: &World, slot: PlayerSlot, input: &mut PlayInput) {
-    let Some(ent_signs) = world.get_resource::<PlayerEntSigns>() else {
-        tracing::warn!("PlayerEntSigns doesn't exist; This is alright before the scene fully spawned but shouldn't happen during the game");
-        return;
-    };
-    let entity = ent_signs.get(slot);
-    world.run_system(apply_cpu_input_system, (entity, input));
+    if let Some(ent_signs) = world.get_resource::<PlayerEntSigns>() {
+        let entity = ent_signs.get(slot);
+        world.run_system(apply_cpu_input_system, (entity, input));
+    }
 }
 
 pub fn apply_cpu_input_system(
