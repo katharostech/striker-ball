@@ -441,24 +441,7 @@ pub fn splash_update(ui: &World) {
 }
 pub fn how_to_play_update(ui: &World) {
     let mut howtoplay = ui.resource_mut::<HowToPlay>();
-
     let inputs = ui.resource::<LocalInputs>();
-    let keyboard = ui.resource::<KeyboardInputs>();
-
-    for event in &keyboard.key_events {
-        if let Maybe::Set(key_code) = event.key_code {
-            if key_code == KeyCode::Escape && event.button_state == ButtonState::Pressed {
-                start_fade(
-                    ui,
-                    FadeTransition {
-                        hide: how_to_play_hide,
-                        prep: splash_prep,
-                        finish: splash_finish,
-                    },
-                );
-            }
-        }
-    }
 
     for (_gamepad, input) in inputs.iter() {
         if input.menu_back.just_pressed() {
@@ -471,26 +454,11 @@ pub fn how_to_play_update(ui: &World) {
                 },
             );
         }
-        match *howtoplay {
-            HowToPlay::GameOverview => {
-                if input.menu_right.just_pressed() {
-                    *howtoplay = HowToPlay::SingleStickControls;
-                }
-            }
-            HowToPlay::DualStickControls => {
-                if input.menu_left.just_pressed() {
-                    *howtoplay = HowToPlay::SingleStickControls;
-                }
-            }
-            HowToPlay::SingleStickControls => {
-                if input.menu_left.just_pressed() {
-                    *howtoplay = HowToPlay::GameOverview;
-                }
-                if input.menu_right.just_pressed() {
-                    *howtoplay = HowToPlay::DualStickControls;
-                }
-            }
-            HowToPlay::Hidden => {}
+        if input.menu_left.just_pressed() {
+            howtoplay.left();
+        }
+        if input.menu_right.just_pressed() {
+            howtoplay.right();
         }
     }
 }

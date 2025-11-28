@@ -31,6 +31,25 @@ pub enum HowToPlay {
     SingleStickControls,
     DualStickControls,
 }
+impl HowToPlay {
+    pub fn left(&mut self) {
+        match self {
+            Self::Hidden => {}
+            Self::GameOverview => {}
+            Self::SingleStickControls => *self = Self::GameOverview,
+            Self::DualStickControls => *self = Self::SingleStickControls,
+        }
+    }
+    pub fn right(&mut self) {
+        match self {
+            Self::Hidden => {}
+            Self::GameOverview => *self = Self::SingleStickControls,
+            Self::SingleStickControls => *self = Self::DualStickControls,
+            Self::DualStickControls => {}
+        }
+    }
+}
+
 impl SessionPlugin for HowToPlay {
     fn install(self, session: &mut SessionBuilder) {
         session.insert_resource(self);
@@ -41,7 +60,7 @@ fn foreground() -> egui::LayerId {
     LayerId::new(Order::Foreground, Id::new("how_to_play_foreground"))
 }
 pub fn show(world: &World) {
-    let howtoplay = world.resource::<HowToPlay>();
+    let mut howtoplay = world.resource_mut::<HowToPlay>();
     if HowToPlay::Hidden == *howtoplay {
         return;
     }
@@ -200,30 +219,42 @@ pub fn show(world: &World) {
     // Arrows
     match *howtoplay {
         HowToPlay::GameOverview => {
-            right_arrow.paint_at(
+            let right_rect = right_arrow.paint_at(
                 origin + slots.right_arrow.to_array().into(),
                 &painter,
                 &textures,
             );
+            if ctx.clicked_rect(right_rect) {
+                howtoplay.right();
+            }
         }
         HowToPlay::SingleStickControls => {
-            left_arrow.paint_at(
+            let left_rect = left_arrow.paint_at(
                 origin + slots.left_arrow.to_array().into(),
                 &painter,
                 &textures,
             );
-            right_arrow.paint_at(
+            let right_rect = right_arrow.paint_at(
                 origin + slots.right_arrow.to_array().into(),
                 &painter,
                 &textures,
             );
+            if ctx.clicked_rect(left_rect) {
+                howtoplay.left();
+            }
+            if ctx.clicked_rect(right_rect) {
+                howtoplay.right();
+            }
         }
         HowToPlay::DualStickControls => {
-            left_arrow.paint_at(
+            let left_rect = left_arrow.paint_at(
                 origin + slots.left_arrow.to_array().into(),
                 &painter,
                 &textures,
             );
+            if ctx.clicked_rect(left_rect) {
+                howtoplay.left();
+            }
         }
         HowToPlay::Hidden => unreachable!(),
     }
