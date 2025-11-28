@@ -2,8 +2,8 @@ use super::*;
 
 pub mod prelude {
     pub use super::{
-        AimArrow, AimCone, Player, PlayerEntSigns, PlayerShadowSprite, PlayerSlot, PlayerSprite,
-        StickIndicator, Team,
+        AimArrow, AimCone, Player, PlayerEntSigns, PlayerIndicator, PlayerShadowSprite, PlayerSlot,
+        PlayerSprite, StickIndicator, Team,
     };
 }
 pub mod state {
@@ -129,6 +129,27 @@ pub struct PlayerSprite;
 #[derive(HasSchema, Clone, Default)]
 pub struct PlayerShadowSprite;
 
+#[derive(HasSchema, Clone)]
+#[schema(no_default)]
+pub enum PlayerIndicator {
+    Cpu { timer: Timer },
+    Player { index: usize, timer: Timer },
+}
+impl PlayerIndicator {
+    pub fn timer(&self) -> &Timer {
+        match self {
+            PlayerIndicator::Cpu { timer } => timer,
+            PlayerIndicator::Player { timer, .. } => timer,
+        }
+    }
+    pub fn timer_mut(&mut self) -> &mut Timer {
+        match self {
+            PlayerIndicator::Cpu { timer } => timer,
+            PlayerIndicator::Player { timer, .. } => timer,
+        }
+    }
+}
+
 /// A few things that could be components are built into this struct
 /// for convinience but could easily be extracted to remove the dependency
 /// on its behaviors.
@@ -200,6 +221,7 @@ pub fn plugin(session: &mut SessionBuilder) {
         .add_system_to_stage(Update, aim_cones_update)
         .add_system_to_stage(PostUpdate, player_graphics)
         .add_system_to_stage(PostUpdate, hide_stick_indicators)
+        .add_system_to_stage(PostUpdate, hide_player_indicators)
         .add_system_to_stage(PostUpdate, sync_sub_sprites);
 }
 
@@ -766,6 +788,22 @@ fn sync_sub_sprites(
         let player = players.get(follow.target()).unwrap();
         atlas.flip_x = player.flip_x;
         bank.set_current(player.animation);
+    }
+}
+
+fn hide_player_indicators(
+    entities: Res<Entities>,
+    time: Res<Time>,
+    mut indicators: CompMut<PlayerIndicator>,
+    mut sprites: CompMut<Sprite>,
+) {
+    for (_e, (indicator, sprite)) in entities.iter_with((&mut indicators, &mut sprites)) {
+        indicator.timer_mut().tick(time.delta());
+        if indicator.timer().finished() {
+            sprite.color = Color::NONE;
+        } else {
+            sprite.color = Color::WHITE;
+        }
     }
 }
 

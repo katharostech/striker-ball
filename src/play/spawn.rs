@@ -288,6 +288,10 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
         PlayerInfo::Local { number, .. } => {
             world
                 .spawn()
+                .insert(PlayerIndicator::Player {
+                    index: number,
+                    timer: Timer::from_seconds(3.0, TimerMode::Once),
+                })
                 .insert(Sprite {
                     image: **root.menu.team_select.player_icons()[number],
                     ..Default::default()
@@ -296,12 +300,14 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
                     target: player.id(),
                     offset: Vec2::new(0., -18.),
                 })
-                .insert(Lifetime::seconds(3.0))
                 .insert(Transform::from_z(layers::PLAYER_SHADOW));
         }
         PlayerInfo::CPU => {
             world
                 .spawn()
+                .insert(PlayerIndicator::Cpu {
+                    timer: Timer::from_seconds(3.0, TimerMode::Once),
+                })
                 .insert(Sprite {
                     image: root.sprite.cpu_indicator,
                     ..Default::default()
@@ -310,7 +316,6 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
                     target: player.id(),
                     offset: Vec2::new(0., -18.),
                 })
-                .insert(Lifetime::seconds(3.0))
                 .insert(Transform::from_z(layers::PLAYER_SHADOW));
         }
     }

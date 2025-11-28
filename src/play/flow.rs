@@ -79,6 +79,7 @@ pub fn score_display_update(
     fade: Res<Fade>,
     entities: Res<Entities>,
     pin_score: Res<PinScore>,
+    mut player_indicators: CompMut<PlayerIndicator>,
     mut audio: ResMut<AudioCenter>,
     mut balls: CompMut<Ball>,
     mut transforms: CompMut<Transform>,
@@ -112,6 +113,9 @@ pub fn score_display_update(
                 Team::A => root.screen_size.x / 10.,
                 Team::B => root.screen_size.x / -10.,
             };
+        }
+        for (_indicator_e, indicator) in entities.iter_with(&mut player_indicators) {
+            indicator.timer_mut().reset();
         }
     }
     if fade.fade_in.just_finished() {
