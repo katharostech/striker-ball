@@ -300,19 +300,18 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
                 .insert(Transform::from_z(layers::PLAYER_SHADOW));
         }
         PlayerInfo::CPU => {
-            // TODO: spawn "CPU" sprite icon
-            // world
-            //     .spawn()
-            //     .insert(Sprite {
-            //         image: root.sprite.p1_shadow,
-            //         ..Default::default()
-            //     })
-            //     .insert(Follow::XY {
-            //         target: player.id(),
-            //         offset: Vec2::new(0., -18.),
-            //     })
-            //     .insert(Lifetime::seconds(3.0))
-            //     .insert(Transform::from_z(layers::PLAYER_SHADOW));
+            world
+                .spawn()
+                .insert(Sprite {
+                    image: root.sprite.cpu_indicator,
+                    ..Default::default()
+                })
+                .insert(Follow::XY {
+                    target: player.id(),
+                    offset: Vec2::new(0., -18.),
+                })
+                .insert(Lifetime::seconds(3.0))
+                .insert(Transform::from_z(layers::PLAYER_SHADOW));
         }
     }
 

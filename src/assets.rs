@@ -84,6 +84,7 @@ pub struct Sprites {
     pub player_animations: Handle<AnimationBankAsset>,
     pub lstick_indicator: Handle<Image>,
     pub rstick_indicator: Handle<Image>,
+    pub cpu_indicator: Handle<Image>,
     pub p1_shadow: Handle<Image>,
     pub p2_shadow: Handle<Image>,
     pub p3_shadow: Handle<Image>,

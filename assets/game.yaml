@@ -46,6 +46,7 @@ sprite:
   player_animations: sprites/players/player.animations.yaml
   lstick_indicator: sprites/players/LStickIndicator.png
   rstick_indicator: sprites/players/RStickIndicator.png
+  cpu_indicator: sprites/players/CpuIndicator.png
   p1_shadow: sprites/players/p1Shadow.png
   p2_shadow: sprites/players/p2Shadow.png
   p3_shadow: sprites/players/p3Shadow.png
