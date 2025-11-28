@@ -501,7 +501,10 @@ pub fn team_select_update(ui: &World) {
     let root = asset_server.root::<Data>();
 
     for (source, input) in local_inputs.iter() {
-        if input.start.just_pressed() && assignments.is_some() {
+        if input.start.just_pressed()
+            && assignments.is_some()
+            && ui.resource::<TeamSelect>().contains_source(*source)
+        {
             start_fade(
                 ui,
                 FadeTransition {
