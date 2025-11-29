@@ -182,7 +182,7 @@ menu:
     start: [ui/team_select/pressStart.png, 73, 21]
     start_blink: [ui/team_select/pressStartBlink.png, 73, 21]
     back_btn: ui/team_select/goBackButton.atlas.yaml
-    back_buffer: 60
+    back_buffer: 40
 
   winner_banner:
     team_a: [ui/winnerBannerRed.png, &bannerx 375, &bannery 50]
