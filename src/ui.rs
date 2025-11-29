@@ -42,7 +42,6 @@ impl SessionPlugin for UiSessionPlugin {
 pub fn show_ui(world: &World) {
     fade::show(world);
     splash::show(world);
-    team_select::show(world);
     pause::show(world);
     howtoplay::show(world);
     #[cfg(not(target_arch = "wasm32"))]

@@ -179,6 +179,7 @@ pub fn update_menu(world: &World) {
     let lan_select = world.resource_mut::<LanSelect>().process_ui(world);
     #[cfg(not(target_arch = "wasm32"))]
     let network_quit = world.resource_mut::<NetworkQuit>().process_ui(world);
+    let team_select_output = world.resource_mut::<TeamSelect>().process_ui(world);
     // TODO: use the `LanSelect` pattern for rendering and processing all the ui elements
     //...
 
@@ -187,7 +188,15 @@ pub fn update_menu(world: &World) {
         MenuState::FadeTransition => fade_transition(world),
         MenuState::Splash => splash_update(world),
         MenuState::HowToPlay => how_to_play_update(world),
-        MenuState::TeamSelect => team_select_update(world),
+        MenuState::TeamSelect => {
+            if let Some(output) = world
+                .resource_mut::<TeamSelect>()
+                .process_input(world)
+                .or(team_select_output)
+            {
+                team_select_transition(world, output)
+            }
+        }
         MenuState::InGame => {}
         #[cfg(not(target_arch = "wasm32"))]
         MenuState::InNetworkGame => {
@@ -462,76 +471,23 @@ pub fn how_to_play_update(ui: &World) {
         }
     }
 }
-pub fn team_select_update(ui: &World) {
-    let assignments = ui.resource_mut::<TeamSelect>().get_player_signs();
-    let local_inputs = ui.resource::<LocalInputs>();
-    let asset_server = ui.asset_server();
-    let root = asset_server.root::<Data>();
-
-    for (source, input) in local_inputs.iter() {
-        if input.start.just_pressed()
-            && assignments.is_some()
-            && ui.resource::<TeamSelect>().contains_source(*source)
-        {
-            start_fade(
-                ui,
-                FadeTransition {
-                    hide: team_select_hide,
-                    prep: play_offline_prep,
-                    finish: |_| {},
-                },
-            );
-            return;
-        }
-        if input.start.just_pressed()
-            || input.north.just_pressed()
-            || input.east.just_pressed()
-            || input.menu_select.just_pressed()
-            || input.menu_back.just_pressed()
-            || input.left_bump.just_pressed()
-            || input.right_bump.just_pressed()
-        {
-            ui.resource_mut::<TeamSelect>().add_source(*source);
-            if let SingleSource::Gamepad(gamepad_id) = source {
-                ui.resource_mut::<GamepadsRumble>().set_rumble(
-                    *gamepad_id,
-                    GamepadRumbleIntensity::LIGHT_BOTH,
-                    0.2,
-                );
-            }
-        }
-        if input.menu_select.just_pressed() {
-            ui.resource_mut::<TeamSelect>().ready_join(*source);
-        }
-        if input.menu_back.just_pressed() {
-            ui.resource_mut::<TeamSelect>().reverse_join(*source);
-        }
-        if input.menu_back.just_held(root.menu.team_select.back_buffer) {
-            start_fade(
-                ui,
-                FadeTransition {
-                    hide: team_select_hide,
-                    prep: splash_prep,
-                    finish: splash_finish,
-                },
-            );
-        }
-        if input.menu_left.just_pressed() {
-            ui.resource_mut::<TeamSelect>().left_join(*source);
-        }
-        if input.menu_right.just_pressed() {
-            ui.resource_mut::<TeamSelect>().right_join(*source);
-        }
-        if input.right_bump.just_held(20) && input.left_bump.just_held(20) {
-            start_fade(
-                ui,
-                FadeTransition {
-                    hide: team_select_hide,
-                    prep: play_offline_prep,
-                    finish: |_| {},
-                },
-            );
-            return;
-        }
+pub fn team_select_transition(world: &World, output: TeamSelectOutput) {
+    match output {
+        TeamSelectOutput::PlayersInfo(..) => start_fade(
+            world,
+            FadeTransition {
+                hide: team_select_hide,
+                prep: play_offline_prep,
+                finish: |_| {},
+            },
+        ),
+        TeamSelectOutput::Exit => start_fade(
+            world,
+            FadeTransition {
+                hide: team_select_hide,
+                prep: splash_prep,
+                finish: splash_finish,
+            },
+        ),
     }
 }
