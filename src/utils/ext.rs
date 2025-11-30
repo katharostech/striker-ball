@@ -38,23 +38,23 @@ impl GamepadEventExt for GamepadEvent {
 }
 pub trait WorldExtra {
     #[track_caller]
-    fn spawn(&self) -> EntityOps;
-    fn entity_ops(&self, entity: Entity) -> EntityOps;
+    fn spawn(&'_ self) -> EntityOps<'_>;
+    fn entity_ops(&'_ self, entity: Entity) -> EntityOps<'_>;
     #[track_caller]
     fn add_command<Args, S>(&self, system: S)
     where
         S: IntoSystem<Args, (), (), Sys = StaticSystem<(), ()>>;
     #[track_caller]
-    fn asset_server(&self) -> Ref<AssetServer>;
+    fn asset_server(&'_ self) -> Ref<'_, AssetServer>;
 }
 impl WorldExtra for World {
-    fn spawn(&self) -> EntityOps {
+    fn spawn(&'_ self) -> EntityOps<'_> {
         EntityOps {
             entity: self.resource_mut::<Entities>().create(),
             world: self,
         }
     }
-    fn entity_ops(&self, entity: Entity) -> EntityOps {
+    fn entity_ops(&'_ self, entity: Entity) -> EntityOps<'_> {
         EntityOps {
             entity,
             world: self,
@@ -66,7 +66,7 @@ impl WorldExtra for World {
     {
         self.resource_mut::<CommandQueue>().add(system);
     }
-    fn asset_server(&self) -> Ref<AssetServer> {
+    fn asset_server(&'_ self) -> Ref<'_, AssetServer> {
         self.resource::<AssetServer>()
     }
 }
