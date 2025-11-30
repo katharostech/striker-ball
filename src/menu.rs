@@ -65,110 +65,6 @@ impl SessionPlugin for MenuPlugin {
             );
         });
         session.add_system_to_stage(First, update_menu);
-        session.add_system_to_stage(First, update_pause);
-    }
-}
-
-pub fn update_pause(ui: &World) {
-    let mut pause = ui.resource_mut::<Pause>();
-
-    if pause == Pause::Disabled {
-        return;
-    }
-    let local_inputs = ui.resource::<LocalInputs>();
-
-    let unpause = || {
-        let mut sessions = ui.resource_mut::<Sessions>();
-        let session = sessions.get_mut(session::PLAY).unwrap();
-        session
-            .world
-            .resource_mut::<Countdown>()
-            .visual
-            .remove_hide();
-        session
-            .world
-            .resource_mut::<MatchDone>()
-            .visual
-            .remove_hide();
-        session
-            .world
-            .resource_mut::<ScoreDisplay>()
-            .visual
-            .remove_hide();
-        session
-            .world
-            .resource_mut::<WinnerBanner>()
-            .visual
-            .remove_hide();
-        session.active = true;
-    };
-
-    for (_gamepad, input) in local_inputs.iter() {
-        if input.menu_down.just_pressed() {
-            pause.cycle()
-        }
-        if input.menu_up.just_pressed() {
-            pause.cycle();
-            pause.cycle();
-        }
-        if input.pause.just_pressed() {
-            match *pause {
-                Pause::Hidden => {
-                    let mut sessions = ui.resource_mut::<Sessions>();
-                    let session = sessions.get_mut(session::PLAY).unwrap();
-                    session.world.resource_mut::<Countdown>().visual.add_hide();
-                    session.world.resource_mut::<MatchDone>().visual.add_hide();
-                    session
-                        .world
-                        .resource_mut::<ScoreDisplay>()
-                        .visual
-                        .add_hide();
-                    session
-                        .world
-                        .resource_mut::<WinnerBanner>()
-                        .visual
-                        .add_hide();
-                    session.active = false;
-                    *pause = Pause::Continue;
-                }
-                Pause::Continue | Pause::Restart | Pause::Quit => {
-                    unpause();
-                    *pause = Pause::Hidden;
-                }
-                Pause::Disabled => unreachable!(),
-            }
-        }
-        if input.menu_select.just_pressed() {
-            match *pause {
-                Pause::Continue => {
-                    unpause();
-                    *pause = Pause::Hidden;
-                }
-                Pause::Restart => {
-                    start_fade(
-                        ui,
-                        FadeTransition {
-                            hide: play_reset,
-                            prep: play_offline_prep,
-                            finish: |_| {},
-                        },
-                    );
-                    *pause = Pause::Disabled;
-                }
-                Pause::Quit => {
-                    start_fade(
-                        ui,
-                        FadeTransition {
-                            hide: play_leave,
-                            prep: splash_prep,
-                            finish: splash_finish,
-                        },
-                    );
-                    *pause = Pause::Disabled;
-                }
-                Pause::Hidden | Pause::Disabled => {}
-            }
-        }
     }
 }
 
@@ -180,6 +76,7 @@ pub fn update_menu(world: &World) {
     #[cfg(not(target_arch = "wasm32"))]
     let network_quit = world.resource_mut::<NetworkQuit>().process_ui(world);
     let team_select_output = world.resource_mut::<TeamSelect>().process_ui(world);
+    let pause_ouptut = world.resource_mut::<Pause>().process_ui(world);
     // TODO: use the `LanSelect` pattern for rendering and processing all the ui elements
     //...
 
@@ -197,7 +94,15 @@ pub fn update_menu(world: &World) {
                 team_select_transition(world, output)
             }
         }
-        MenuState::InGame => {}
+        MenuState::InGame => {
+            if let Some(output) = world
+                .resource_mut::<Pause>()
+                .process_input(world)
+                .or(pause_ouptut)
+            {
+                pause_transition(world, output)
+            }
+        }
         #[cfg(not(target_arch = "wasm32"))]
         MenuState::InNetworkGame => {
             if let Some(output) = world
@@ -489,5 +394,71 @@ pub fn team_select_transition(world: &World, output: TeamSelectOutput) {
                 finish: splash_finish,
             },
         ),
+    }
+}
+pub fn pause_transition(world: &World, output: PauseOutput) {
+    match output {
+        PauseOutput::Hide => {
+            let mut sessions = world.resource_mut::<Sessions>();
+            let session = sessions.get_mut(session::PLAY).unwrap();
+            session
+                .world
+                .resource_mut::<Countdown>()
+                .visual
+                .remove_hide();
+            session
+                .world
+                .resource_mut::<MatchDone>()
+                .visual
+                .remove_hide();
+            session
+                .world
+                .resource_mut::<ScoreDisplay>()
+                .visual
+                .remove_hide();
+            session
+                .world
+                .resource_mut::<WinnerBanner>()
+                .visual
+                .remove_hide();
+            session.active = true;
+        }
+        PauseOutput::Show => {
+            let mut sessions = world.resource_mut::<Sessions>();
+            let session = sessions.get_mut(session::PLAY).unwrap();
+            session.world.resource_mut::<Countdown>().visual.add_hide();
+            session.world.resource_mut::<MatchDone>().visual.add_hide();
+            session
+                .world
+                .resource_mut::<ScoreDisplay>()
+                .visual
+                .add_hide();
+            session
+                .world
+                .resource_mut::<WinnerBanner>()
+                .visual
+                .add_hide();
+            session.active = false;
+        }
+        PauseOutput::Restart => {
+            start_fade(
+                world,
+                FadeTransition {
+                    hide: play_reset,
+                    prep: play_offline_prep,
+                    finish: |_| {},
+                },
+            );
+        }
+        PauseOutput::Quit => {
+            start_fade(
+                world,
+                FadeTransition {
+                    hide: play_leave,
+                    prep: splash_prep,
+                    finish: splash_finish,
+                },
+            );
+        }
     }
 }
