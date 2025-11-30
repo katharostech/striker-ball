@@ -47,10 +47,11 @@ pub fn show_ui(world: &World) {
     lan_ui::show(world);
 
     if let Some(world) = world.resource_mut::<Sessions>().get_world(session::PLAY) {
+        world.resource_mut::<MatchDone>().process_input(world);
+        world.resource_mut::<MatchDone>().process_ui(world);
         fade::show(world);
         countdown::show(world);
         score_display::show(world);
-        match_done::show(world);
         winner::show(world);
     }
 }

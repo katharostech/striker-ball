@@ -172,65 +172,49 @@ fn podium_update(play: &World) {
 
 fn match_done_update(play: &World) {
     let match_done = *play.resource::<MatchDone>();
-    if !match_done.visual.shown() {
+
+    let Some(output) = match_done.output else {
         return;
     };
 
-    let to_team_select = || {
-        let mut sessions = play.resource_mut::<Sessions>();
-        let ui = sessions.get_world(session::UI).unwrap();
-        start_fade(
-            ui,
-            FadeTransition {
-                hide: play_leave,
-                prep: team_select_prep,
-                finish: team_select_finish,
-            },
-        );
-    };
-    let play_again = || {
-        // We can use the ui session here for convenience since
-        // this isn't in a network game.
-        let mut sessions = play.resource_mut::<Sessions>();
-        let ui = sessions.get_world(session::UI).unwrap();
-        start_fade(
-            ui,
-            FadeTransition {
-                hide: play_reset,
-                prep: play_offline_prep,
-                finish: |_| {},
-            },
-        );
-    };
-    let to_splash = || {
-        let mut sessions = play.resource_mut::<Sessions>();
-        let ui = sessions.get_world(session::UI).unwrap();
-        start_fade(
-            ui,
-            FadeTransition {
-                hide: play_leave,
-                prep: splash_prep,
-                finish: splash_finish,
-            },
-        );
-    };
-
-    let inputs = play.resource::<LocalInputs>();
-
-    for (_id, input) in inputs.iter() {
-        if input.menu_select.just_pressed() {
-            match match_done.state {
-                MatchDoneState::TeamSelect => to_team_select(),
-                MatchDoneState::PlayAgain => play_again(),
-                MatchDoneState::Quit => to_splash(),
-            }
-            play.resource_mut::<MatchDone>().visual.hide();
+    match output {
+        MatchDoneState::PlayAgain => {
+            // We can use the ui session here for convenience since
+            // this isn't in a network game.
+            let mut sessions = play.resource_mut::<Sessions>();
+            let ui = sessions.get_world(session::UI).unwrap();
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: play_reset,
+                    prep: play_offline_prep,
+                    finish: |_| {},
+                },
+            );
         }
-        if input.menu_up.just_pressed() {
-            play.resource_mut::<MatchDone>().cycle_up();
+        MatchDoneState::TeamSelect => {
+            let mut sessions = play.resource_mut::<Sessions>();
+            let ui = sessions.get_world(session::UI).unwrap();
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: play_leave,
+                    prep: team_select_prep,
+                    finish: team_select_finish,
+                },
+            );
         }
-        if input.menu_down.just_pressed() {
-            play.resource_mut::<MatchDone>().cycle_down();
+        MatchDoneState::Quit => {
+            let mut sessions = play.resource_mut::<Sessions>();
+            let ui = sessions.get_world(session::UI).unwrap();
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: play_leave,
+                    prep: splash_prep,
+                    finish: splash_finish,
+                },
+            );
         }
     }
 }
