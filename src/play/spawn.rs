@@ -240,9 +240,9 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
             PlayerSlot::B2 => player_b2,
         }))
         .insert(animations.to_bank(ustr("idle")))
-        .insert(Follow::XY {
+        .insert(Follow::XYZ {
             target: player.id(),
-            offset: Vec2::new(0., sprite_offset),
+            offset: Vec3::new(0., sprite_offset, 0.),
         })
         .insert(Transform::from_z(layers::PLAYER));
 

@@ -858,15 +858,24 @@ fn player_graphics(
     mut path2ds: CompMut<Path2d>,
     mut path_colors: CompMut<Path2dToggle>,
     mut players: CompMut<Player>,
+    mut transforms: CompMut<Transform>,
 ) {
-    for (_player_e, (player, path, path_color, state)) in
-        entities.iter_with((&mut players, &mut path2ds, &mut path_colors, &states))
-    {
+    for (_player_e, (player, path, path_color, transform, state)) in entities.iter_with((
+        &mut players,
+        &mut path2ds,
+        &mut path_colors,
+        &mut transforms,
+        &states,
+    )) {
         if player.angle.x > 0.0 {
             player.flip_x = false
         } else if player.angle.x < 0.0 {
             player.flip_x = true
         }
+
+        // This will make any player that is below another visually stack on top.
+        transform.translation.z = layers::PLAYER + -transform.translation.y * 0.005;
+
         *path.points.get_mut(10).unwrap() = player.angle * root.constant.player_radius;
 
         match state.current {
