@@ -449,5 +449,7 @@ pub fn allowed_character(char: &char) -> bool {
             | '0'
             | '?'
             | '_'
+            | '\''
+            | ','
     )
 }
