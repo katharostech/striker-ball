@@ -219,13 +219,14 @@ fn match_done_update(play: &World) {
     }
 }
 
-// TODO: Use PlayerEntSigns on the three functions below.
 pub fn set_player_states_scored_a(
-    entities: Res<Entities>,
+    player_ent_signs: Res<PlayerEntSigns>,
     players: Comp<Player>,
     mut states: CompMut<State>,
 ) {
-    for (_player_e, (player, state)) in entities.iter_with((&players, &mut states)) {
+    for entity in player_ent_signs.entities() {
+        let player = players.get(entity).unwrap();
+        let state = states.get_mut(entity).unwrap();
         match player.team() {
             Team::A => state.current = player::state::win(),
             Team::B => state.current = player::state::lose(),
@@ -233,25 +234,24 @@ pub fn set_player_states_scored_a(
     }
 }
 pub fn set_player_states_scored_b(
-    entities: Res<Entities>,
+    player_ent_signs: Res<PlayerEntSigns>,
     players: Comp<Player>,
     mut states: CompMut<State>,
 ) {
-    for (_player_e, (player, state)) in entities.iter_with((&players, &mut states)) {
+    for entity in player_ent_signs.entities() {
+        let player = players.get(entity).unwrap();
+        let state = states.get_mut(entity).unwrap();
         match player.team() {
             Team::A => state.current = player::state::lose(),
             Team::B => state.current = player::state::win(),
         }
     }
 }
-pub fn set_player_states_free(
-    entities: Res<Entities>,
-    players: Comp<Player>,
-    mut states: CompMut<State>,
-) {
+pub fn set_player_states_free(player_ent_signs: Res<PlayerEntSigns>, mut states: CompMut<State>) {
     tracing::info!("freeing players");
-    for (_player_e, (_player, state)) in entities.iter_with((&players, &mut states)) {
-        state.current = player::state::free()
+    for entity in player_ent_signs.entities() {
+        let state = states.get_mut(entity).unwrap();
+        state.current = player::state::free();
     }
 }
 
