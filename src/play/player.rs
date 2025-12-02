@@ -263,6 +263,7 @@ fn recieve_transition(world: &World) {
     for player_e in world.resource::<PlayerEntSigns>().entities() {
         if world.component::<State>().get(player_e).unwrap().current == state::recieve() {
             world.run_system(to_dribble_transition, player_e);
+            world.run_system(recieve_out_transition, player_e);
         }
     }
 }
@@ -402,6 +403,24 @@ fn dribble_out_transition(
         } else {
             player.action_angle = player.angle;
         }
+    }
+}
+
+fn recieve_out_transition(
+    In(player_e): In<Entity>,
+    entities: Res<Entities>,
+    player_ent_signs: Res<PlayerEntSigns>,
+    mut states: CompMut<State>,
+    mut balls: CompMut<Ball>,
+) {
+    let state = states.get_mut(player_e).unwrap();
+    let (_ball_e, ball) = entities.get_single_with(&mut balls).unwrap();
+    if ball
+        .owner
+        .option()
+        .is_some_and(|owner| owner != player_ent_signs.get_partner(player_e))
+    {
+        state.current = state::free();
     }
 }
 

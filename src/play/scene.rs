@@ -26,9 +26,8 @@ pub struct PlayersInfo {
 }
 
 /// This is the player spawn information.
-#[derive(HasSchema, Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(HasSchema, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlayerInfo {
-    #[default]
     CPU,
     Network,
     Local {
@@ -43,6 +42,16 @@ pub enum PlayerInfo {
         /// dual stick controls.
         dual_stick: bool,
     },
+}
+impl Default for PlayerInfo {
+    fn default() -> Self {
+        // This is the best default for dev testing
+        Self::Local {
+            number: 0,
+            source: SingleSource::Gamepad(0),
+            dual_stick: true,
+        }
+    }
 }
 
 /// The minimal requirements for the [`PLAY`] session.
