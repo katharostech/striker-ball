@@ -7,6 +7,7 @@ pub struct HowToPlayAssets {
     pub rules: SizedImageAsset,
     pub single_stick: SizedImageAsset,
     pub twin_stick: SizedImageAsset,
+    pub keyboard: SizedImageAsset,
     pub left_arrow: SizedImageAsset,
     pub right_arrow: SizedImageAsset,
 }
@@ -30,6 +31,7 @@ pub enum HowToPlay {
     GameOverview,
     SingleStickControls,
     DualStickControls,
+    KeyboardControls,
 }
 impl HowToPlay {
     pub fn left(&mut self) {
@@ -38,6 +40,7 @@ impl HowToPlay {
             Self::GameOverview => {}
             Self::SingleStickControls => *self = Self::GameOverview,
             Self::DualStickControls => *self = Self::SingleStickControls,
+            Self::KeyboardControls => *self = Self::DualStickControls,
         }
     }
     pub fn right(&mut self) {
@@ -45,7 +48,8 @@ impl HowToPlay {
             Self::Hidden => {}
             Self::GameOverview => *self = Self::SingleStickControls,
             Self::SingleStickControls => *self = Self::DualStickControls,
-            Self::DualStickControls => {}
+            Self::DualStickControls => *self = Self::KeyboardControls,
+            Self::KeyboardControls => {}
         }
     }
 }
@@ -76,6 +80,7 @@ pub fn show(world: &World) {
         rules,
         single_stick,
         twin_stick,
+        keyboard,
         left_arrow,
         right_arrow,
     } = &root.menu.how_to_play;
@@ -118,6 +123,7 @@ pub fn show(world: &World) {
         HowToPlay::GameOverview => 0.,
         HowToPlay::SingleStickControls => -root.screen_size.x,
         HowToPlay::DualStickControls => -root.screen_size.x * 2.,
+        HowToPlay::KeyboardControls => -root.screen_size.x * 3.,
         HowToPlay::Hidden => unreachable!(),
     };
     let offset_x = ctx.animate_value_with_time(Id::new("howtoplay_offset_x"), target_offset_x, 0.3);
@@ -216,6 +222,12 @@ pub fn show(world: &World) {
         &textures,
     );
 
+    keyboard.paint_at(
+        origin + offset + vec2(root.screen_size.x * 3.0, 0.),
+        &painter,
+        &textures,
+    );
+
     // Arrows
     match *howtoplay {
         HowToPlay::GameOverview => {
@@ -228,7 +240,7 @@ pub fn show(world: &World) {
                 howtoplay.right();
             }
         }
-        HowToPlay::SingleStickControls => {
+        HowToPlay::SingleStickControls | HowToPlay::DualStickControls => {
             let left_rect = left_arrow.paint_at(
                 origin + slots.left_arrow.to_array().into(),
                 &painter,
@@ -246,7 +258,7 @@ pub fn show(world: &World) {
                 howtoplay.right();
             }
         }
-        HowToPlay::DualStickControls => {
+        HowToPlay::KeyboardControls => {
             let left_rect = left_arrow.paint_at(
                 origin + slots.left_arrow.to_array().into(),
                 &painter,

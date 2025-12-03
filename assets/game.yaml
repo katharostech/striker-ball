@@ -126,6 +126,11 @@ menu:
       *screen_width,
       *screen_height,
     ]
+    keyboard: [
+      ui/main_menu/keyboardDiagram.png,
+      *screen_width,
+      *screen_height,
+    ]
     right_arrow: [ui/main_menu/howToPlayRightArrow.png, 22, 14]
     left_arrow: [ui/main_menu/howToPlayLeftArrow.png, 22, 14]
     slots:
