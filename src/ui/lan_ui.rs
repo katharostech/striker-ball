@@ -275,12 +275,6 @@ impl LanUI {
                                                         family: FontFamily::Name(inner_font),
                                                     };
 
-                                                    // TODO: do this at startup instead
-                                                    ui.style_mut().visuals.selection.bg_fill =
-                                                        Color32::YELLOW;
-                                                    ui.style_mut().visuals.text_cursor.color =
-                                                        Color32::YELLOW;
-
                                                     let egui::widgets::text_edit::TextEditOutput {
                                                         response,
                                                         text_draw_pos,

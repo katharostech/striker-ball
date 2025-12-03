@@ -36,6 +36,7 @@ impl SessionPlugin for UiSessionPlugin {
             .install_plugin(DefaultSessionPlugin)
             .install_plugin(UiScalePlugin)
             .install_plugin(MenuPlugin)
+            .add_startup_system(set_egui_styles)
             .add_system_to_stage(Update, show_ui);
     }
 }
@@ -52,6 +53,12 @@ pub fn show_ui(world: &World) {
         score_display::show(world);
         winner::show(world);
     }
+}
+
+pub fn set_egui_styles(ctx: Res<EguiCtx>) {
+    use egui::*;
+    ctx.style_mut(|w| w.visuals.selection.bg_fill = Color32::YELLOW);
+    ctx.style_mut(|w| w.visuals.text_cursor.color = Color32::YELLOW);
 }
 
 pub struct UiScalePlugin;
