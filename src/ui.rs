@@ -43,8 +43,6 @@ pub fn show_ui(world: &World) {
     fade::show(world);
     splash::show(world);
     howtoplay::show(world);
-    #[cfg(not(target_arch = "wasm32"))]
-    lan_ui::show(world);
 
     if let Some(world) = world.resource_mut::<Sessions>().get_world(session::PLAY) {
         world.resource_mut::<MatchDone>().process_input(world);

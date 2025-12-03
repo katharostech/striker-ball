@@ -74,6 +74,8 @@ pub fn update_menu(world: &World) {
     #[cfg(not(target_arch = "wasm32"))]
     let lan_select = world.resource_mut::<LanSelect>().process_ui(world);
     #[cfg(not(target_arch = "wasm32"))]
+    let lan_ui = world.resource_mut::<LanUI>().process_ui(world);
+    #[cfg(not(target_arch = "wasm32"))]
     let network_quit = world.resource_mut::<NetworkQuit>().process_ui(world);
     let team_select_output = world.resource_mut::<TeamSelect>().process_ui(world);
     let pause_ouptut = world.resource_mut::<Pause>().process_ui(world);
@@ -124,7 +126,15 @@ pub fn update_menu(world: &World) {
             }
         }
         #[cfg(not(target_arch = "wasm32"))]
-        MenuState::Lan => lan_ui_update(world),
+        MenuState::Lan => {
+            let output = world
+                .resource_mut::<LanUI>()
+                .process_input(world)
+                .or(lan_ui);
+            if let Some(output) = output {
+                lan_ui_transition(world, output)
+            }
+        }
     }
 }
 pub fn network_quit_transition(world: &World, output: NetworkQuitOutput) {

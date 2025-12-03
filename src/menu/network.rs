@@ -64,15 +64,14 @@ pub fn lan_select_transition(world: &World, output: LanSelectOutput) {
         }
     }
 }
-pub fn lan_ui_update(ui: &World) {
-    let mut lan_ui = ui.resource_mut::<LanUI>();
-    let local_inputs = ui.resource::<LocalInputs>();
-    let mut matchmaker = ui.resource_mut::<Matchmaker>();
+pub fn lan_ui_transition(world: &World, output: LanUIOutput) {
+    let lan_ui = world.resource::<LanUI>();
+    let mut matchmaker = world.resource_mut::<Matchmaker>();
 
     if matchmaker.network_match_socket().is_some() {
-        ui.resources.insert(lan_ui.service);
+        world.resources.insert(lan_ui.service);
         start_fade(
-            ui,
+            world,
             FadeTransition {
                 hide: lan_ui_hide,
                 prep: play_online_prep,
@@ -81,74 +80,26 @@ pub fn lan_ui_update(ui: &World) {
         );
         return;
     }
-
-    let keyboard = ui.resource::<KeyboardInputs>();
-
-    for event in &keyboard.key_events {
-        if let Maybe::Set(key_code) = event.key_code {
-            if key_code == KeyCode::Escape && event.button_state == ButtonState::Pressed {
-                start_fade(
-                    ui,
-                    FadeTransition {
-                        hide: lan_ui_leave,
-                        prep: splash_prep,
-                        finish: splash_finish,
-                    },
-                );
+    match output {
+        LanUIOutput::HostCancel => {
+            if matchmaker.is_hosting() {
+                matchmaker.lan_cancel();
+            } else {
+                matchmaker.lan_host();
             }
         }
-    }
-
-    fn lan_ui_action(
-        output: LanUIState,
-        matchmaker: &mut RefMut<'_, Matchmaker>,
-        lan_ui: &mut RefMut<'_, LanUI>,
-    ) {
-        match output {
-            LanUIState::Host => {
-                if matchmaker.is_hosting() {
-                    matchmaker.lan_cancel();
-                } else {
-                    matchmaker.lan_host();
-                }
-            }
-            LanUIState::Server(i) => {
-                if let Some(server) = matchmaker.lan_servers().get(i).cloned() {
-                    matchmaker.lan_join(&server);
-                }
-            }
-            LanUIState::Disconnected => {
-                lan_ui.state = LanUIState::Host;
+        LanUIOutput::Server(i) => {
+            if let Some(server) = matchmaker.lan_servers().get(i).cloned() {
+                matchmaker.lan_join(&server);
             }
         }
-    }
-
-    if let Some(state) = lan_ui.output {
-        lan_ui_action(state, &mut matchmaker, &mut lan_ui);
-        return;
-    }
-
-    for (_gamepad, input) in local_inputs.iter() {
-        if input.menu_select.just_pressed() {
-            lan_ui_action(lan_ui.state, &mut matchmaker, &mut lan_ui);
-            return;
-        }
-        if input.menu_back.just_pressed() {
-            start_fade(
-                ui,
-                FadeTransition {
-                    hide: lan_ui_leave,
-                    prep: splash_prep,
-                    finish: splash_finish,
-                },
-            );
-            return;
-        }
-        if input.menu_up.just_pressed() {
-            lan_ui.state.cycle_up();
-        }
-        if input.menu_down.just_pressed() {
-            lan_ui.state.cycle_down();
-        }
+        LanUIOutput::Exit => start_fade(
+            world,
+            FadeTransition {
+                hide: lan_ui_leave,
+                prep: splash_prep,
+                finish: splash_finish,
+            },
+        ),
     }
 }
