@@ -139,23 +139,8 @@ pub struct PlayerShadowSprite;
 
 #[derive(HasSchema, Clone)]
 #[schema(no_default)]
-pub enum PlayerIndicator {
-    Cpu { timer: Timer },
-    Player { index: usize, timer: Timer },
-}
-impl PlayerIndicator {
-    pub fn timer(&self) -> &Timer {
-        match self {
-            PlayerIndicator::Cpu { timer } => timer,
-            PlayerIndicator::Player { timer, .. } => timer,
-        }
-    }
-    pub fn timer_mut(&mut self) -> &mut Timer {
-        match self {
-            PlayerIndicator::Cpu { timer } => timer,
-            PlayerIndicator::Player { timer, .. } => timer,
-        }
-    }
+pub struct PlayerIndicator {
+    pub timer: Timer,
 }
 
 /// A few things that could be components are built into this struct
@@ -825,8 +810,8 @@ fn hide_player_indicators(
     mut sprites: CompMut<Sprite>,
 ) {
     for (_e, (indicator, sprite)) in entities.iter_with((&mut indicators, &mut sprites)) {
-        indicator.timer_mut().tick(time.delta());
-        if indicator.timer().finished() {
+        indicator.timer.tick(time.delta());
+        if indicator.timer.finished() {
             sprite.color = Color::NONE;
         } else {
             sprite.color = Color::WHITE;

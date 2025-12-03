@@ -288,8 +288,7 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
         PlayerInfo::Local { number, .. } => {
             world
                 .spawn()
-                .insert(PlayerIndicator::Player {
-                    index: number,
+                .insert(PlayerIndicator {
                     timer: Timer::from_seconds(3.0, TimerMode::Once),
                 })
                 .insert(Sprite {
@@ -305,7 +304,7 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
         PlayerInfo::CPU => {
             world
                 .spawn()
-                .insert(PlayerIndicator::Cpu {
+                .insert(PlayerIndicator {
                     timer: Timer::from_seconds(3.0, TimerMode::Once),
                 })
                 .insert(Sprite {

@@ -115,7 +115,7 @@ pub fn score_display_update(
             };
         }
         for (_indicator_e, indicator) in entities.iter_with(&mut player_indicators) {
-            indicator.timer_mut().reset();
+            indicator.timer.reset();
         }
     }
     if fade.fade_in.just_finished() {
