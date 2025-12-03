@@ -30,7 +30,7 @@ pub fn apply_cpu_input_system(
     let partner_e = player_ent_signs.get_partner(self_e);
     let self_player = players.get(self_e).unwrap();
     let partner_player = players.get(partner_e).unwrap();
-    let attacking_direction = self_player.id.team().direction(); // TODO: add attacking_direction & defending_direction methods to `Team`
+    let attacking_direction = self_player.id.team().attacking_direction();
     let defending_direction = -attacking_direction;
 
     let (ball_e, ball) = entities.get_single_with(&balls).unwrap();

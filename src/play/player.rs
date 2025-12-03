@@ -65,10 +65,18 @@ pub enum Team {
 impl Team {
     /// Returns a float of either `1.0` or `-1.0` for attacking direction
     /// of the team on the `x` axis.
-    pub fn direction(&self) -> f32 {
+    pub fn attacking_direction(&self) -> f32 {
         match self {
             Team::A => 1.0,
             Team::B => -1.0,
+        }
+    }
+    /// Returns a float of either `1.0` or `-1.0` for defending direction
+    /// of the team on the `x` axis.
+    pub fn defending_direction(&self) -> f32 {
+        match self {
+            Team::A => -1.0,
+            Team::B => 1.0,
         }
     }
 }
