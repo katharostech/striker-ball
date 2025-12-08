@@ -1,7 +1,7 @@
 use super::*;
 
 pub mod prelude {
-    pub use super::{Pin, PinScore};
+    pub use super::{Pin, PinPlugin, PinScore};
 }
 
 #[derive(HasSchema, Clone, Default)]
@@ -21,9 +21,12 @@ impl PinScore {
     }
 }
 
-pub fn plugin(session: &mut SessionBuilder) {
-    session.insert_resource(PinScore::default());
-    session.add_system_to_stage(Update, update);
+pub struct PinPlugin;
+impl SessionPlugin for PinPlugin {
+    fn install(self, session: &mut SessionBuilder) {
+        session.insert_resource(PinScore::default());
+        session.add_system_to_stage(Update, update);
+    }
 }
 
 pub fn animation_bank() -> AnimationBankSprite {

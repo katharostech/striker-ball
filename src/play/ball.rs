@@ -1,7 +1,7 @@
 use super::*;
 
 pub mod prelude {
-    pub use super::Ball;
+    pub use super::{Ball, BallPlugin};
 }
 
 #[derive(HasSchema, Clone)]
@@ -34,8 +34,11 @@ pub fn sprite() -> AnimatedSprite {
     }
 }
 
-pub fn plugin(session: &mut SessionBuilder) {
-    session.add_system_to_stage(Update, update_ball);
+pub struct BallPlugin;
+impl SessionPlugin for BallPlugin {
+    fn install(self, session: &mut SessionBuilder) {
+        session.add_system_to_stage(Update, update_ball);
+    }
 }
 
 pub fn update_ball(

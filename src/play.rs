@@ -42,9 +42,9 @@ impl SessionPlugin for BehaviorsPlugin {
     fn install(self, session: &mut SessionBuilder) {
         session
             .install_plugin(StatePlugin)
-            .install_plugin(player::plugin)
-            .install_plugin(ball::plugin)
-            .install_plugin(pin::plugin)
+            .install_plugin(PlayerPlugin)
+            .install_plugin(BallPlugin)
+            .install_plugin(PinPlugin)
             .install_plugin(LifetimePlugin)
             .install_plugin(FollowPlugin);
     }

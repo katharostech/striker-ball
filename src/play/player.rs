@@ -2,8 +2,8 @@ use super::*;
 
 pub mod prelude {
     pub use super::{
-        AimArrow, AimCone, Player, PlayerEntSigns, PlayerIndicator, PlayerShadowSprite, PlayerSlot,
-        PlayerSprite, StickIndicator, Team,
+        AimArrow, AimCone, Player, PlayerEntSigns, PlayerIndicator, PlayerPlugin,
+        PlayerShadowSprite, PlayerSlot, PlayerSprite, StickIndicator, Team,
     };
 }
 pub mod state {
@@ -179,43 +179,47 @@ impl Default for Player {
         Self::new(PlayerSlot::A1)
     }
 }
-pub fn plugin(session: &mut SessionBuilder) {
-    session
-        .add_system_to_stage(StateStage, dribble_transition)
-        .add_system_to_stage(StateStage, free_transition)
-        .add_system_to_stage(StateStage, recieve_transition)
-        .add_system_to_stage(StateStage, shoot_transition)
-        .add_system_to_stage(StateStage, turn_transition)
-        .add_system_to_stage(
-            StateStage,
-            timed_transition::<Player>(state::kick(), state::free(), seconds(0.5)),
-        )
-        .add_system_to_stage(
-            StateStage,
-            timed_transition::<Player>(state::tackle(), state::free(), seconds(0.5)),
-        )
-        .add_system_to_stage(
-            StateStage,
-            timed_transition::<Player>(state::tackled(), state::free(), seconds(0.5)),
-        )
-        .add_system_to_stage(
-            StateStage,
-            timed_transition::<Player>(state::pass(), state::free(), seconds(0.5)),
-        )
-        .add_system_to_stage(
-            StateStage,
-            timed_transition::<Player>(state::recieve(), state::free(), seconds(0.5)),
-        )
-        .add_system_to_stage(PreUpdate, free_update)
-        .add_system_to_stage(PreUpdate, dribble_update)
-        .add_system_to_stage(PreUpdate, shoot_update)
-        .add_system_to_stage(PreUpdate, tackle_update)
-        .add_system_to_stage(Update, aim_arrows_update)
-        .add_system_to_stage(Update, aim_cones_update)
-        .add_system_to_stage(PostUpdate, player_graphics)
-        .add_system_to_stage(PostUpdate, hide_stick_indicators)
-        .add_system_to_stage(PostUpdate, hide_player_indicators)
-        .add_system_to_stage(PostUpdate, sync_sub_sprites);
+
+pub struct PlayerPlugin;
+impl SessionPlugin for PlayerPlugin {
+    fn install(self, session: &mut SessionBuilder) {
+        session
+            .add_system_to_stage(StateStage, dribble_transition)
+            .add_system_to_stage(StateStage, free_transition)
+            .add_system_to_stage(StateStage, recieve_transition)
+            .add_system_to_stage(StateStage, shoot_transition)
+            .add_system_to_stage(StateStage, turn_transition)
+            .add_system_to_stage(
+                StateStage,
+                timed_transition::<Player>(state::kick(), state::free(), seconds(0.5)),
+            )
+            .add_system_to_stage(
+                StateStage,
+                timed_transition::<Player>(state::tackle(), state::free(), seconds(0.5)),
+            )
+            .add_system_to_stage(
+                StateStage,
+                timed_transition::<Player>(state::tackled(), state::free(), seconds(0.5)),
+            )
+            .add_system_to_stage(
+                StateStage,
+                timed_transition::<Player>(state::pass(), state::free(), seconds(0.5)),
+            )
+            .add_system_to_stage(
+                StateStage,
+                timed_transition::<Player>(state::recieve(), state::free(), seconds(0.5)),
+            )
+            .add_system_to_stage(PreUpdate, free_update)
+            .add_system_to_stage(PreUpdate, dribble_update)
+            .add_system_to_stage(PreUpdate, shoot_update)
+            .add_system_to_stage(PreUpdate, tackle_update)
+            .add_system_to_stage(Update, aim_arrows_update)
+            .add_system_to_stage(Update, aim_cones_update)
+            .add_system_to_stage(PostUpdate, player_graphics)
+            .add_system_to_stage(PostUpdate, hide_stick_indicators)
+            .add_system_to_stage(PostUpdate, hide_player_indicators)
+            .add_system_to_stage(PostUpdate, sync_sub_sprites);
+    }
 }
 
 //
