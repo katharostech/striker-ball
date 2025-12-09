@@ -20,26 +20,6 @@ pub struct PlayInput {
     pub shoot: PressInput,
     pub pass: PressInput,
 }
-impl PlayInput {
-    pub fn from_local(local: &LocalInput) -> Self {
-        Self {
-            x: local.left_stick.x,
-            y: local.left_stick.y,
-            shoot: local.south | local.right_trigger | local.left_trigger | local.east,
-            pass: local.west | local.left_bump | local.north,
-        }
-    }
-    /// Gather input for the secondary player in case the player is
-    /// being controlled by one controller.
-    pub fn from_local_dual(local: &LocalInput) -> Self {
-        Self {
-            x: local.right_stick.x,
-            y: local.right_stick.y,
-            shoot: local.south | local.right_trigger | local.left_trigger,
-            pass: local.west | local.right_bump,
-        }
-    }
-}
 
 #[derive(HasSchema, Clone, Copy, Default, Debug, PartialEq)]
 #[repr(C)]
