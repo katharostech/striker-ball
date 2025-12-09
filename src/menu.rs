@@ -131,9 +131,10 @@ pub fn update_menu(world: &World) {
                 .resource_mut::<LanUI>()
                 .process_input(world)
                 .or(lan_ui);
-            if let Some(output) = output {
-                lan_ui_transition(world, output)
-            }
+            // TODO: should probably take the `None` possibility
+            // on the other ui transitions as well for standardization.
+            // That will let the function decide to go dormant without input.
+            lan_ui_transition(world, output)
         }
     }
 }

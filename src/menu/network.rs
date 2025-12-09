@@ -64,7 +64,7 @@ pub fn lan_select_transition(world: &World, output: LanSelectOutput) {
         }
     }
 }
-pub fn lan_ui_transition(world: &World, output: LanUIOutput) {
+pub fn lan_ui_transition(world: &World, output: Option<LanUIOutput>) {
     let lan_ui = world.resource::<LanUI>();
     let mut matchmaker = world.resource_mut::<Matchmaker>();
 
@@ -80,6 +80,7 @@ pub fn lan_ui_transition(world: &World, output: LanUIOutput) {
         );
         return;
     }
+    let Some(output) = output else { return };
     match output {
         LanUIOutput::HostCancel => {
             if matchmaker.is_hosting() {
