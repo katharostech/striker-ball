@@ -4,12 +4,12 @@ use bones_framework::networking::input::*;
 bitfield::bitfield! {
     #[derive(bytemuck::Pod, bytemuck::Zeroable, Default, Clone, Copy, PartialEq, Eq)]
     #[repr(transparent)]
-    pub struct PlayInputDense(u32);
+    pub struct PlayInputDense(u64);
     impl Debug;
     pub shoot, set_shoot: 0;
     pub pass, set_pass: 1;
     pub some_angle, set_some_angle: 2;
-    pub from into DenseAngle, angle, set_angle: 16, 3;
+    pub from into DenseAngle, angle, set_angle: 32, 3;
 }
 
 impl NetworkPlayerControl<PlayInputDense> for PlayInput {
@@ -36,26 +36,14 @@ impl NetworkPlayerControl<PlayInputDense> for PlayInput {
     }
 }
 
-impl From<u32> for PlayInputDense {
-    fn from(value: u32) -> Self {
+impl From<u64> for PlayInputDense {
+    fn from(value: u64) -> Self {
         Self(value)
     }
 }
-impl From<PlayInputDense> for u32 {
+impl From<PlayInputDense> for u64 {
     fn from(dense: PlayInputDense) -> Self {
         dense.0
-    }
-}
-impl From<u64> for PlayInputDense {
-    fn from(bits: u64) -> Self {
-        let bits_32 = bits as u32;
-        bits_32.into()
-    }
-}
-impl From<PlayInputDense> for u64 {
-    fn from(dir: PlayInputDense) -> Self {
-        let bits_16 = u32::from(dir);
-        bits_16 as u64
     }
 }
 

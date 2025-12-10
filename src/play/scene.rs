@@ -128,7 +128,7 @@ pub fn lan_session_runner(
     use bones_framework::networking::{GgrsSessionRunner, GgrsSessionRunnerInfo};
 
     let mut runner = GgrsSessionRunner::<PlayTeamNetworkInputConfig>::new(
-        Some(30.0),
+        Some(60.0),
         GgrsSessionRunnerInfo::new(socket.ggrs_socket(), Some(7), Some(2), 0),
     );
     match service_type {
