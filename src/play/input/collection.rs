@@ -8,6 +8,7 @@ pub enum SingleSource {
     Gamepad(u32),
 }
 
+// TODO: This is unused right now, remove if needed.
 /// Collection type variants for gathering inputs for two characters on one computer.
 #[derive(HasSchema, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TeamSource {
@@ -156,6 +157,8 @@ pub struct PlayTeamInputCollector {
     p1_source: SingleSource,
     p2_source: SingleSource,
     // TODO: I think current may be the wrong name but I still have to nail down all the input stuff
+    // TODO: FIXME: This should only include the state, but `PlayTeamInput` has just_pressed data in it.
+    // NOTE: We can only change this by disolving the unnecessary type restrictions on the collector.
     current: PlayTeamInput,
     // TODO: I think I can put individual collectors into this collector.
 }
@@ -243,10 +246,11 @@ impl InputCollector<'_, Mapping, BlankSource, PlayTeamInput> for PlayTeamInputCo
     // Called on frame update as opposed to the cpu cycle.
     // By the time this is called, the dense input is sent across the network.
     fn advance_frame(&mut self) {
-        self.current.p1.pass.advance();
-        self.current.p1.shoot.advance();
-        self.current.p2.pass.advance();
-        self.current.p2.shoot.advance();
+        // self.current.p1.pass.advance();
+        // self.current.p1.shoot.advance();
+        // self.current.p2.pass.advance();
+        // self.current.p2.shoot.advance();
+        // This can be properly handled on in-game systems.
     }
     // This is only ever used for getting *dense* input, so we should probably return
     // the dense instead. This would reduce some processing as well since we're not

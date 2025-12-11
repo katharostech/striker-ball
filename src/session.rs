@@ -43,8 +43,6 @@ impl SessionRunner for OfflineRunner {
 
         for collector in &mut self.collectors {
             collector.offline_apply_inputs(world);
-            // collector.apply_inputs(&world.resource(), &world.resource(), &world.resource());
-            // collector.update_just_pressed();
         }
 
         self.accumulator += delta;
@@ -67,13 +65,14 @@ impl SessionRunner for OfflineRunner {
                     .iter_mut()
                     .enumerate()
                 {
-                    *client = *self.collectors[i].get_control(i, Default::default());
+                    use bones_framework::networking::input::NetworkPlayerControl;
+                    client.update_from_dense(
+                        &self.collectors[i]
+                            .get_control(/* both of these are unused */ 0, Default::default())
+                            .get_dense_input(),
+                    );
                 }
             };
-
-            for collector in &mut self.collectors {
-                collector.advance_frame();
-            }
 
             stages.run(world);
         }

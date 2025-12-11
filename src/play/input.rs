@@ -42,6 +42,9 @@ impl PlayTeamInputs {
             PlayerSlot::B2 => &self.clients[1].p2,
         }
     }
+    // This is how this will be handled in the future; I call this in my own
+    // systems as a way to handle just_pressed inputs based on the state
+    // that `Self` has gathered from all the collectors.
     pub fn advance_frame(&mut self) {
         for client in &mut self.clients {
             client.p1.shoot.advance();

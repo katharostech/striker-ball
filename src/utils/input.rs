@@ -29,6 +29,7 @@ impl PressInput {
         self.held
     }
     /// Applies a boolean value to the input for whether or not the button should be pressed.
+    /// This can be used multiple times in one frame.
     pub fn apply_bool(&mut self, pressed: bool) {
         self.current = pressed;
         if self.just_pressed() {
@@ -36,12 +37,11 @@ impl PressInput {
         }
     }
     /// Applies an `f32` value to the input, `value == 1.0` meaning the button should be pressed.
+    /// /// This can be used multiple times in one frame.
     pub fn apply_value(&mut self, value: f32) {
-        self.current = value == 1.0;
-        if self.just_pressed() {
-            self.held = 0;
-        }
+        self.apply_bool(value == 1.0);
     }
+    /// This should be called after the input has been read or updated in a frame.
     pub fn advance(&mut self) {
         self.last = self.current;
 
