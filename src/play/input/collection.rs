@@ -175,23 +175,18 @@ impl PlayTeamInputCollector {
     /// I believe this can be replaced with the [`InputCollector`] trait method
     /// once it supports the borrowing of the world and that is considered safe.
     pub fn offline_apply_inputs(&mut self, world: &World) {
-        let mut cpus = 0;
         if let SingleSource::CPU(player_slot) = self.p1_source {
             cpu_player::apply_cpu_input(world, player_slot, &mut self.current.p1);
-            cpus += 1;
         }
         if let SingleSource::CPU(player_slot) = self.p2_source {
             cpu_player::apply_cpu_input(world, player_slot, &mut self.current.p2);
-            cpus += 1;
         }
-        if cpus < 2 {
-            self.apply_inputs(
-                &world.resource(),
-                &world.resource(),
-                &world.resource(),
-                &world.resource(),
-            );
-        }
+        self.apply_inputs(
+            &world.resource(),
+            &world.resource(),
+            &world.resource(),
+            &world.resource(),
+        );
     }
 }
 impl InputCollector<'_, Mapping, BlankSource, PlayTeamInput> for PlayTeamInputCollector {
