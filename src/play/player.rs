@@ -292,6 +292,7 @@ fn turn_out_transition(
     entities: Res<Entities>,
     root: Root<Data>,
     players: Comp<Player>,
+    mut transforms: CompMut<Transform>,
     mut audio: ResMut<AudioCenter>,
     mut balls: CompMut<Ball>,
     mut states: CompMut<State>,
@@ -303,10 +304,16 @@ fn turn_out_transition(
     {
         state.current = state::kick();
 
-        let (_ball_e, ball) = entities.get_single_with(&mut balls).unwrap();
+        let (ball_e, ball) = entities.get_single_with(&mut balls).unwrap();
+        let player_pos = transforms.get(player_e).unwrap().translation.xy();
         let player = players.get(player_e).unwrap();
 
-        // TODO: Add warn if the dribble_pos didn't get to the target position by now.
+        let target_pos =
+            player_pos + player.angle * (root.constant.player_radius + root.constant.ball_radius);
+
+        let ball_pos = &mut transforms.get_mut(ball_e).unwrap().translation;
+        ball_pos.x = target_pos.x;
+        ball_pos.y = target_pos.y;
 
         ball.owner = Maybe::Unset;
         ball.velocity = player.angle * root.constant.kick_power;
