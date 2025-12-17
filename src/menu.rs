@@ -44,7 +44,7 @@ impl SessionPlugin for MenuPlugin {
         #[cfg(not(target_arch = "wasm32"))]
         {
             session.install_plugin(
-                MatchmakerPlugin::new(MATCHMAKER_SERVICE_NAME_ONEPLAYER)
+                MatchmakerPlugin::new(MATCHMAKER_SERVICE_NAME)
                     .refresh(1.0)
                     .player_count(2),
             );

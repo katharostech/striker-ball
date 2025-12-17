@@ -1,7 +1,6 @@
 use super::*;
 
-pub const MATCHMAKER_SERVICE_NAME_ONEPLAYER: &str = "sb1player";
-pub const MATCHMAKER_SERVICE_NAME_TWOPLAYER: &str = "sb2player";
+pub const MATCHMAKER_SERVICE_NAME: &str = "StrikerBall";
 
 #[derive(HasSchema, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ServiceType {
@@ -11,14 +10,6 @@ pub enum ServiceType {
 impl Default for ServiceType {
     fn default() -> Self {
         Self::OnePlayer(0)
-    }
-}
-impl ServiceType {
-    pub fn service_name(&self) -> &str {
-        match self {
-            ServiceType::OnePlayer(_) => MATCHMAKER_SERVICE_NAME_ONEPLAYER,
-            ServiceType::TwoPlayer(_, _) => MATCHMAKER_SERVICE_NAME_TWOPLAYER,
-        }
     }
 }
 
