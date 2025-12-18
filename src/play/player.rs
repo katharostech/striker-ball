@@ -50,6 +50,15 @@ impl PlayerEntSigns {
             Team::B => [self.a1, self.a2],
         }
     }
+    pub fn get_enemies_with_entity(&self, entity: Entity) -> [Entity; 2] {
+        if entity == self.a1 || entity == self.a2 {
+            [self.b1, self.b2]
+        } else if entity == self.b1 || entity == self.b2 {
+            [self.a1, self.a2]
+        } else {
+            panic!("entity is not an assigned player");
+        }
+    }
     pub fn entities(&self) -> [Entity; 4] {
         [self.a1, self.a2, self.b1, self.b2]
     }

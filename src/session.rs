@@ -65,7 +65,6 @@ impl SessionRunner for OfflineRunner {
                     .iter_mut()
                     .enumerate()
                 {
-                    use bones_framework::networking::input::NetworkPlayerControl;
                     client.update_from_dense(
                         &self.collectors[i]
                             .get_control(/* both of these are unused */ 0, Default::default())

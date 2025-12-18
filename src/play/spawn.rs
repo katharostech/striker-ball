@@ -316,6 +316,18 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
                     offset: Vec2::new(0., -18.),
                 })
                 .insert(Transform::from_z(layers::PLAYER_SHADOW));
+
+            let mut cpu_state = world.spawn();
+            // This entity is not tagged very much but the only thing
+            // that needs to reference it is the cpu component below it.
+            cpu_state
+                .insert(CpuPlayerState)
+                .insert(State::new(&cpu_player::state::chase()));
+
+            player.insert(CpuPlayer {
+                state_e: cpu_state.entity,
+                input: Default::default(),
+            });
         }
     }
 

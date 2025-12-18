@@ -3,9 +3,7 @@ use super::*;
 pub mod collection;
 pub use collection::*;
 
-#[cfg(not(target_arch = "wasm32"))]
 pub mod dense;
-#[cfg(not(target_arch = "wasm32"))]
 pub use dense::*;
 
 pub mod prelude {

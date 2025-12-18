@@ -16,6 +16,8 @@ ttf-parser = { version = "0.25.1", features = ["std"] }
 ttf-parser-older = { package = "ttf-parser", version = "0.24.1", features = ["std"] }
 bitfield = "0.19.1"
 bit_field = "0.10.2"
+# TODO: Take numquant out after bones exposes wasm32 compatible networking traits & types
+numquant = "0.2.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 # We don't directly depend on these but we need to add the WASM features to them because

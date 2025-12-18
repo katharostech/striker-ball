@@ -7135,6 +7135,7 @@ dependencies = [
  "bytemuck",
  "getrandom 0.3.4",
  "gilrs",
+ "numquant",
  "tracing",
  "ttf-parser 0.24.1",
  "ttf-parser 0.25.1",

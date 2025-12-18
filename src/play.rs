@@ -46,7 +46,8 @@ impl SessionPlugin for BehaviorsPlugin {
             .install_plugin(BallPlugin)
             .install_plugin(PinPlugin)
             .install_plugin(LifetimePlugin)
-            .install_plugin(FollowPlugin);
+            .install_plugin(FollowPlugin)
+            .install_plugin(CpuPlayerPlugin);
     }
 }
 

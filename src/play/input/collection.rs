@@ -179,10 +179,14 @@ impl PlayTeamInputCollector {
     /// once it supports the borrowing of the world and that is considered safe.
     pub fn offline_apply_inputs(&mut self, world: &World) {
         if let SingleSource::CPU(player_slot) = self.p1_source {
-            cpu_player::apply_cpu_input(world, player_slot, &mut self.current.p1);
+            self.current
+                .p1
+                .update_from_dense(&cpu_player::get_cpu_input(world, player_slot));
         }
         if let SingleSource::CPU(player_slot) = self.p2_source {
-            cpu_player::apply_cpu_input(world, player_slot, &mut self.current.p2);
+            self.current
+                .p2
+                .update_from_dense(&cpu_player::get_cpu_input(world, player_slot));
         }
         self.apply_inputs(
             &world.resource(),

@@ -28,6 +28,15 @@ impl PressInput {
     pub fn held(&self) -> u32 {
         self.held
     }
+    pub fn press(&mut self) {
+        self.apply_bool(true);
+    }
+    pub fn release(&mut self) {
+        self.apply_bool(false);
+    }
+    pub fn toggle(&mut self) {
+        self.apply_bool(!self.current);
+    }
     /// Applies a boolean value to the input for whether or not the button should be pressed.
     /// This can be used multiple times in one frame.
     pub fn apply_bool(&mut self, pressed: bool) {
