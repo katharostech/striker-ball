@@ -303,6 +303,16 @@ impl LanUI {
                                                         }
                                                         matchmaker.host_name = new;
                                                     }
+                                                    if response.gained_focus() {
+                                                        world
+                                                            .resource_mut::<LocalInputs>()
+                                                            .add_key_consumption(KeyCode::Space);
+                                                    }
+                                                    if response.lost_focus() {
+                                                        world
+                                                            .resource_mut::<LocalInputs>()
+                                                            .remove_key_consumption(KeyCode::Space);
+                                                    }
 
                                                     ui.painter().text(
                                                         text_draw_pos,

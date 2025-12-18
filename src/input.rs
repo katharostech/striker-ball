@@ -150,7 +150,9 @@ impl LocalInput {
 /// The primary layer of collective inputs.
 #[derive(HasSchema, Clone, Default, Deref, DerefMut)]
 pub struct LocalInputs {
+    #[deref]
     pub sources: HashMap<SingleSource, LocalInput>,
+    pub key_consumers: HashMap<KeyCode, usize>,
 }
 impl LocalInputs {
     pub fn get_input(&mut self, source: SingleSource) -> &LocalInput {
@@ -159,8 +161,19 @@ impl LocalInputs {
         }
         self.sources.get(&source).unwrap()
     }
+    pub fn add_key_consumption(&mut self, key: KeyCode) {
+        *self.key_consumers.entry(key).or_default() += 1;
+    }
+    pub fn remove_key_consumption(&mut self, key: KeyCode) {
+        if let Some(consumers) = self.key_consumers.get_mut(&key) {
+            *consumers = consumers.saturating_sub(1);
+        }
+    }
     pub fn update(game: &mut Game) {
-        let LocalInputs { sources } = &mut *game.shared_resource_mut::<LocalInputs>().unwrap();
+        let LocalInputs {
+            sources,
+            key_consumers,
+        } = &mut *game.shared_resource_mut::<LocalInputs>().unwrap();
         let gamepad_inputs = game.shared_resource::<GamepadInputs>().unwrap();
         let keyboard_inputs = game.shared_resource::<KeyboardInputs>().unwrap();
 
@@ -175,6 +188,15 @@ impl LocalInputs {
             local_input.apply_gamepad_input(event);
         }
         for event in &keyboard_inputs.key_events {
+            if let KeyboardEvent {
+                key_code: Maybe::Set(key),
+                ..
+            } = event
+            {
+                if *key_consumers.get(key).unwrap_or(&0) > 0 {
+                    continue;
+                }
+            }
             let id = &SingleSource::KeyboardMouse;
             let local_input = if sources.contains_key(id) {
                 sources.get_mut(id).unwrap()
