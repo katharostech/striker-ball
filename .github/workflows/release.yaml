@@ -79,7 +79,9 @@ jobs:
       
       - name: Install ALSA [Unix]
         if: matrix.config.os == 'ubuntu-latest'
-        run: sudo apt install libasound2-dev libudev-dev
+        run: |
+          sudo apt update -y
+          sudo apt install libasound2-dev libudev-dev
 
       - name: 🔨 Build
         uses: actions-rs/cargo@v1
