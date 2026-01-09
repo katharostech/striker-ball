@@ -339,21 +339,13 @@ impl LanUI {
                                     .clone()
                                     .text(text)
                                     .pos(ui.cursor().min)
-                                    .color(if matchmaker.is_hosting() {
-                                        Color32::BLACK
-                                    } else {
-                                        Color32::TRANSPARENT
-                                    })
+                                    .color(Color32::BLACK)
                                     .paint(ui.painter());
                                 inner
                                     .clone()
                                     .text(text)
                                     .pos(ui.cursor().min)
-                                    .color(if matchmaker.is_hosting() {
-                                        Color32::WHITE
-                                    } else {
-                                        Color32::TRANSPARENT
-                                    })
+                                    .color(Color32::WHITE)
                                     .paint(ui.painter());
                                 ui.advance_cursor_after_rect(rect);
                                 return;
