@@ -120,6 +120,7 @@ pub struct Menus {
     pub team_select: TeamSelectAssets,
     pub match_done: MatchDoneAssets,
     pub pause: PauseAssets,
+    pub settings: SettingsAssets,
 }
 
 #[derive(HasSchema, Clone, Copy, Default)]

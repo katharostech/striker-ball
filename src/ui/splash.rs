@@ -14,6 +14,8 @@ pub struct SplashAssets {
     pub offline_blink: SizedImageAsset,
     pub how_to_play: SizedImageAsset,
     pub how_to_play_blink: SizedImageAsset,
+    pub settings_button: SizedImageAsset,
+    pub settings_button_blink: SizedImageAsset,
 }
 
 #[derive(HasSchema, Clone, Copy, Default)]
@@ -24,6 +26,7 @@ pub struct SplashSlots {
     pub button_1: f32,
     pub button_2: f32,
     pub button_3: f32,
+    pub settings: Vec2,
 }
 
 #[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq)]
@@ -33,6 +36,7 @@ pub enum SplashState {
     #[cfg(not(target_arch = "wasm32"))]
     Lan,
     HowToPlay,
+    Settings,
 }
 impl SplashState {
     #[cfg(not(target_arch = "wasm32"))]
@@ -41,6 +45,15 @@ impl SplashState {
             Self::Offline => Self::HowToPlay,
             Self::Lan => Self::Offline,
             Self::HowToPlay => Self::Lan,
+            Self::Settings => Self::HowToPlay,
+        }
+    }
+    #[cfg(target_arch = "wasm32")]
+    pub fn cycle_up(&mut self) {
+        *self = match self {
+            Self::Offline => Self::HowToPlay,
+            Self::HowToPlay => Self::Offline,
+            Self::Settings => Self::HowToPlay,
         }
     }
     #[cfg(not(target_arch = "wasm32"))]
@@ -49,20 +62,43 @@ impl SplashState {
             Self::Offline => Self::Lan,
             Self::Lan => Self::HowToPlay,
             Self::HowToPlay => Self::Offline,
-        }
-    }
-    #[cfg(target_arch = "wasm32")]
-    pub fn cycle_up(&mut self) {
-        *self = match self {
-            Self::Offline => Self::HowToPlay,
-            Self::HowToPlay => Self::Offline,
+            Self::Settings => Self::Settings,
         }
     }
     #[cfg(target_arch = "wasm32")]
     pub fn cycle_down(&mut self) {
         *self = match self {
             Self::Offline => Self::HowToPlay,
-            Self::HowToPlay => Self::Offline,
+            Self::HowToPlay => Self::Settings,
+            Self::Settings => Self::Offline,
+        }
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn cycle_left(&mut self) {
+        *self = match self {
+            Self::Offline | Self::Lan | Self::HowToPlay => Self::Settings,
+            Self::Settings => Self::HowToPlay,
+        }
+    }
+    #[cfg(target_arch = "wasm32")]
+    pub fn cycle_left(&mut self) {
+        *self = match self {
+            Self::Offline | Self::HowToPlay => Self::Settings,
+            Self::Settings => Self::HowToPlay,
+        }
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn cycle_right(&mut self) {
+        *self = match self {
+            Self::Offline | Self::Lan | Self::HowToPlay => Self::Settings,
+            Self::Settings => Self::HowToPlay,
+        }
+    }
+    #[cfg(target_arch = "wasm32")]
+    pub fn cycle_right(&mut self) {
+        *self = match self {
+            Self::Offline | Self::HowToPlay => Self::Settings,
+            Self::Settings => Self::HowToPlay,
         }
     }
 }
@@ -115,6 +151,8 @@ pub fn show(world: &World) {
         lan,
         #[cfg(not(target_arch = "wasm32"))]
         lan_blink,
+        settings_button,
+        settings_button_blink,
         ..
     } = root.menu.splash;
 
@@ -216,5 +254,25 @@ pub fn show(world: &World) {
         if ctx.hovered_rect(lan_rect) {
             splash.state = SplashState::Lan;
         }
+    }
+
+    let image = if splash.state == SplashState::Settings {
+        settings_button_blink
+    } else {
+        settings_button
+    };
+    let settings_rect = builder
+        .clone()
+        .image(*image)
+        .size(image.egui_size())
+        .pos(slots.settings.to_array().into())
+        .paint(&painter, &textures)
+        .expand(2.0);
+
+    if ctx.clicked_rect(settings_rect) {
+        splash.interact = Some(SplashState::Settings);
+    }
+    if ctx.hovered_rect(settings_rect) {
+        splash.state = SplashState::Settings;
     }
 }

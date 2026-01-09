@@ -99,6 +99,7 @@ menu:
       button_1: 131
       button_2: 144
       button_3: 157
+      settings: [343, 168]
     bg: ui/main_menu/mainMenuBackground.png
     title: [ui/main_menu/titleText.png, 117, 66]
     button_bg: [ui/main_menu/modeSelectBackground.png, 95, 51]
@@ -109,6 +110,8 @@ menu:
     lan_blink: [ui/main_menu/LANButtonBlink.png, 68, 7]
     how_to_play: [ui/main_menu/howToPlayButton.png, 55, 7]
     how_to_play_blink: [ui/main_menu/howToPlayButtonBlink.png, 55, 7]
+    settings_button: [ui/main_menu/settingsButton.png, 20, 20]
+    settings_button_blink: [ui/main_menu/settingsButtonBlink.png, 20, 20]
 
   how_to_play:
     rules: [
@@ -206,3 +209,19 @@ menu:
     continue_pos: [61, 47]
     restart_pos: [65, 59]
     team_select_pos: [72, 71]
+
+  settings:
+    sfx_volume_slider_start: [&slidersx 169, 98]
+    sfx_volume_slider_length: &sliderl 60
+    sfx_volume_label_offset: [13, 26]
+    sfx_volume_label_highlight: [ui/settings/sfxLabelHighlight.png, 16, 7]
+    music_volume_slider_start: [*slidersx, 117]
+    music_volume_slider_length: *sliderl
+    music_volume_label_offset: [8, 45]
+    music_volume_label_highlight: [
+      ui/settings/musicLabelHighlight.png,
+      26,
+      7,
+    ]
+    settings_frame: [ui/settings/soundSettingsMenu.png, 117, 66]
+    settings_slider: [ui/settings/soundSliderBar.png, 5, 9]

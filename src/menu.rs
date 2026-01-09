@@ -9,6 +9,7 @@ pub use network::*;
 pub enum MenuState {
     #[default]
     Splash,
+    Settings,
     HowToPlay,
     FadeTransition,
     TeamSelect,
@@ -30,6 +31,7 @@ impl SessionPlugin for MenuPlugin {
             visual: Visual::new_shown(),
             ..Default::default()
         });
+        session.install_plugin(Settings::default());
         session.install_plugin(HowToPlay::default());
         session.install_plugin(Fade::new(
             0.5,
@@ -53,17 +55,26 @@ impl SessionPlugin for MenuPlugin {
             session.install_plugin(NetworkQuit::default());
         }
 
-        session.add_startup_system(|root: Root<Data>, mut audio: ResMut<AudioCenter>| {
-            audio.play_music_advanced(
-                *root.sound.menu_music,
-                root.sound.menu_music.volume(),
-                true,
-                false,
-                0.0,
-                1.0,
-                true,
-            );
-        });
+        session.add_startup_system(
+            |root: Root<Data>, mut storage: ResMut<Storage>, mut audio: ResMut<AudioCenter>| {
+                audio.set_volume_scales(
+                    1.0,
+                    storage
+                        .get_or_insert_default::<MusicVolumeSetting>()
+                        .scale(),
+                    storage.get_or_insert_default::<SfxVolumeSetting>().scale(),
+                );
+                audio.play_music_advanced(
+                    *root.sound.menu_music,
+                    root.sound.menu_music.volume(),
+                    true,
+                    false,
+                    0.0,
+                    1.0,
+                    true,
+                );
+            },
+        );
         session.add_system_to_stage(First, update_menu);
     }
 }
@@ -77,6 +88,7 @@ pub fn update_menu(world: &World) {
     let lan_ui = world.resource_mut::<LanUI>().process_ui(world);
     #[cfg(not(target_arch = "wasm32"))]
     let network_quit = world.resource_mut::<NetworkQuit>().process_ui(world);
+    let settings_output = world.resource_mut::<Settings>().process_ui(world);
     let team_select_output = world.resource_mut::<TeamSelect>().process_ui(world);
     let pause_ouptut = world.resource_mut::<Pause>().process_ui(world);
     // TODO: use the `LanSelect` pattern for rendering and processing all the ui elements
@@ -87,6 +99,15 @@ pub fn update_menu(world: &World) {
         MenuState::FadeTransition => fade_transition(world),
         MenuState::Splash => splash_update(world),
         MenuState::HowToPlay => how_to_play_update(world),
+        MenuState::Settings => {
+            if let Some(output) = world
+                .resource_mut::<Settings>()
+                .process_input(world)
+                .or(settings_output)
+            {
+                settings_transition(world, output)
+            }
+        }
         MenuState::TeamSelect => {
             if let Some(output) = world
                 .resource_mut::<TeamSelect>()
@@ -246,6 +267,19 @@ pub fn splash_finish(world: &World) {
 pub fn team_select_hide(world: &World) {
     world.resource_mut::<TeamSelect>().visible = false;
 }
+pub fn settings_hide(world: &World) {
+    world.resource_mut::<Settings>().visible = false;
+}
+pub fn settings_prep(world: &World) {
+    *world.resource_mut() = Settings {
+        visible: true,
+        ..Default::default()
+    };
+    world.resource::<EguiCtx>().clear_animations();
+}
+pub fn settings_finish(world: &World) {
+    *world.resource_mut() = MenuState::Settings;
+}
 pub fn team_select_prep(world: &World) {
     *world.resource_mut() = TeamSelect {
         visible: true,
@@ -342,6 +376,16 @@ pub fn splash_update(ui: &World) {
                 },
             );
         }
+        SplashState::Settings => {
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: splash_hide,
+                    prep: settings_prep,
+                    finish: settings_finish,
+                },
+            );
+        }
     };
 
     if let Some(interact) = splash.interact {
@@ -356,6 +400,14 @@ pub fn splash_update(ui: &World) {
         }
         if input.menu_down.just_pressed() {
             splash.cycle_down();
+            return;
+        }
+        if input.menu_left.just_pressed() {
+            splash.cycle_left();
+            return;
+        }
+        if input.menu_right.just_pressed() {
+            splash.cycle_right();
             return;
         }
         if input.menu_select.just_pressed() {
@@ -386,6 +438,16 @@ pub fn how_to_play_update(ui: &World) {
             howtoplay.right();
         }
     }
+}
+pub fn settings_transition(world: &World, _output: SettingsOutput) {
+    start_fade(
+        world,
+        FadeTransition {
+            hide: settings_hide,
+            prep: splash_prep,
+            finish: splash_finish,
+        },
+    );
 }
 pub fn team_select_transition(world: &World, output: TeamSelectOutput) {
     match output {
