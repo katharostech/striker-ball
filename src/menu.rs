@@ -57,13 +57,12 @@ impl SessionPlugin for MenuPlugin {
 
         session.add_startup_system(
             |root: Root<Data>, mut storage: ResMut<Storage>, mut audio: ResMut<AudioCenter>| {
-                audio.set_volume_scales(
-                    1.0,
-                    storage
-                        .get_or_insert_default::<MusicVolumeSetting>()
-                        .scale(),
-                    storage.get_or_insert_default::<SfxVolumeSetting>().scale(),
-                );
+                let Settings {
+                    sfx_volume,
+                    music_volume,
+                } = storage.get_or_insert_default::<Settings>();
+
+                audio.set_volume_scales(1.0, music_volume.scale(), sfx_volume.scale());
                 audio.play_music_advanced(
                     *root.sound.menu_music,
                     root.sound.menu_music.volume(),
