@@ -31,7 +31,7 @@ impl SessionPlugin for MenuPlugin {
             visual: Visual::new_shown(),
             ..Default::default()
         });
-        session.install_plugin(Settings::default());
+        session.install_plugin(SettingsUi::default());
         session.install_plugin(HowToPlay::default());
         session.install_plugin(Fade::new(
             0.5,
@@ -88,7 +88,7 @@ pub fn update_menu(world: &World) {
     let lan_ui = world.resource_mut::<LanUI>().process_ui(world);
     #[cfg(not(target_arch = "wasm32"))]
     let network_quit = world.resource_mut::<NetworkQuit>().process_ui(world);
-    let settings_output = world.resource_mut::<Settings>().process_ui(world);
+    let settings_output = world.resource_mut::<SettingsUi>().process_ui(world);
     let team_select_output = world.resource_mut::<TeamSelect>().process_ui(world);
     let pause_ouptut = world.resource_mut::<Pause>().process_ui(world);
     // TODO: use the `LanSelect` pattern for rendering and processing all the ui elements
@@ -101,7 +101,7 @@ pub fn update_menu(world: &World) {
         MenuState::HowToPlay => how_to_play_update(world),
         MenuState::Settings => {
             if let Some(output) = world
-                .resource_mut::<Settings>()
+                .resource_mut::<SettingsUi>()
                 .process_input(world)
                 .or(settings_output)
             {
@@ -268,10 +268,10 @@ pub fn team_select_hide(world: &World) {
     world.resource_mut::<TeamSelect>().visible = false;
 }
 pub fn settings_hide(world: &World) {
-    world.resource_mut::<Settings>().visible = false;
+    world.resource_mut::<SettingsUi>().visible = false;
 }
 pub fn settings_prep(world: &World) {
-    *world.resource_mut() = Settings {
+    *world.resource_mut() = SettingsUi {
         visible: true,
         ..Default::default()
     };

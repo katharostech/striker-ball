@@ -33,13 +33,13 @@ impl SettingsState {
 }
 
 #[derive(HasSchema, Clone, Default, Deref, DerefMut)]
-pub struct Settings {
+pub struct SettingsUi {
     #[deref]
     pub state: SettingsState,
     pub visible: bool,
 }
 
-impl SessionPlugin for Settings {
+impl SessionPlugin for SettingsUi {
     fn install(self, session: &mut SessionBuilder) {
         session.insert_resource(self);
     }
@@ -83,7 +83,7 @@ impl MusicVolumeSetting {
 
 pub struct SettingsOutput;
 
-impl Settings {
+impl SettingsUi {
     pub fn process_input(&mut self, world: &World) -> Option<SettingsOutput> {
         let mut output = None;
 
