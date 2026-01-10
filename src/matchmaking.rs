@@ -32,18 +32,22 @@ pub struct Matchmaker {
     lan_discovery: Option<lan::ServiceDiscoveryReceiver>,
 
     // Join
+    joining: bool,
     socket: Option<NetworkMatchSocket>,
 }
 
 impl Matchmaker {
-    /// Whether or not the matchmaker has created a server for hosting.
-    pub fn is_hosting(&self) -> bool {
-        self.server.is_some()
-    }
-    /// This is whether or not the matchmaker has gotten a network socket for a match full of players
+    /// This is whether or not the matchmaker is waiting to get a network socket for a match full of players
     /// either by hosting or by searching then joining.
-    pub fn is_joined(&self) -> bool {
-        self.socket.is_some()
+    pub fn is_waiting(&self) -> bool {
+        self.joining
+    }
+    /// Whether or not the matchmaker is waiting to get a network socket by way of hosting.
+    pub fn is_hosting(&self) -> bool {
+        self.server.is_some() && self.is_waiting()
+    }
+    pub fn is_joining(&self) -> bool {
+        self.server.is_none() && self.is_waiting()
     }
     pub fn service_name(&self) -> &str {
         &self.service_name
@@ -57,6 +61,8 @@ impl Matchmaker {
     pub fn joined_players(&self) -> Option<usize> {
         self.is_hosting().then_some(self.joined_players)
     }
+    /// This is the network socket for a match full of players
+    /// either by hosting or by searching then joining.
     pub fn network_match_socket(&self) -> Option<NetworkMatchSocket> {
         self.socket.clone()
     }
@@ -77,15 +83,17 @@ impl Matchmaker {
         let (is_recreated, server) = RUNTIME.block_on(async {
             lan::prepare_to_host(&mut self.server, &service_type, &self.host_name).await
         });
-        dbg!(is_recreated);
+        tracing::debug!(?is_recreated, "preparing to host");
 
         lan::start_server(server.clone(), self.player_count);
 
+        self.joining = true;
         self.socket = lan::wait_players(&mut self.joined_players, server);
     }
     pub fn lan_join(&mut self, server: &lan::ServerInfo) {
         self.lan_cancel();
         lan::join_server(server).expect("failed to join lan server");
+        self.joining = true;
         self.socket = lan::wait_game_start();
     }
     pub fn lan_cancel(&mut self) {
@@ -94,6 +102,7 @@ impl Matchmaker {
         } else {
             lan::leave_server();
         }
+        self.joining = false;
         self.socket = None;
         self.lan_discovery = None;
         self.lan_servers = Vec::new();
@@ -110,18 +119,14 @@ impl Matchmaker {
     pub fn update(&mut self, delta: std::time::Duration) {
         self.refresh.tick(delta);
 
-        if self.search_enabled && !self.is_hosting() && !self.is_joined() && self.refresh.finished()
-        {
+        if self.search_enabled && self.refresh.finished() && !self.is_waiting() {
             tracing::debug!("matchmaker refresh...");
             self.lan_search();
             self.refresh.reset();
         }
-        if !self.is_joined() {
-            self.socket =
-            // is hosting
-            if let Some(server) = &self.server {
+        if self.is_waiting() && self.socket.is_none() {
+            self.socket = if let Some(server) = &self.server {
                 lan::wait_players(&mut self.joined_players, server)
-                // is joining
             } else {
                 lan::wait_game_start()
             };
@@ -181,6 +186,7 @@ impl From<MatchmakerPlugin> for Matchmaker {
             lan_servers: Vec::new(),
             lan_discovery: None,
             socket: None,
+            joining: false,
         }
     }
 }

@@ -197,7 +197,7 @@ impl LanUI {
                                     BorderedFrame::new(&root.menu.bframe).show(ui, |ui| {
                                         let painter = ui.painter();
 
-                                        let text = if matchmaker.is_hosting() {
+                                        let text = if matchmaker.is_waiting() {
                                             "Cancel"
                                         } else {
                                             "Host"
@@ -334,6 +334,24 @@ impl LanUI {
                             });
                             if matchmaker.is_hosting() {
                                 let text = "Waiting for players...";
+
+                                let rect = outer
+                                    .clone()
+                                    .text(text)
+                                    .pos(ui.cursor().min)
+                                    .color(Color32::BLACK)
+                                    .paint(ui.painter());
+                                inner
+                                    .clone()
+                                    .text(text)
+                                    .pos(ui.cursor().min)
+                                    .color(Color32::WHITE)
+                                    .paint(ui.painter());
+                                ui.advance_cursor_after_rect(rect);
+                                return;
+                            }
+                            if matchmaker.is_joining() {
+                                let text = "Joining...";
 
                                 let rect = outer
                                     .clone()

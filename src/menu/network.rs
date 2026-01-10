@@ -80,7 +80,7 @@ pub fn lan_ui_transition(world: &World, output: Option<LanUIOutput>) {
     let Some(output) = output else { return };
     match output {
         LanUIOutput::HostCancel => {
-            if matchmaker.is_hosting() {
+            if matchmaker.is_waiting() {
                 matchmaker.lan_cancel();
             } else {
                 matchmaker.lan_host();
