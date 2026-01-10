@@ -166,8 +166,8 @@ impl LanUI {
                     .padding(Margin::same(5.0))
                     .show(ui, |ui| {
                         let text = match &service {
-                            ServiceType::OnePlayer(..) => "1 Vs 1 Twin-Stick Controls",
-                            ServiceType::TwoPlayer(..) => "2 Vs 2 Cooperative",
+                            ServiceType::OnePlayer(..) => "SOLO - Twin-Stick",
+                            ServiceType::TwoPlayer(..) => "DOUBLES - CO-OP",
                         };
                         let response = ui.label(
                             RichText::new(text)
@@ -333,7 +333,7 @@ impl LanUI {
                                     });
                             });
                             if matchmaker.is_hosting() {
-                                let text = "Waiting for players...";
+                                let text = "Waiting for a player...";
 
                                 let rect = outer
                                     .clone()
