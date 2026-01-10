@@ -270,13 +270,13 @@ impl SettingsUi {
 
         let sfx_volume_slider_rect = settings_slider
             .image_painter()
-            .pos(sfx_volume_slider_start.to_array().into())
+            .pos(area.response.rect.min + sfx_volume_slider_start.to_array().into())
             .offset(pos2(sfx_volume_slider_offset, 0.0))
             .paint(&painter, &textures);
 
         let music_volume_slider_rect = settings_slider
             .image_painter()
-            .pos(music_volume_slider_start.to_array().into())
+            .pos(area.response.rect.min + music_volume_slider_start.to_array().into())
             .offset(pos2(music_volume_slider_offset, 0.0))
             .paint(&painter, &textures);
 

@@ -261,13 +261,12 @@ pub fn show(world: &World) {
     } else {
         settings_button
     };
-    let settings_rect = builder
-        .clone()
-        .image(*image)
+    let settings_rect = image
+        .image_painter()
         .size(image.egui_size())
-        .pos(slots.settings.to_array().into())
-        .paint(&painter, &textures)
-        .expand(2.0);
+        .pos(area.response.rect.min)
+        .offset(slots.settings.to_array().into())
+        .paint(&painter, &textures);
 
     if ctx.clicked_rect(settings_rect) {
         splash.interact = Some(SplashState::Settings);
