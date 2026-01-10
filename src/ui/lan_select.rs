@@ -101,7 +101,7 @@ impl LanSelect {
                     LanSelection::TwoPlayerBind { .. } => self.selection = LanSelection::TwoPlayer,
                 }
             }
-            if input.menu_left.just_pressed() || input.menu_right.just_pressed() {
+            if input.menu_up.just_pressed() || input.menu_down.just_pressed() {
                 match self.selection {
                     LanSelection::OnePlayer => self.selection = LanSelection::TwoPlayer,
                     LanSelection::TwoPlayer => self.selection = LanSelection::OnePlayer,
@@ -151,12 +151,12 @@ impl LanSelect {
                     .anchor(Align2::CENTER_CENTER, [0., 0.])
                     .order(Order::Foreground)
                     .show(&world.resource::<EguiCtx>(), |ui| {
-                        ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
                             let irsp = BorderedFrame::new(&root.menu.bframe)
                                 .padding(Margin::same(6.0))
                                 .show(ui, |ui| {
                                     super::primary_text(
-                                        "1 Player",
+                                        "SOLO - Twin Stick",
                                         self.selection == LanSelection::OnePlayer,
                                         &asset_server,
                                         ui,
@@ -172,7 +172,7 @@ impl LanSelect {
                                 .padding(Margin::same(6.0))
                                 .show(ui, |ui| {
                                     super::primary_text(
-                                        "2 Player",
+                                        "DOUBLES - CO-OP",
                                         self.selection == LanSelection::TwoPlayer,
                                         &asset_server,
                                         ui,
@@ -198,7 +198,7 @@ impl LanSelect {
                         BorderedFrame::new(&root.menu.bframe)
                             .padding(Margin::same(50.0))
                             .show(ui, |ui| {
-                                let text = "Player 1, Press Select On A Gamepad";
+                                let text = "Player 1 - Press Select On A Gamepad";
                                 let response = ui.label(
                                     RichText::new(text).color(Color32::WHITE).font(FontId {
                                         size: 7.0,
@@ -225,7 +225,7 @@ impl LanSelect {
                         BorderedFrame::new(&root.menu.bframe)
                             .padding(Margin::same(50.0))
                             .show(ui, |ui| {
-                                let text = "Player 2, Press Select";
+                                let text = "Player 2 - Press Select On A Gamepad";
                                 let response = ui.label(
                                     RichText::new(text).color(Color32::WHITE).font(FontId {
                                         size: 7.0,

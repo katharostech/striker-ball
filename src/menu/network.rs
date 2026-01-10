@@ -1,7 +1,7 @@
 use super::*;
 
 pub fn lan_select_hide(world: &World) {
-    world.resource_mut::<LanSelect>().visible = false;
+    *world.resource_mut::<LanSelect>() = default();
 }
 pub fn lan_select_prep(world: &World) {
     world.resource_mut::<LanSelect>().visible = true;
