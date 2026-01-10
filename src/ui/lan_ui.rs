@@ -394,10 +394,24 @@ impl LanUI {
                                         Color32::WHITE
                                     };
                                     let ping = if let Some(ping) = server.ping {
-                                        format!("PING: {ping}")
+                                        format!("PING {ping}")
                                     } else {
-                                        "PING: ?".to_string()
+                                        "PING ?".to_string()
                                     };
+                                    let host_name =
+                                        server.service.get_hostname().split_once('.').unwrap().0;
+                                    outer
+                                        .clone()
+                                        .text(host_name)
+                                        .pos(ui.cursor().min)
+                                        .paint(ui.painter());
+                                    let rect = inner
+                                        .clone()
+                                        .color(color)
+                                        .text(host_name)
+                                        .pos(ui.cursor().min)
+                                        .paint(ui.painter());
+                                    ui.advance_cursor_after_rect(rect);
                                     outer
                                         .clone()
                                         .text(ping.clone())
@@ -407,18 +421,6 @@ impl LanUI {
                                         .clone()
                                         .text(ping)
                                         .color(color)
-                                        .pos(ui.cursor().min)
-                                        .paint(ui.painter());
-                                    ui.advance_cursor_after_rect(rect);
-                                    outer
-                                        .clone()
-                                        .text(server.service.get_hostname())
-                                        .pos(ui.cursor().min)
-                                        .paint(ui.painter());
-                                    let rect = inner
-                                        .clone()
-                                        .color(color)
-                                        .text(server.service.get_hostname())
                                         .pos(ui.cursor().min)
                                         .paint(ui.painter());
                                     ui.advance_cursor_after_rect(rect);
