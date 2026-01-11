@@ -100,6 +100,9 @@ impl Pause {
 
         let asset_server = world.resource::<AssetServer>();
         let root = asset_server.root::<Data>();
+        let ctx = world.resource::<EguiCtx>();
+        let textures = world.resource::<EguiTextures>();
+
         let PauseAssets {
             menu,
             cursor,
@@ -109,73 +112,73 @@ impl Pause {
         } = root.menu.pause;
 
         use egui::*;
-        Area::new("pause-ui")
+        let area = Area::new("pause_area")
             .anchor(Align2::CENTER_CENTER, [0., 0.])
-            .order(Order::Foreground)
-            .show(&world.resource::<EguiCtx>(), |ui| {
-                let textures = world.resource::<EguiTextures>();
-                ui.horizontal(|ui| {
-                    ui.style_mut().spacing.item_spacing = Vec2::ZERO;
-                    let response = ui.image(ImageSource::Texture(load::SizedTexture::new(
-                        textures.get(*menu),
-                        menu.egui_size(),
-                    )));
-
-                    let pos = match *self {
-                        Pause::Continue => continue_pos,
-                        Pause::Restart => restart_pos,
-                        Pause::Quit => team_select_pos,
-                        Pause::Disabled | Pause::Hidden => unreachable!(),
-                    };
-                    ui.painter().image(
-                        textures.get(*cursor),
-                        Rect::from_min_size(
-                            response.rect.min + egui::Vec2::new(pos.x, pos.y),
-                            cursor.egui_size(),
-                        ),
-                        default_uv(),
-                        Color32::WHITE,
-                    );
-
-                    let button_height = restart_pos.y - continue_pos.y;
-                    let continue_rect = Rect::from_min_size(
-                        response.rect.min + egui::vec2(0.0, continue_pos.y - button_height / 4.0),
-                        egui::vec2(response.rect.width(), button_height),
-                    );
-                    let team_select_rect = Rect::from_min_size(
-                        response.rect.min
-                            + egui::vec2(0.0, team_select_pos.y - button_height / 4.0),
-                        egui::vec2(response.rect.width(), button_height),
-                    );
-                    let restart_rect = Rect::from_min_size(
-                        response.rect.min + egui::vec2(0.0, restart_pos.y - button_height / 4.0),
-                        egui::vec2(response.rect.width(), button_height),
-                    );
-
-                    if ui.ctx().hovered_rect(continue_rect) {
-                        *self = Pause::Continue;
-                    }
-                    if ui.ctx().hovered_rect(restart_rect) {
-                        *self = Pause::Restart;
-                    }
-                    if ui.ctx().hovered_rect(team_select_rect) {
-                        *self = Pause::Quit;
-                    }
-
-                    if ui.ctx().clicked_rect(continue_rect) {
-                        *self = Pause::Hidden;
-                        output = PauseOutput::Hide.into();
-                    }
-                    if ui.ctx().clicked_rect(restart_rect) {
-                        *self = Pause::Disabled;
-                        output = PauseOutput::Restart.into();
-                    }
-                    if ui.ctx().clicked_rect(team_select_rect) {
-                        *self = Pause::Disabled;
-                        output = PauseOutput::Quit.into();
-                    }
-                });
+            .show(&ctx, |ui| {
+                ui.set_width(root.screen_size.x);
+                ui.set_height(root.screen_size.y);
             });
+
+        let mut painter =
+            ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("pause_canvas")));
+
+        painter.set_clip_rect(area.response.rect);
+
+        let rect = menu
+            .image_painter()
+            .align2(Align2::CENTER_CENTER)
+            .pos(area.response.rect.center())
+            .paint(&painter, &textures);
+
+        let cursor_pos = match *self {
+            Pause::Continue => continue_pos,
+            Pause::Restart => restart_pos,
+            Pause::Quit => team_select_pos,
+            Pause::Disabled | Pause::Hidden => unreachable!(),
+        };
+        cursor
+            .image_painter()
+            .pos(rect.min)
+            .offset(cursor_pos.to_array().into())
+            .paint(&painter, &textures);
+
+        let button_height = restart_pos.y - continue_pos.y;
+        let continue_rect = Rect::from_min_size(
+            rect.min + egui::vec2(0.0, continue_pos.y - button_height / 4.0),
+            egui::vec2(rect.width(), button_height),
+        );
+        let team_select_rect = Rect::from_min_size(
+            rect.min + egui::vec2(0.0, team_select_pos.y - button_height / 4.0),
+            egui::vec2(rect.width(), button_height),
+        );
+        let restart_rect = Rect::from_min_size(
+            rect.min + egui::vec2(0.0, restart_pos.y - button_height / 4.0),
+            egui::vec2(rect.width(), button_height),
+        );
+
+        if ctx.hovered_rect(continue_rect) {
+            *self = Pause::Continue;
+        }
+        if ctx.hovered_rect(restart_rect) {
+            *self = Pause::Restart;
+        }
+        if ctx.hovered_rect(team_select_rect) {
+            *self = Pause::Quit;
+        }
+
+        if ctx.clicked_rect(continue_rect) {
+            *self = Pause::Hidden;
+            output = PauseOutput::Hide.into();
+        }
+        if ctx.clicked_rect(restart_rect) {
+            *self = Pause::Disabled;
+            output = PauseOutput::Restart.into();
+        }
+        if ctx.clicked_rect(team_select_rect) {
+            *self = Pause::Disabled;
+            output = PauseOutput::Quit.into();
+        }
+
         output
     }
 }
