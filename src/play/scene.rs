@@ -81,26 +81,12 @@ impl SessionPlugin for ScenePlugin {
         session.install_plugin(Path2dTogglePlugin);
 
         session.add_system_to_stage(Update, toggle_debug_lines);
-        session.add_system_to_stage(First, fix_camera_size);
 
         session.add_startup_system(spawn::scene);
         session.add_startup_system(hide_debug_lines);
         session.add_system_to_stage(Last, |mut inputs: ResMut<PlayTeamInputs>| {
             inputs.advance_frame()
         });
-    }
-}
-
-fn fix_camera_size(root: Root<Data>, window: Res<Window>, mut cameras: CompMut<Camera>) {
-    for camera in cameras.iter_mut() {
-        let size = root.court.size();
-        let ratio = size.x / size.y;
-        let wratio = window.size.x / window.size.y;
-        if wratio > ratio {
-            camera.size = CameraSize::FixedHeight(size.y);
-        } else {
-            camera.size = CameraSize::FixedWidth(size.x);
-        }
     }
 }
 

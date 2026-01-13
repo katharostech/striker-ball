@@ -48,6 +48,7 @@ pub fn show_ui(world: &World) {
     howtoplay::show(world);
 
     if let Some(world) = world.resource_mut::<Sessions>().get_world(session::PLAY) {
+        world.run_system(fix_camera_size, ());
         world.resource_mut::<MatchDone>().process_input(world);
         world.resource_mut::<MatchDone>().process_ui(world);
         fade::show(world);
@@ -73,6 +74,19 @@ impl SessionPlugin for UiScalePlugin {
                 // TODO: Use resource instead of root asset & Move to utils module
                 (size.y / root.screen_size.y).min(size.x / root.screen_size.x) as f64;
         });
+    }
+}
+
+fn fix_camera_size(root: Root<Data>, window: Res<Window>, mut cameras: CompMut<Camera>) {
+    for camera in cameras.iter_mut() {
+        let size = root.court.size();
+        let ratio = size.x / size.y;
+        let wratio = window.size.x / window.size.y;
+        if wratio > ratio {
+            camera.size = CameraSize::FixedHeight(size.y);
+        } else {
+            camera.size = CameraSize::FixedWidth(size.x);
+        }
     }
 }
 
