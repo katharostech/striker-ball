@@ -70,3 +70,48 @@ impl std::ops::BitOr for PressInput {
         }
     }
 }
+
+#[derive(HasSchema, Clone, Default)]
+pub struct KeyboardState {
+    pub current: HashMap<KeyCode, bool>,
+}
+impl GamePlugin for KeyboardState {
+    fn install(self, game: &mut Game) {
+        game.insert_shared_resource(self);
+        game.systems.add_before_system(|game: &mut Game| {
+            game.shared_resource_mut::<Self>()
+                .unwrap()
+                .apply_keyboard_events(&game.shared_resource().unwrap())
+        });
+    }
+}
+impl SessionPlugin for KeyboardState {
+    fn install(self, session: &mut SessionBuilder) {
+        session.insert_resource(self);
+        session.add_system_to_stage(First, |world: &World| {
+            world
+                .resource_mut::<Self>()
+                .apply_keyboard_events(&world.resource())
+        });
+    }
+}
+impl KeyboardState {
+    pub fn is_pressed(&self, code: &KeyCode) -> bool {
+        *self.current.get(code).unwrap_or(&false)
+    }
+    pub fn apply_keyboard_event(&mut self, event: &KeyboardEvent) {
+        let Maybe::Set(key_code) = event.key_code else {
+            return;
+        };
+        if let Some(state) = self.current.get_mut(&key_code) {
+            *state = event.button_state.pressed();
+        } else {
+            self.current.insert(key_code, event.button_state.pressed());
+        }
+    }
+    pub fn apply_keyboard_events(&mut self, keyboard_inputs: &KeyboardInputs) {
+        for event in &keyboard_inputs.key_events {
+            self.apply_keyboard_event(event);
+        }
+    }
+}

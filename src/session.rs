@@ -43,7 +43,7 @@ impl SessionRunner for OfflineRunner {
         self.accumulator += delta;
 
         for collector in &mut self.collectors {
-            collector.offline_apply_inputs(world);
+            collector.apply_inputs(world);
         }
 
         let step_start = Instant::now();

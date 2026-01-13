@@ -21,6 +21,7 @@ fn main() {
     game.insert_shared_resource(ClearColor(Color::BLACK));
 
     game.install_plugin(LocalInputGamePlugin);
+    game.install_plugin(KeyboardState::default());
     game.sessions.create_with(session::UI, UiSessionPlugin);
 
     BonesBevyRenderer::new(game)

@@ -22,51 +22,27 @@ impl Default for TeamSource {
         Self::TwinStick(0)
     }
 }
-
-fn apply_keyboard_event_primary(input: &mut PlayInput, event: &KeyboardEvent) {
-    if let KeyboardEvent {
-        key_code: Maybe::Set(key),
-        button_state,
-        ..
-    } = event
-    {
-        match key {
-            KeyCode::W => {
-                if let ButtonState::Pressed = button_state {
-                    input.y = 1.0;
-                } else {
-                    input.y = 0.0;
-                }
-            }
-            KeyCode::S => {
-                if let ButtonState::Pressed = button_state {
-                    input.y = -1.0;
-                } else {
-                    input.y = 0.0;
-                }
-            }
-            KeyCode::A => {
-                if let ButtonState::Pressed = button_state {
-                    input.x = -1.0;
-                } else {
-                    input.x = 0.0;
-                }
-            }
-            KeyCode::D => {
-                if let ButtonState::Pressed = button_state {
-                    input.x = 1.0;
-                } else {
-                    input.x = 0.0;
-                }
-            }
-            KeyCode::J => {
-                input.shoot.apply_bool(button_state.pressed());
-            }
-            KeyCode::K => {
-                input.pass.apply_bool(button_state.pressed());
-            }
-            _ => {}
+fn apply_keyboard_state_primary(
+    input: &mut PlayInput,
+    key: &KeyCode,
+    keyboard_state: &KeyboardState,
+) {
+    match key {
+        KeyCode::W | KeyCode::S => {
+            input.y = keyboard_state.is_pressed(&KeyCode::W) as i8 as f32
+                - keyboard_state.is_pressed(&KeyCode::S) as i8 as f32;
         }
+        KeyCode::A | KeyCode::D => {
+            input.x = keyboard_state.is_pressed(&KeyCode::D) as i8 as f32
+                - keyboard_state.is_pressed(&KeyCode::A) as i8 as f32;
+        }
+        KeyCode::J => {
+            input.shoot.apply_bool(keyboard_state.is_pressed(key));
+        }
+        KeyCode::K => {
+            input.pass.apply_bool(keyboard_state.is_pressed(key));
+        }
+        _ => {}
     }
 }
 fn apply_mouse_event_primary(input: &mut PlayInput, event: &MouseButtonEvent) {
@@ -174,41 +150,22 @@ impl PlayTeamInputCollector {
         self.p1_source = p1_source;
         self.p2_source = p2_source;
     }
-    /// This is a temporary function that is needed for CPU player input.
-    /// I believe this can be replaced with the [`InputCollector`] trait method
-    /// once it supports the borrowing of the world and that is considered safe.
-    pub fn offline_apply_inputs(&mut self, world: &World) {
-        if let SingleSource::CPU(player_slot) = self.p1_source {
-            self.current
-                .p1
-                .update_from_dense(&cpu_player::get_cpu_input(world, player_slot));
-        }
-        if let SingleSource::CPU(player_slot) = self.p2_source {
-            self.current
-                .p2
-                .update_from_dense(&cpu_player::get_cpu_input(world, player_slot));
-        }
-        self.apply_inputs(
-            &world.resource(),
-            &world.resource(),
-            &world.resource(),
-            &world.resource(),
-        );
-    }
 }
 impl InputCollector<'_, Mapping, BlankSource, PlayTeamInput> for PlayTeamInputCollector {
     // Called on cpu cycle as opposed to the frame update.
-    fn apply_inputs(
-        &mut self,
-        _mapping: &Mapping,
-        mouse: &MouseInputs,
-        keyboard: &KeyboardInputs,
-        gamepad: &GamepadInputs,
-    ) {
+    fn apply_inputs(&mut self, world: &World) {
+        let keyboard = world.resource::<KeyboardInputs>();
+        let keyboard_state = world.resource::<KeyboardState>();
+        let gamepad = world.resource::<GamepadInputs>();
+        let mouse = world.resource::<MouseInputs>();
+
         match self.p1_source {
             SingleSource::KeyboardMouse => {
                 for event in &keyboard.key_events {
-                    apply_keyboard_event_primary(&mut self.current.p1, event)
+                    let Maybe::Set(key) = &event.key_code else {
+                        continue;
+                    };
+                    apply_keyboard_state_primary(&mut self.current.p1, key, &keyboard_state);
                 }
                 for event in &mouse.button_events {
                     apply_mouse_event_primary(&mut self.current.p1, event);
@@ -219,12 +176,19 @@ impl InputCollector<'_, Mapping, BlankSource, PlayTeamInput> for PlayTeamInputCo
                     apply_gamepad_event_primary(&mut self.current.p1, event, gamepad_id)
                 }
             }
-            SingleSource::CPU(..) => {} // processed in offline runner only via `Self::offline_apply_inputs`
+            SingleSource::CPU(player_slot) => {
+                self.current
+                    .p1
+                    .update_from_dense(&cpu_player::get_cpu_input(world, player_slot));
+            }
         }
         match self.p2_source {
             SingleSource::KeyboardMouse => {
                 for event in &keyboard.key_events {
-                    apply_keyboard_event_primary(&mut self.current.p2, event)
+                    let Maybe::Set(key) = &event.key_code else {
+                        continue;
+                    };
+                    apply_keyboard_state_primary(&mut self.current.p2, key, &keyboard_state);
                 }
                 for event in &mouse.button_events {
                     apply_mouse_event_primary(&mut self.current.p2, event);
@@ -241,7 +205,11 @@ impl InputCollector<'_, Mapping, BlankSource, PlayTeamInput> for PlayTeamInputCo
                     }
                 }
             }
-            SingleSource::CPU(..) => {} // processed in offline runner only via `Self::offline_apply_inputs`
+            SingleSource::CPU(player_slot) => {
+                self.current
+                    .p2
+                    .update_from_dense(&cpu_player::get_cpu_input(world, player_slot));
+            }
         }
     }
     fn update_just_pressed(&mut self) {
