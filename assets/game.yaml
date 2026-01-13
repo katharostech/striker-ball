@@ -144,9 +144,9 @@ menu:
       secondary_header: [300, 25]
       right_arrow: [346, &arrow_y 99]
       left_arrow: [8, *arrow_y]
-      overview_tl: [&leftx 70, &topy 60]
-      overview_tr: [&rightx 240, *topy]
-      overview_bl: [*leftx, &bottomy 150]
+      overview_tl: [&leftx 70, &topy 65]
+      overview_tr: [&rightx 240, 58]
+      overview_bl: [*leftx, &bottomy 138]
       overview_br: [*rightx, *bottomy]
 
   team_select:
