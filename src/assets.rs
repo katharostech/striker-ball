@@ -111,6 +111,9 @@ impl Sprites {
 pub struct Menus {
     pub numbers: Handle<Atlas>,
     pub bframe: BorderImageMeta,
+    pub back_button: SizedImageAsset,
+    pub back_button_blink: SizedImageAsset,
+    pub back_button_pos: Vec2,
     pub score_bg: SizedImageAsset,
     pub go_text: SizedImageAsset,
     pub countdown_bg: SizedImageAsset,

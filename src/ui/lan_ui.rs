@@ -120,7 +120,7 @@ impl LanUI {
             }
         }
 
-        Area::new("lan_ui")
+        let area = Area::new("lan_ui")
             .order(Order::Background)
             .interactable(false)
             .anchor(Align2::CENTER_CENTER, [0., 0.])
@@ -130,6 +130,14 @@ impl LanUI {
                     root.screen_size.to_array(),
                 ));
             });
+        let origin = area.response.rect.min;
+
+        let mut painter = ctx.layer_painter(LayerId::new(
+            Order::Foreground,
+            Id::new("splash_foreground"),
+        ));
+
+        painter.set_clip_rect(area.response.rect);
 
         if let LanUIState::Disconnected = state {
             Area::new("disconnected-popup")
@@ -436,6 +444,25 @@ impl LanUI {
                         });
                     });
             });
+
+        let rect = Rect::from_min_size(
+            origin + root.menu.back_button_pos.to_array().into(),
+            root.menu.back_button.egui_size(),
+        );
+        let image = if ctx.hovered_rect(rect) {
+            root.menu.back_button_blink
+        } else {
+            root.menu.back_button
+        };
+        if ctx.clicked_rect(rect) {
+            output = Some(LanUIOutput::Exit);
+        }
+        image
+            .image_painter()
+            .size(image.egui_size())
+            .pos(origin)
+            .offset(root.menu.back_button_pos.to_array().into())
+            .paint(&painter, &textures);
         output
     }
 }

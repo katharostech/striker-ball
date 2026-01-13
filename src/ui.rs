@@ -47,7 +47,6 @@ impl SessionPlugin for UiSessionPlugin {
 pub fn show_ui(world: &World) {
     fade::show(world);
     splash::show(world);
-    howtoplay::show(world);
 
     if let Some(world) = world.resource_mut::<Sessions>().get_world(session::PLAY) {
         world.run_system(fix_camera_size, ());

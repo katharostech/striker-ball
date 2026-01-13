@@ -114,6 +114,25 @@ impl CreditsUi {
             .pos(origin)
             .paint(&painter, &textures);
 
+        let rect = Rect::from_min_size(
+            origin + root.menu.back_button_pos.to_array().into(),
+            root.menu.back_button.egui_size(),
+        );
+        let image = if ctx.hovered_rect(rect) {
+            root.menu.back_button_blink
+        } else {
+            root.menu.back_button
+        };
+        if ctx.clicked_rect(rect) {
+            output = Some(CreditsOutput);
+        }
+        image
+            .image_painter()
+            .size(image.egui_size())
+            .pos(origin)
+            .offset(root.menu.back_button_pos.to_array().into())
+            .paint(&painter, &textures);
+
         output
     }
 }

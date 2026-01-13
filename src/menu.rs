@@ -89,6 +89,8 @@ pub fn update_menu(world: &World) {
     let lan_ui = world.resource_mut::<LanUI>().process_ui(world);
     #[cfg(not(target_arch = "wasm32"))]
     let network_quit = world.resource_mut::<NetworkQuit>().process_ui(world);
+
+    let howtoplay_output = world.resource_mut::<HowToPlay>().process_ui(world);
     let settings_output = world.resource_mut::<SettingsUi>().process_ui(world);
     let credits_output = world.resource_mut::<CreditsUi>().process_ui(world);
     let team_select_output = world.resource_mut::<TeamSelect>().process_ui(world);
@@ -100,7 +102,15 @@ pub fn update_menu(world: &World) {
     match menu_state {
         MenuState::FadeTransition => fade_transition(world),
         MenuState::Splash => splash_update(world),
-        MenuState::HowToPlay => how_to_play_update(world),
+        MenuState::HowToPlay => {
+            if let Some(output) = world
+                .resource_mut::<HowToPlay>()
+                .process_input(world)
+                .or(howtoplay_output)
+            {
+                how_to_play_transition(world, output)
+            }
+        }
         MenuState::Credits => {
             if let Some(output) = world
                 .resource_mut::<CreditsUi>()
@@ -447,28 +457,15 @@ pub fn splash_update(ui: &World) {
         }
     }
 }
-pub fn how_to_play_update(ui: &World) {
-    let mut howtoplay = ui.resource_mut::<HowToPlay>();
-    let inputs = ui.resource::<LocalInputs>();
-
-    for (_gamepad, input) in inputs.iter() {
-        if input.menu_back.just_pressed() {
-            start_fade(
-                ui,
-                FadeTransition {
-                    hide: how_to_play_hide,
-                    prep: splash_prep,
-                    finish: splash_finish,
-                },
-            );
-        }
-        if input.menu_left.just_pressed() {
-            howtoplay.left();
-        }
-        if input.menu_right.just_pressed() {
-            howtoplay.right();
-        }
-    }
+pub fn how_to_play_transition(world: &World, _output: HowToPlayOutput) {
+    start_fade(
+        world,
+        FadeTransition {
+            hide: how_to_play_hide,
+            prep: splash_prep,
+            finish: splash_finish,
+        },
+    );
 }
 pub fn settings_transition(world: &World, _output: SettingsOutput) {
     start_fade(
