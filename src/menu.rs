@@ -10,6 +10,7 @@ pub enum MenuState {
     #[default]
     Splash,
     Settings,
+    Credits,
     HowToPlay,
     FadeTransition,
     TeamSelect,
@@ -32,6 +33,7 @@ impl SessionPlugin for MenuPlugin {
             ..Default::default()
         });
         session.install_plugin(SettingsUi::default());
+        session.install_plugin(CreditsUi::default());
         session.install_plugin(HowToPlay::default());
         session.install_plugin(Fade::new(
             0.5,
@@ -88,6 +90,7 @@ pub fn update_menu(world: &World) {
     #[cfg(not(target_arch = "wasm32"))]
     let network_quit = world.resource_mut::<NetworkQuit>().process_ui(world);
     let settings_output = world.resource_mut::<SettingsUi>().process_ui(world);
+    let credits_output = world.resource_mut::<CreditsUi>().process_ui(world);
     let team_select_output = world.resource_mut::<TeamSelect>().process_ui(world);
     let pause_ouptut = world.resource_mut::<Pause>().process_ui(world);
     // TODO: use the `LanSelect` pattern for rendering and processing all the ui elements
@@ -98,6 +101,15 @@ pub fn update_menu(world: &World) {
         MenuState::FadeTransition => fade_transition(world),
         MenuState::Splash => splash_update(world),
         MenuState::HowToPlay => how_to_play_update(world),
+        MenuState::Credits => {
+            if let Some(output) = world
+                .resource_mut::<CreditsUi>()
+                .process_input(world)
+                .or(credits_output)
+            {
+                credits_transition(world, output)
+            }
+        }
         MenuState::Settings => {
             if let Some(output) = world
                 .resource_mut::<SettingsUi>()
@@ -279,6 +291,16 @@ pub fn settings_prep(world: &World) {
 pub fn settings_finish(world: &World) {
     *world.resource_mut() = MenuState::Settings;
 }
+pub fn credits_hide(world: &World) {
+    world.resource_mut::<CreditsUi>().visible = false;
+}
+pub fn credits_prep(world: &World) {
+    world.resource_mut::<CreditsUi>().visible = true;
+    world.resource::<EguiCtx>().clear_animations();
+}
+pub fn credits_finish(world: &World) {
+    *world.resource_mut() = MenuState::Credits;
+}
 pub fn team_select_prep(world: &World) {
     *world.resource_mut() = TeamSelect {
         visible: true,
@@ -385,6 +407,16 @@ pub fn splash_update(ui: &World) {
                 },
             );
         }
+        SplashState::Credits => {
+            start_fade(
+                ui,
+                FadeTransition {
+                    hide: splash_hide,
+                    prep: credits_prep,
+                    finish: credits_finish,
+                },
+            );
+        }
     };
 
     if let Some(interact) = splash.interact {
@@ -443,6 +475,16 @@ pub fn settings_transition(world: &World, _output: SettingsOutput) {
         world,
         FadeTransition {
             hide: settings_hide,
+            prep: splash_prep,
+            finish: splash_finish,
+        },
+    );
+}
+pub fn credits_transition(world: &World, _output: CreditsOutput) {
+    start_fade(
+        world,
+        FadeTransition {
+            hide: credits_hide,
             prep: splash_prep,
             finish: splash_finish,
         },

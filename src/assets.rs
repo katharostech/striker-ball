@@ -121,6 +121,7 @@ pub struct Menus {
     pub match_done: MatchDoneAssets,
     pub pause: PauseAssets,
     pub settings: SettingsAssets,
+    pub credits: CreditsAssets,
 }
 
 #[derive(HasSchema, Clone, Copy, Default)]

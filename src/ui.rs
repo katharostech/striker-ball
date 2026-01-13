@@ -1,6 +1,7 @@
 use super::*;
 
 pub mod countdown;
+pub mod credits;
 pub mod fade;
 pub mod howtoplay;
 pub mod lan_select;
@@ -16,6 +17,7 @@ pub mod team_select;
 pub mod winner;
 
 pub use countdown::*;
+pub use credits::*;
 pub use fade::*;
 pub use howtoplay::*;
 pub use lan_select::*;

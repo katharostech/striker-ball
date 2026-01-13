@@ -16,6 +16,8 @@ pub struct SplashAssets {
     pub how_to_play_blink: SizedImageAsset,
     pub settings_button: SizedImageAsset,
     pub settings_button_blink: SizedImageAsset,
+    pub credits_button: SizedImageAsset,
+    pub credits_button_blink: SizedImageAsset,
 }
 
 #[derive(HasSchema, Clone, Copy, Default)]
@@ -27,6 +29,7 @@ pub struct SplashSlots {
     pub button_2: f32,
     pub button_3: f32,
     pub settings: Vec2,
+    pub credits: Vec2,
 }
 
 #[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq)]
@@ -37,6 +40,7 @@ pub enum SplashState {
     Lan,
     HowToPlay,
     Settings,
+    Credits,
 }
 impl SplashState {
     #[cfg(not(target_arch = "wasm32"))]
@@ -46,6 +50,7 @@ impl SplashState {
             Self::Lan => Self::Offline,
             Self::HowToPlay => Self::Lan,
             Self::Settings => Self::HowToPlay,
+            Self::Credits => Self::HowToPlay,
         }
     }
     #[cfg(target_arch = "wasm32")]
@@ -54,6 +59,7 @@ impl SplashState {
             Self::Offline => Self::HowToPlay,
             Self::HowToPlay => Self::Offline,
             Self::Settings => Self::HowToPlay,
+            Self::Credits => Self::HowToPlay,
         }
     }
     #[cfg(not(target_arch = "wasm32"))]
@@ -63,6 +69,7 @@ impl SplashState {
             Self::Lan => Self::HowToPlay,
             Self::HowToPlay => Self::Offline,
             Self::Settings => Self::Settings,
+            Self::Credits => Self::Credits,
         }
     }
     #[cfg(target_arch = "wasm32")]
@@ -70,35 +77,36 @@ impl SplashState {
         *self = match self {
             Self::Offline => Self::HowToPlay,
             Self::HowToPlay => Self::Settings,
-            Self::Settings => Self::Offline,
+            Self::Settings => Self::Settings,
+            Self::Credits => Self::Credits,
         }
     }
     #[cfg(not(target_arch = "wasm32"))]
     pub fn cycle_left(&mut self) {
         *self = match self {
-            Self::Offline | Self::Lan | Self::HowToPlay => Self::Settings,
+            Self::Offline | Self::Lan | Self::HowToPlay | Self::Credits => Self::Credits,
             Self::Settings => Self::HowToPlay,
         }
     }
     #[cfg(target_arch = "wasm32")]
     pub fn cycle_left(&mut self) {
         *self = match self {
-            Self::Offline | Self::HowToPlay => Self::Settings,
+            Self::Offline | Self::HowToPlay | Self::Credits => Self::Credits,
             Self::Settings => Self::HowToPlay,
         }
     }
     #[cfg(not(target_arch = "wasm32"))]
     pub fn cycle_right(&mut self) {
         *self = match self {
-            Self::Offline | Self::Lan | Self::HowToPlay => Self::Settings,
-            Self::Settings => Self::HowToPlay,
+            Self::Offline | Self::Lan | Self::HowToPlay | Self::Settings => Self::Settings,
+            Self::Credits => Self::HowToPlay,
         }
     }
     #[cfg(target_arch = "wasm32")]
     pub fn cycle_right(&mut self) {
         *self = match self {
-            Self::Offline | Self::HowToPlay => Self::Settings,
-            Self::Settings => Self::HowToPlay,
+            Self::Offline | Self::HowToPlay | Self::Settings => Self::Settings,
+            Self::Credits => Self::HowToPlay,
         }
     }
 }
@@ -153,6 +161,8 @@ pub fn show(world: &World) {
         lan_blink,
         settings_button,
         settings_button_blink,
+        credits_button,
+        credits_button_blink,
         ..
     } = root.menu.splash;
 
@@ -273,5 +283,24 @@ pub fn show(world: &World) {
     }
     if ctx.hovered_rect(settings_rect) {
         splash.state = SplashState::Settings;
+    }
+
+    let image = if splash.state == SplashState::Credits {
+        credits_button_blink
+    } else {
+        credits_button
+    };
+    let credits_rect = image
+        .image_painter()
+        .size(image.egui_size())
+        .pos(area.response.rect.min)
+        .offset(slots.credits.to_array().into())
+        .paint(&painter, &textures);
+
+    if ctx.clicked_rect(credits_rect) {
+        splash.interact = Some(SplashState::Credits);
+    }
+    if ctx.hovered_rect(credits_rect) {
+        splash.state = SplashState::Credits;
     }
 }
