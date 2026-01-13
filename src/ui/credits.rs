@@ -95,7 +95,7 @@ impl CreditsUi {
 
         let delta_scroll = ctx.input(|r| r.scroll_delta);
 
-        self.scroll += delta_scroll.y / 4.0;
+        self.scroll += delta_scroll.y / 10.0;
         self.scroll = self.scroll.clamp(-*credits_scroll_max, 0.0);
 
         credits_header
