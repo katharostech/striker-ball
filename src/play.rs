@@ -1,5 +1,8 @@
 use super::*;
 
+mod flow;
+pub use flow::*;
+
 pub mod layers;
 pub mod path2d;
 
@@ -13,8 +16,6 @@ pub mod ball;
 pub use ball::prelude::*;
 pub mod spawn;
 pub use spawn::prelude::*;
-pub mod flow;
-pub use flow::*;
 pub mod scene;
 pub use scene::*;
 pub mod cpu_player;

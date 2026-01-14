@@ -11,8 +11,8 @@ pub enum PlayState {
     MatchDone,
 }
 
-pub struct FlowPlugin;
-impl SessionPlugin for FlowPlugin {
+pub struct PlayFlowPlugin;
+impl SessionPlugin for PlayFlowPlugin {
     fn install(self, session: &mut SessionBuilder) {
         session.insert_resource(PlayState::default());
         session.insert_resource(Score {

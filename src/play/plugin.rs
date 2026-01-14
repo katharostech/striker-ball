@@ -13,7 +13,7 @@ impl SessionPlugin for PlayPlugin {
             .install_plugin(self::ScenePlugin { mode: self.mode })
             .install_plugin(self::BehaviorsPlugin)
             .install_plugin(self::PlayUIPlugin)
-            .install_plugin(self::FlowPlugin);
+            .install_plugin(self::PlayFlowPlugin);
     }
 }
 

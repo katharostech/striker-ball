@@ -3,7 +3,7 @@ use super::*;
 mod plugin;
 pub use plugin::*;
 
-pub mod flow;
+mod flow;
 pub use flow::*;
 
 #[cfg(not(target_arch = "wasm32"))]

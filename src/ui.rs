@@ -1,6 +1,6 @@
 use super::*;
 
-pub mod plugin;
+mod plugin;
 pub use plugin::*;
 
 pub mod countdown;
