@@ -115,9 +115,10 @@ impl SplashState {
 pub struct Splash {
     #[deref]
     pub state: SplashState,
-    pub interact: Option<SplashState>,
     pub visual: Visual,
 }
+
+pub type SplashOutput = SplashState;
 
 impl SessionPlugin for Splash {
     fn install(self, session: &mut SessionBuilder) {
@@ -128,179 +129,205 @@ fn foreground() -> egui::LayerId {
     use egui::*;
     LayerId::new(Order::Foreground, Id::new("splash_foreground"))
 }
-pub fn show(world: &World) {
-    let mut splash = world.resource_mut::<Splash>();
+impl Splash {
+    pub fn process_input(&mut self, world: &World) -> Option<SplashOutput> {
+        let mut output = None;
 
-    splash.interact = None;
+        let inputs = world.resource::<LocalInputs>();
 
-    if !splash.visual.shown() {
-        return;
+        for (_gamepad, input) in inputs.iter() {
+            if input.menu_up.just_pressed() {
+                self.cycle_up();
+            }
+            if input.menu_down.just_pressed() {
+                self.cycle_down();
+            }
+            if input.menu_left.just_pressed() {
+                self.cycle_left();
+            }
+            if input.menu_right.just_pressed() {
+                self.cycle_right();
+            }
+            if input.menu_select.just_pressed() {
+                output = Some(self.state);
+            }
+        }
+        output
     }
+    pub fn process_ui(&mut self, world: &World) -> Option<SplashOutput> {
+        let mut output = None;
 
-    let asset_server = world.resource::<AssetServer>();
-    let root = asset_server.root::<Data>();
-    let textures = world.resource::<EguiTextures>();
-    let ctx = world.resource::<EguiCtx>();
+        if !self.visual.shown() {
+            return output;
+        }
 
-    let SplashAssets {
-        slots,
-        bg,
-        title,
-        #[cfg(not(target_arch = "wasm32"))]
-        button_bg,
-        #[cfg(target_arch = "wasm32")]
-            button_bg_web: button_bg,
-        offline,
-        offline_blink,
-        how_to_play,
-        how_to_play_blink,
+        let asset_server = world.resource::<AssetServer>();
+        let root = asset_server.root::<Data>();
+        let textures = world.resource::<EguiTextures>();
+        let ctx = world.resource::<EguiCtx>();
 
-        #[cfg(not(target_arch = "wasm32"))]
-        lan,
-        #[cfg(not(target_arch = "wasm32"))]
-        lan_blink,
-        settings_button,
-        settings_button_blink,
-        credits_button,
-        credits_button_blink,
-        ..
-    } = root.menu.splash;
+        let SplashAssets {
+            slots,
+            bg,
+            title,
+            #[cfg(not(target_arch = "wasm32"))]
+            button_bg,
+            #[cfg(target_arch = "wasm32")]
+                button_bg_web: button_bg,
+            offline,
+            offline_blink,
+            how_to_play,
+            how_to_play_blink,
 
-    use egui::*;
+            #[cfg(not(target_arch = "wasm32"))]
+            lan,
+            #[cfg(not(target_arch = "wasm32"))]
+            lan_blink,
+            settings_button,
+            settings_button_blink,
+            credits_button,
+            credits_button_blink,
+            ..
+        } = root.menu.splash;
 
-    let area = Area::new("splash")
-        .anchor(Align2::CENTER_CENTER, [0., 0.])
-        .show(&ctx, |ui| {
-            ui.image(load::SizedTexture::new(
-                textures.get(bg),
-                root.screen_size.to_array(),
-            ));
-        });
-    let mut painter = ctx.layer_painter(foreground());
+        use egui::*;
 
-    painter.set_clip_rect(area.response.rect);
+        let area = Area::new("splash")
+            .anchor(Align2::CENTER_CENTER, [0., 0.])
+            .show(&ctx, |ui| {
+                ui.image(load::SizedTexture::new(
+                    textures.get(bg),
+                    root.screen_size.to_array(),
+                ));
+            });
+        let mut painter = ctx.layer_painter(foreground());
 
-    let builder = ImagePainter::new(*title)
-        .align2(Align2::CENTER_TOP)
-        .pos(area.response.rect.center_top());
+        painter.set_clip_rect(area.response.rect);
 
-    builder
-        .clone()
-        .image(*title)
-        .size(title.egui_size())
-        .offset(pos2(0.0, slots.title))
-        .paint(&painter, &textures);
+        let builder = ImagePainter::new(*title)
+            .align2(Align2::CENTER_TOP)
+            .pos(area.response.rect.center_top());
 
-    builder
-        .clone()
-        .image(*button_bg)
-        .size(button_bg.egui_size())
-        .offset(pos2(0.0, slots.selection))
-        .paint(&painter, &textures);
+        builder
+            .clone()
+            .image(*title)
+            .size(title.egui_size())
+            .offset(pos2(0.0, slots.title))
+            .paint(&painter, &textures);
 
-    let image = if splash.state == SplashState::Offline {
-        offline_blink
-    } else {
-        offline
-    };
-    let offline_rect = builder
-        .clone()
-        .image(*image)
-        .size(image.egui_size())
-        .offset(pos2(0.0, slots.button_1))
-        .paint(&painter, &textures)
-        .expand(2.0);
+        builder
+            .clone()
+            .image(*button_bg)
+            .size(button_bg.egui_size())
+            .offset(pos2(0.0, slots.selection))
+            .paint(&painter, &textures);
 
-    if ctx.clicked_rect(offline_rect) {
-        splash.interact = Some(SplashState::Offline);
-    }
-    if ctx.hovered_rect(offline_rect) {
-        splash.state = SplashState::Offline;
-    }
-
-    let image = if splash.state == SplashState::HowToPlay {
-        how_to_play_blink
-    } else {
-        how_to_play
-    };
-    #[cfg(target_arch = "wasm32")]
-    let offset = slots.button_2;
-    #[cfg(not(target_arch = "wasm32"))]
-    let offset = slots.button_3;
-
-    let howtoplay_rect = builder
-        .clone()
-        .image(*image)
-        .size(image.egui_size())
-        .offset(pos2(0.0, offset))
-        .paint(&painter, &textures)
-        .expand(2.0);
-
-    if ctx.clicked_rect(howtoplay_rect) {
-        splash.interact = Some(SplashState::HowToPlay);
-    }
-    if ctx.hovered_rect(howtoplay_rect) {
-        splash.state = SplashState::HowToPlay;
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let image = if splash.state == SplashState::Lan {
-            lan_blink
+        let image = if self.state == SplashState::Offline {
+            offline_blink
         } else {
-            lan
+            offline
         };
-        let lan_rect = builder
+        let offline_rect = builder
             .clone()
             .image(*image)
             .size(image.egui_size())
-            .offset(pos2(0.0, slots.button_2))
+            .offset(pos2(0.0, slots.button_1))
             .paint(&painter, &textures)
             .expand(2.0);
 
-        if ctx.clicked_rect(lan_rect) {
-            splash.interact = Some(SplashState::Lan);
+        if ctx.clicked_rect(offline_rect) {
+            output = Some(SplashState::Offline);
         }
-        if ctx.hovered_rect(lan_rect) {
-            splash.state = SplashState::Lan;
+        if ctx.hovered_rect(offline_rect) {
+            self.state = SplashState::Offline;
         }
-    }
 
-    let image = if splash.state == SplashState::Settings {
-        settings_button_blink
-    } else {
-        settings_button
-    };
-    let settings_rect = image
-        .image_painter()
-        .size(image.egui_size())
-        .pos(area.response.rect.min)
-        .offset(slots.settings.to_array().into())
-        .paint(&painter, &textures);
+        let image = if self.state == SplashState::HowToPlay {
+            how_to_play_blink
+        } else {
+            how_to_play
+        };
+        #[cfg(target_arch = "wasm32")]
+        let offset = slots.button_2;
+        #[cfg(not(target_arch = "wasm32"))]
+        let offset = slots.button_3;
 
-    if ctx.clicked_rect(settings_rect) {
-        splash.interact = Some(SplashState::Settings);
-    }
-    if ctx.hovered_rect(settings_rect) {
-        splash.state = SplashState::Settings;
-    }
+        let howtoplay_rect = builder
+            .clone()
+            .image(*image)
+            .size(image.egui_size())
+            .offset(pos2(0.0, offset))
+            .paint(&painter, &textures)
+            .expand(2.0);
 
-    let image = if splash.state == SplashState::Credits {
-        credits_button_blink
-    } else {
-        credits_button
-    };
-    let credits_rect = image
-        .image_painter()
-        .size(image.egui_size())
-        .pos(area.response.rect.min)
-        .offset(slots.credits.to_array().into())
-        .paint(&painter, &textures);
+        if ctx.clicked_rect(howtoplay_rect) {
+            output = Some(SplashState::HowToPlay);
+        }
+        if ctx.hovered_rect(howtoplay_rect) {
+            self.state = SplashState::HowToPlay;
+        }
 
-    if ctx.clicked_rect(credits_rect) {
-        splash.interact = Some(SplashState::Credits);
-    }
-    if ctx.hovered_rect(credits_rect) {
-        splash.state = SplashState::Credits;
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let image = if self.state == SplashState::Lan {
+                lan_blink
+            } else {
+                lan
+            };
+            let lan_rect = builder
+                .clone()
+                .image(*image)
+                .size(image.egui_size())
+                .offset(pos2(0.0, slots.button_2))
+                .paint(&painter, &textures)
+                .expand(2.0);
+
+            if ctx.clicked_rect(lan_rect) {
+                output = Some(SplashState::Lan);
+            }
+            if ctx.hovered_rect(lan_rect) {
+                self.state = SplashState::Lan;
+            }
+        }
+
+        let image = if self.state == SplashState::Settings {
+            settings_button_blink
+        } else {
+            settings_button
+        };
+        let settings_rect = image
+            .image_painter()
+            .size(image.egui_size())
+            .pos(area.response.rect.min)
+            .offset(slots.settings.to_array().into())
+            .paint(&painter, &textures);
+
+        if ctx.clicked_rect(settings_rect) {
+            output = Some(SplashState::Settings);
+        }
+        if ctx.hovered_rect(settings_rect) {
+            self.state = SplashState::Settings;
+        }
+
+        let image = if self.state == SplashState::Credits {
+            credits_button_blink
+        } else {
+            credits_button
+        };
+        let credits_rect = image
+            .image_painter()
+            .size(image.egui_size())
+            .pos(area.response.rect.min)
+            .offset(slots.credits.to_array().into())
+            .paint(&painter, &textures);
+
+        if ctx.clicked_rect(credits_rect) {
+            output = Some(SplashState::Credits);
+        }
+        if ctx.hovered_rect(credits_rect) {
+            self.state = SplashState::Credits;
+        }
+
+        output
     }
 }
