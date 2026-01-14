@@ -3,6 +3,8 @@
 pub use bones::*;
 pub use bones_framework::prelude as bones;
 
+pub mod game;
+
 pub mod menu;
 pub use menu::*;
 
