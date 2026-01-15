@@ -52,74 +52,41 @@ pub fn scene(world: &World) {
             socket,
             service_type,
         } => {
-            let (dual_stick, number1, number2, gamepad1, gamepad2) = match service_type {
-                ServiceType::OnePlayer(p1) => (
-                    true,
-                    0,
-                    0,
-                    SingleSource::Gamepad(*p1),
-                    SingleSource::Gamepad(*p1),
-                ),
-                ServiceType::TwoPlayer(p1, p2) => (false, 0, 1, *p1, *p2),
-            };
+            let primary_info = service_type.player_info_primary();
+            let secondary_info = service_type.player_info_secondary();
+
             let local_team = match socket.player_idx() {
                 0 => Team::A,
                 1 => Team::B,
                 _ => panic!("index out of player count bounds"),
             };
+
+            let a1 = if local_team == Team::A {
+                primary_info
+            } else {
+                PlayerInfo::Network
+            };
+            let a2 = if local_team == Team::A {
+                secondary_info
+            } else {
+                PlayerInfo::Network
+            };
+            let b1 = if local_team == Team::B {
+                primary_info
+            } else {
+                PlayerInfo::Network
+            };
+            let b2 = if local_team == Team::B {
+                secondary_info
+            } else {
+                PlayerInfo::Network
+            };
+
             PlayerEntSigns {
-                a1: self::player(
-                    world,
-                    if local_team == Team::A {
-                        PlayerInfo::Local {
-                            number: number1,
-                            source: gamepad1,
-                            dual_stick,
-                        }
-                    } else {
-                        PlayerInfo::Network
-                    },
-                    PlayerSlot::A1,
-                ),
-                a2: self::player(
-                    world,
-                    if local_team == Team::A {
-                        PlayerInfo::Local {
-                            number: number2,
-                            source: gamepad2,
-                            dual_stick,
-                        }
-                    } else {
-                        PlayerInfo::Network
-                    },
-                    PlayerSlot::A2,
-                ),
-                b1: self::player(
-                    world,
-                    if local_team == Team::B {
-                        PlayerInfo::Local {
-                            number: number1,
-                            source: gamepad1,
-                            dual_stick,
-                        }
-                    } else {
-                        PlayerInfo::Network
-                    },
-                    PlayerSlot::B1,
-                ),
-                b2: self::player(
-                    world,
-                    if local_team == Team::B {
-                        PlayerInfo::Local {
-                            number: number2,
-                            source: gamepad2,
-                            dual_stick,
-                        }
-                    } else {
-                        PlayerInfo::Network
-                    },
-                    PlayerSlot::B2,
-                ),
+                a1: self::player(world, a1, PlayerSlot::A1),
+                a2: self::player(world, a2, PlayerSlot::A2),
+                b1: self::player(world, b1, PlayerSlot::B1),
+                b2: self::player(world, b2, PlayerSlot::B2),
             }
         }
         PlayMode::Offline(PlayersInfo { a1, a2, b1, b2 }) => PlayerEntSigns {

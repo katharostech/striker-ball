@@ -12,6 +12,40 @@ impl Default for ServiceType {
         Self::OnePlayer(0)
     }
 }
+impl ServiceType {
+    pub fn player_info_primary(&self) -> PlayerInfo {
+        match self {
+            ServiceType::OnePlayer(gamepad_id) => PlayerInfo::Local {
+                number: 0,
+                source: SingleSource::Gamepad(*gamepad_id),
+                dual_stick: true,
+            },
+            ServiceType::TwoPlayer(single_source_primary, _single_source_secondary) => {
+                PlayerInfo::Local {
+                    number: 0,
+                    source: *single_source_primary,
+                    dual_stick: false,
+                }
+            }
+        }
+    }
+    pub fn player_info_secondary(&self) -> PlayerInfo {
+        match self {
+            ServiceType::OnePlayer(gamepad_id) => PlayerInfo::Local {
+                number: 0,
+                source: SingleSource::Gamepad(*gamepad_id),
+                dual_stick: true,
+            },
+            ServiceType::TwoPlayer(_single_source_primary, single_source_secondary) => {
+                PlayerInfo::Local {
+                    number: 1,
+                    source: *single_source_secondary,
+                    dual_stick: false,
+                }
+            }
+        }
+    }
+}
 
 #[derive(HasSchema, Clone, Default)]
 pub struct LanSelect {
