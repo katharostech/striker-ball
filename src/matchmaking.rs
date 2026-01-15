@@ -119,18 +119,18 @@ impl Matchmaker {
     pub fn update(&mut self, delta: std::time::Duration) {
         self.refresh.tick(delta);
 
-        if self.search_enabled && self.refresh.finished() && !self.is_waiting() {
-            tracing::debug!("matchmaker refresh...");
-            self.lan_search();
-            self.refresh.reset();
-        }
-        if self.is_waiting() && self.socket.is_none() {
-            self.socket = if let Some(server) = &self.server {
-                lan::wait_players(&mut self.joined_players, server)
+        if !self.is_waiting() {
+            if self.search_enabled && self.refresh.finished() {
+                tracing::debug!("matchmaker refresh...");
+                self.lan_search();
+                self.refresh.reset();
+            }
+        } else if self.socket.is_none() {
+            if let Some(server) = &self.server {
+                self.socket = lan::wait_players(&mut self.joined_players, server);
             } else {
-                lan::wait_game_start()
+                self.socket = lan::wait_game_start();
             };
-            // TODO: cancel search if necessary
         }
     }
 }
