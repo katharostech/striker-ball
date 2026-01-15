@@ -35,8 +35,6 @@ pub enum PlayerInfo {
         /// `0` being P1, `1` being P2, and so on.
         number: usize,
         /// The input source of the player.
-        // TODO: Check if this field should be separated from this struct since
-        // it is not used in the player spawning.
         source: SingleSource,
         /// Whether or not this player is being controlled with
         /// dual stick controls.
