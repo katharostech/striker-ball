@@ -18,8 +18,8 @@ pub fn run() {
     game.init_shared_resource::<AssetServer>();
 
     // By inserting `ClearColor` as a shared resource, every session
-    // will by default read its own `ClearColor` as `BLACK`.
-    // TODO: Check if shared_resources can be overwritten.
+    // will by default read its own `ClearColor` as `BLACK` unless
+    // overwritten by inserting its own `ClearColor` on the session.
     game.insert_shared_resource(ClearColor(Color::BLACK));
 
     game.install_plugin(LocalInputGamePlugin);
