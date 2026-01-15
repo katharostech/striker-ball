@@ -8,20 +8,6 @@ pub enum SingleSource {
     Gamepad(u32),
 }
 
-// TODO: This is unused right now, remove if needed.
-/// Collection type variants for gathering inputs for two characters on one computer.
-#[derive(HasSchema, Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum TeamSource {
-    /// Represents one source for two characters.
-    TwinStick(u32),
-    /// Represents two sources for two characters.
-    TwoPlayer(SingleSource, SingleSource),
-}
-impl Default for TeamSource {
-    fn default() -> Self {
-        Self::TwinStick(0)
-    }
-}
 fn apply_keyboard_state_primary(
     input: &mut PlayInput,
     key: &KeyCode,
