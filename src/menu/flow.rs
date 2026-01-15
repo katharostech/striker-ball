@@ -199,9 +199,7 @@ pub fn fade_transition(ui: &World) {
     let fade = ui.resource::<Fade>();
     let transition = ui.resource::<FadeTransition>();
 
-    if fade.fade_out.just_finished() {
-        // TODO: maybe do these on fade_wait so you see the
-        // results fading in immediatelly.
+    if fade.fade_wait.just_finished() {
         (transition.hide)(ui);
         (transition.prep)(ui);
     }
