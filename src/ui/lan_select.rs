@@ -2,6 +2,9 @@ use super::*;
 
 pub const MATCHMAKER_SERVICE_NAME: &str = "StrikerBall";
 
+/// This is named `ServiceType` but it doesn't actually decide the
+/// matchmaker service name anymore. Its actual purpose right now is
+/// just to determin what the local control source is.
 #[derive(HasSchema, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ServiceType {
     OnePlayer(u32),
