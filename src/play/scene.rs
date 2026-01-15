@@ -74,7 +74,6 @@ impl SessionPlugin for ScenePlugin {
             }
         };
         session.insert_resource(self.mode);
-        session.insert_resource(Mapping); // TODO: This will probably get removed after a bones update.
         session.init_resource::<PlayTeamInputs>();
         session.install_plugin(Path2dTogglePlugin);
 
