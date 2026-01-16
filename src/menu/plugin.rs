@@ -15,10 +15,7 @@ impl SessionPlugin for MenuPlugin {
         session.install_plugin(HowToPlay::default());
         session.install_plugin(TeamSelect::default());
         session.install_plugin(Pause::default());
-        session.install_plugin(Splash {
-            visual: Visual::new_shown(),
-            ..Default::default()
-        });
+        session.install_plugin(Splash::shown());
         session.install_plugin(Fade::new(
             0.5,
             0.15,

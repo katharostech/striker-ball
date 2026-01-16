@@ -115,14 +115,14 @@ impl SplashState {
 pub struct Splash {
     #[deref]
     pub state: SplashState,
-    pub visual: Visual,
+    pub visible: bool,
 }
 impl ShowHide for Splash {
     fn show(&mut self) {
-        self.visual.show()
+        self.visible = true
     }
     fn hide(&mut self) {
-        self.visual.hide()
+        self.visible = false
     }
 }
 
@@ -138,6 +138,12 @@ fn foreground() -> egui::LayerId {
     LayerId::new(Order::Foreground, Id::new("splash_foreground"))
 }
 impl Splash {
+    pub fn shown() -> Self {
+        Self {
+            visible: true,
+            ..Default::default()
+        }
+    }
     pub fn process_input(&mut self, world: &World) -> Option<SplashOutput> {
         let mut output = None;
 
@@ -165,7 +171,7 @@ impl Splash {
     pub fn process_ui(&mut self, world: &World) -> Option<SplashOutput> {
         let mut output = None;
 
-        if !self.visual.shown() {
+        if !self.visible {
             return output;
         }
 
