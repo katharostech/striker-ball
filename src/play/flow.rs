@@ -91,7 +91,7 @@ pub fn score_display_update(
     mut score: ResMut<Score>,
 ) {
     if fade.fade_out.just_finished() {
-        tracing::info!("fade out for round restart, reseting positions");
+        tracing::debug!("fade out for round restart, reseting positions");
 
         // The score may have changed while we were displaying so we update
         // for a potential win.
@@ -119,9 +119,9 @@ pub fn score_display_update(
         }
     }
     if fade.fade_in.just_finished() {
-        tracing::info!("fade in for round restart");
+        tracing::debug!("fade in for round restart");
         if let Some(team) = score.winner() {
-            tracing::info!("winner found, showing winner");
+            tracing::debug!("winner found, showing winner");
             winner.team = team;
             winner.visual.show();
             winner.timer = Timer::from_seconds(3., TimerMode::Once);
@@ -129,7 +129,7 @@ pub fn score_display_update(
             audio.stop_music(false);
             *play_state = PlayState::Podium;
         } else {
-            tracing::info!("no winner, starting countdown");
+            tracing::debug!("no winner, starting countdown");
             countdown.restart();
             *play_state = PlayState::Countdown;
         }
@@ -142,7 +142,7 @@ fn podium_update(play: &World) {
     let mut winner = play.resource_mut::<WinnerBanner>();
 
     if winner.timer.just_finished() {
-        tracing::info!("showing match done ui");
+        tracing::debug!("showing match done ui");
         winner.visual.hide();
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -248,7 +248,7 @@ pub fn set_player_states_scored_b(
     }
 }
 pub fn set_player_states_free(player_ent_signs: Res<PlayerEntSigns>, mut states: CompMut<State>) {
-    tracing::info!("freeing players");
+    tracing::debug!("freeing players");
     for entity in player_ent_signs.entities() {
         let state = states.get_mut(entity).unwrap();
         state.current = player::state::free();
