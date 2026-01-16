@@ -66,6 +66,12 @@ impl Matchmaker {
     pub fn network_match_socket(&self) -> Option<NetworkMatchSocket> {
         self.socket.clone()
     }
+    /// If the matchmaker doesn't have a socket and isn't waiting for a socket
+    /// and the search is enabled this will return true and the matchmaker
+    /// will update its servers on its refresh timer.
+    pub fn is_searching(&self) -> bool {
+        !self.is_waiting() && self.socket.is_none() && self.search_enabled
+    }
     pub fn disable_search(&mut self) {
         self.search_enabled = false;
     }
@@ -120,7 +126,7 @@ impl Matchmaker {
         self.refresh.tick(delta);
 
         if !self.is_waiting() {
-            if self.search_enabled && self.refresh.finished() {
+            if self.is_searching() && self.refresh.finished() {
                 tracing::debug!("matchmaker refresh...");
                 self.lan_search();
                 self.refresh.reset();
@@ -131,6 +137,9 @@ impl Matchmaker {
             } else {
                 self.socket = lan::wait_game_start();
             };
+            if self.socket.is_some() {
+                self.joining = false;
+            }
         }
     }
 }
