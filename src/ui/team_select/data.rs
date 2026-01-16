@@ -190,7 +190,10 @@ pub struct TeamSelect {
 }
 impl ShowHide for TeamSelect {
     fn show(&mut self) {
-        self.visible = true;
+        *self = Self {
+            visible: true,
+            ..Default::default()
+        };
     }
     fn hide(&mut self) {
         self.visible = false
