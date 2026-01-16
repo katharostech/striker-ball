@@ -33,6 +33,14 @@ pub enum HowToPlay {
     DualStickControls,
     KeyboardControls,
 }
+impl ShowHide for HowToPlay {
+    fn show(&mut self) {
+        *self = Self::Hidden
+    }
+    fn hide(&mut self) {
+        *self = Self::Hidden
+    }
+}
 impl HowToPlay {
     pub fn left(&mut self) {
         match self {

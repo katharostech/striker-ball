@@ -46,6 +46,18 @@ fn fix_camera_size(root: Root<Data>, window: Res<Window>, mut cameras: CompMut<C
     }
 }
 
+pub trait ShowHide: HasSchema + Sized {
+    fn show(&mut self);
+    fn hide(&mut self);
+
+    fn show_resource(world: &World) {
+        world.resource_mut::<Self>().show();
+    }
+    fn hide_resource(world: &World) {
+        world.resource_mut::<Self>().hide();
+    }
+}
+
 pub fn primary_text(
     text: &str,
     selected: bool,

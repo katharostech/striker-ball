@@ -188,6 +188,14 @@ pub struct TeamSelect {
     pub visible: bool,
     pub joins: [Join; 4],
 }
+impl ShowHide for TeamSelect {
+    fn show(&mut self) {
+        self.visible = true;
+    }
+    fn hide(&mut self) {
+        self.visible = false
+    }
+}
 impl TeamSelect {
     pub fn add_source(&mut self, source: SingleSource) {
         if !self.joins.iter().any(|join| join.is_source(source)) {

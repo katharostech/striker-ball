@@ -1,14 +1,5 @@
 use super::*;
 
-pub fn lan_select_hide(world: &World) {
-    *world.resource_mut::<LanSelect>() = default();
-}
-pub fn lan_select_prep(world: &World) {
-    world.resource_mut::<LanSelect>().visible = true;
-}
-pub fn lan_select_finish(world: &World) {
-    *world.resource_mut() = MenuState::LanSelect;
-}
 pub fn lan_ui_hide(world: &World) {
     world.resource_mut::<Matchmaker>().disable_search();
     world.resource_mut::<LanUI>().visible = false;
@@ -21,9 +12,6 @@ pub fn lan_ui_leave(world: &World) {
 pub fn lan_ui_prep(world: &World) {
     world.resource_mut::<Matchmaker>().enable_search();
     world.resource_mut::<LanUI>().visible = true;
-}
-pub fn lan_ui_finish(world: &World) {
-    *world.resource_mut() = MenuState::Lan;
 }
 pub fn play_online_prep(ui: &World) {
     let socket = ui.resource::<Matchmaker>().network_match_socket().unwrap();
@@ -42,9 +30,9 @@ pub fn lan_select_transition(world: &World, output: LanSelectOutput) {
             start_fade(
                 world,
                 FadeTransition {
-                    hide: lan_select_hide,
-                    prep: splash_prep,
-                    finish: splash_finish,
+                    hide: LanSelect::hide_resource,
+                    prep: Splash::show_resource,
+                    finish: MenuState::Splash,
                 },
             );
         }
@@ -53,9 +41,9 @@ pub fn lan_select_transition(world: &World, output: LanSelectOutput) {
             start_fade(
                 world,
                 FadeTransition {
-                    hide: lan_select_hide,
+                    hide: LanSelect::show_resource,
                     prep: lan_ui_prep,
-                    finish: lan_ui_finish,
+                    finish: MenuState::Lan,
                 },
             );
         }
@@ -72,7 +60,7 @@ pub fn lan_ui_transition(world: &World, output: Option<LanUIOutput>) {
             FadeTransition {
                 hide: lan_ui_hide,
                 prep: play_online_prep,
-                finish: |_| {},
+                finish: MenuState::InNetworkGame,
             },
         );
         return;
@@ -95,8 +83,8 @@ pub fn lan_ui_transition(world: &World, output: Option<LanUIOutput>) {
             world,
             FadeTransition {
                 hide: lan_ui_leave,
-                prep: splash_prep,
-                finish: splash_finish,
+                prep: Splash::show_resource,
+                finish: MenuState::Splash,
             },
         ),
     }

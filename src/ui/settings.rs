@@ -61,6 +61,14 @@ pub struct SettingsUi {
     pub state: SettingsState,
     pub visible: bool,
 }
+impl ShowHide for SettingsUi {
+    fn show(&mut self) {
+        self.visible = true
+    }
+    fn hide(&mut self) {
+        self.visible = false
+    }
+}
 
 impl SessionPlugin for SettingsUi {
     fn install(self, session: &mut SessionBuilder) {

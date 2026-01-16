@@ -155,7 +155,7 @@ fn podium_update(play: &World) {
                 FadeTransition {
                     hide: play_leave,
                     prep: lan_ui_prep,
-                    finish: lan_ui_finish,
+                    finish: MenuState::Lan,
                 },
             );
         } else {
@@ -188,7 +188,7 @@ fn match_done_update(play: &World) {
                 FadeTransition {
                     hide: play_reset,
                     prep: play_offline_prep,
-                    finish: |_| {},
+                    finish: MenuState::InGame,
                 },
             );
         }
@@ -199,8 +199,8 @@ fn match_done_update(play: &World) {
                 ui,
                 FadeTransition {
                     hide: play_leave,
-                    prep: team_select_prep,
-                    finish: team_select_finish,
+                    prep: TeamSelect::show_resource,
+                    finish: MenuState::TeamSelect,
                 },
             );
         }
@@ -211,8 +211,8 @@ fn match_done_update(play: &World) {
                 ui,
                 FadeTransition {
                     hide: play_leave,
-                    prep: splash_prep,
-                    finish: splash_finish,
+                    prep: Splash::show_resource,
+                    finish: MenuState::Splash,
                 },
             );
         }
@@ -283,7 +283,7 @@ fn handle_disconnections(play: &World) -> Option<()> {
                 FadeTransition {
                     hide: play_leave,
                     prep: lan_ui_prep,
-                    finish: lan_ui_finish,
+                    finish: MenuState::Lan,
                 },
             );
             return Some(());

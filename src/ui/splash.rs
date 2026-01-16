@@ -117,6 +117,14 @@ pub struct Splash {
     pub state: SplashState,
     pub visual: Visual,
 }
+impl ShowHide for Splash {
+    fn show(&mut self) {
+        self.visual.show()
+    }
+    fn hide(&mut self) {
+        self.visual.hide()
+    }
+}
 
 pub type SplashOutput = SplashState;
 

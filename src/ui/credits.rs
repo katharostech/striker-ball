@@ -15,6 +15,14 @@ pub struct CreditsUi {
     pub visible: bool,
     pub scroll: f32,
 }
+impl ShowHide for CreditsUi {
+    fn show(&mut self) {
+        self.visible = true
+    }
+    fn hide(&mut self) {
+        self.visible = false
+    }
+}
 
 impl SessionPlugin for CreditsUi {
     fn install(self, session: &mut SessionBuilder) {

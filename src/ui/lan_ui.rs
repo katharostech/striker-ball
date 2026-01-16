@@ -42,6 +42,14 @@ pub struct LanUI {
     pub service: ServiceType,
     pub state: LanUIState,
 }
+impl ShowHide for LanUI {
+    fn show(&mut self) {
+        self.visible = true
+    }
+    fn hide(&mut self) {
+        self.visible = false
+    }
+}
 
 impl SessionPlugin for LanUI {
     fn install(self, session: &mut SessionBuilder) {

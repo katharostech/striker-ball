@@ -55,6 +55,14 @@ pub struct LanSelect {
     pub visible: bool,
     pub selection: LanSelection,
 }
+impl ShowHide for LanSelect {
+    fn show(&mut self) {
+        self.visible = true
+    }
+    fn hide(&mut self) {
+        self.visible = false
+    }
+}
 
 #[derive(HasSchema, Clone, Default, PartialEq, Eq)]
 pub enum LanSelection {

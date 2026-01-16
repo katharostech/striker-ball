@@ -122,60 +122,6 @@ pub fn update_menu(world: &World) {
         }
     }
 }
-pub fn network_quit_transition(world: &World, output: NetworkQuitOutput) {
-    match output {
-        NetworkQuitOutput::Quit => {
-            start_fade(
-                world,
-                FadeTransition {
-                    hide: play_leave,
-                    prep: splash_prep,
-                    finish: splash_finish,
-                },
-            );
-        }
-        NetworkQuitOutput::Show => {
-            let mut sessions = world.resource_mut::<Sessions>();
-            let session = sessions.get_mut(session::PLAY).unwrap();
-            session.world.resource_mut::<Countdown>().visual.add_hide();
-            session.world.resource_mut::<MatchDone>().visual.add_hide();
-            session
-                .world
-                .resource_mut::<ScoreDisplay>()
-                .visual
-                .add_hide();
-            session
-                .world
-                .resource_mut::<WinnerBanner>()
-                .visual
-                .add_hide();
-        }
-        NetworkQuitOutput::Hide => {
-            let mut sessions = world.resource_mut::<Sessions>();
-            let session = sessions.get_mut(session::PLAY).unwrap();
-            session
-                .world
-                .resource_mut::<Countdown>()
-                .visual
-                .remove_hide();
-            session
-                .world
-                .resource_mut::<MatchDone>()
-                .visual
-                .remove_hide();
-            session
-                .world
-                .resource_mut::<ScoreDisplay>()
-                .visual
-                .remove_hide();
-            session
-                .world
-                .resource_mut::<WinnerBanner>()
-                .visual
-                .remove_hide();
-        }
-    }
-}
 
 #[derive(HasSchema, Clone)]
 pub struct FadeTransition {
@@ -183,18 +129,19 @@ pub struct FadeTransition {
     pub hide: fn(&World),
     /// Makes the associated ui elements visible while the screen is blank to show up later.
     pub prep: fn(&World),
-    /// Makes the changes that gives control over the associated ui elements.
-    pub finish: fn(&World),
+    /// Makes the change to the [`MenuState`] resource that gives control over the associated ui elements.
+    pub finish: MenuState,
 }
 impl Default for FadeTransition {
     fn default() -> Self {
         Self {
             hide: |_| {},
             prep: |_| {},
-            finish: |_| {},
+            finish: MenuState::default(),
         }
     }
 }
+
 pub fn fade_transition(ui: &World) {
     let fade = ui.resource::<Fade>();
     let transition = ui.resource::<FadeTransition>();
@@ -202,11 +149,14 @@ pub fn fade_transition(ui: &World) {
     if fade.fade_wait.just_finished() {
         (transition.hide)(ui);
         (transition.prep)(ui);
+
+        ui.resource::<EguiCtx>().clear_animations();
     }
     if fade.fade_in.just_finished() {
-        (transition.finish)(ui);
+        *ui.resource_mut() = transition.finish;
     }
 }
+
 pub fn start_fade(world: &World, transition: FadeTransition) {
     let mut fade = world.resource_mut::<Fade>();
     if !fade.finished() {
@@ -216,61 +166,7 @@ pub fn start_fade(world: &World, transition: FadeTransition) {
     *world.resource_mut() = MenuState::FadeTransition;
     *world.resource_mut() = transition;
 }
-pub fn splash_hide(world: &World) {
-    world.resource_mut::<Splash>().visual.hide();
-}
-pub fn splash_prep(world: &World) {
-    world.resource_mut::<Splash>().visual.show();
-}
-pub fn splash_finish(world: &World) {
-    *world.resource_mut() = MenuState::Splash;
-}
-pub fn team_select_hide(world: &World) {
-    world.resource_mut::<TeamSelect>().visible = false;
-}
-pub fn settings_hide(world: &World) {
-    world.resource_mut::<SettingsUi>().visible = false;
-}
-pub fn settings_prep(world: &World) {
-    *world.resource_mut() = SettingsUi {
-        visible: true,
-        ..Default::default()
-    };
-    world.resource::<EguiCtx>().clear_animations();
-}
-pub fn settings_finish(world: &World) {
-    *world.resource_mut() = MenuState::Settings;
-}
-pub fn credits_hide(world: &World) {
-    world.resource_mut::<CreditsUi>().visible = false;
-}
-pub fn credits_prep(world: &World) {
-    world.resource_mut::<CreditsUi>().visible = true;
-    world.resource::<EguiCtx>().clear_animations();
-}
-pub fn credits_finish(world: &World) {
-    *world.resource_mut() = MenuState::Credits;
-}
-pub fn team_select_prep(world: &World) {
-    *world.resource_mut() = TeamSelect {
-        visible: true,
-        ..Default::default()
-    };
-    world.resource::<EguiCtx>().clear_animations();
-}
-pub fn team_select_finish(world: &World) {
-    *world.resource_mut() = MenuState::TeamSelect;
-}
-pub fn how_to_play_hide(world: &World) {
-    *world.resource_mut() = HowToPlay::Hidden;
-}
-pub fn how_to_play_prep(world: &World) {
-    *world.resource_mut() = HowToPlay::GameOverview;
-    world.resource::<EguiCtx>().clear_animations();
-}
-pub fn how_to_play_finish(world: &World) {
-    *world.resource_mut() = MenuState::HowToPlay;
-}
+
 pub fn play_leave(ui: &World) {
     *ui.resource_mut() = Pause::Disabled;
 
@@ -282,6 +178,7 @@ pub fn play_leave(ui: &World) {
     let mut sessions = ui.resource_mut::<Sessions>();
     sessions.delete_play();
 }
+
 pub fn play_reset(ui: &World) {
     *ui.resource_mut() = Pause::Disabled;
 
@@ -296,6 +193,7 @@ pub fn play_reset(ui: &World) {
             reset_resources: default(),
         });
 }
+
 pub fn play_offline_prep(ui: &World) {
     let mut sessions = ui.resource_mut::<Sessions>();
     let player_signs = ui
@@ -318,9 +216,9 @@ pub fn splash_transition(ui: &World, output: SplashOutput) {
         SplashState::Offline => start_fade(
             ui,
             FadeTransition {
-                hide: splash_hide,
-                prep: team_select_prep,
-                finish: team_select_finish,
+                hide: Splash::hide_resource,
+                prep: TeamSelect::show_resource,
+                finish: MenuState::TeamSelect,
             },
         ),
         #[cfg(not(target_arch = "wasm32"))]
@@ -328,9 +226,9 @@ pub fn splash_transition(ui: &World, output: SplashOutput) {
             start_fade(
                 ui,
                 FadeTransition {
-                    hide: splash_hide,
-                    prep: lan_select_prep,
-                    finish: lan_select_finish,
+                    hide: Splash::hide_resource,
+                    prep: LanSelect::show_resource,
+                    finish: MenuState::LanSelect,
                 },
             );
         }
@@ -338,9 +236,9 @@ pub fn splash_transition(ui: &World, output: SplashOutput) {
             start_fade(
                 ui,
                 FadeTransition {
-                    hide: splash_hide,
-                    prep: how_to_play_prep,
-                    finish: how_to_play_finish,
+                    hide: Splash::hide_resource,
+                    prep: HowToPlay::show_resource,
+                    finish: MenuState::HowToPlay,
                 },
             );
         }
@@ -348,9 +246,9 @@ pub fn splash_transition(ui: &World, output: SplashOutput) {
             start_fade(
                 ui,
                 FadeTransition {
-                    hide: splash_hide,
-                    prep: settings_prep,
-                    finish: settings_finish,
+                    hide: Splash::hide_resource,
+                    prep: SettingsUi::show_resource,
+                    finish: MenuState::Settings,
                 },
             );
         }
@@ -358,9 +256,9 @@ pub fn splash_transition(ui: &World, output: SplashOutput) {
             start_fade(
                 ui,
                 FadeTransition {
-                    hide: splash_hide,
-                    prep: credits_prep,
-                    finish: credits_finish,
+                    hide: Splash::hide_resource,
+                    prep: CreditsUi::show_resource,
+                    finish: MenuState::Credits,
                 },
             );
         }
@@ -370,9 +268,9 @@ pub fn how_to_play_transition(world: &World, _output: HowToPlayOutput) {
     start_fade(
         world,
         FadeTransition {
-            hide: how_to_play_hide,
-            prep: splash_prep,
-            finish: splash_finish,
+            hide: HowToPlay::hide_resource,
+            prep: Splash::show_resource,
+            finish: MenuState::Splash,
         },
     );
 }
@@ -380,9 +278,9 @@ pub fn settings_transition(world: &World, _output: SettingsOutput) {
     start_fade(
         world,
         FadeTransition {
-            hide: settings_hide,
-            prep: splash_prep,
-            finish: splash_finish,
+            hide: SettingsUi::hide_resource,
+            prep: Splash::show_resource,
+            finish: MenuState::Splash,
         },
     );
 }
@@ -390,9 +288,9 @@ pub fn credits_transition(world: &World, _output: CreditsOutput) {
     start_fade(
         world,
         FadeTransition {
-            hide: credits_hide,
-            prep: splash_prep,
-            finish: splash_finish,
+            hide: CreditsUi::hide_resource,
+            prep: Splash::show_resource,
+            finish: MenuState::Splash,
         },
     );
 }
@@ -401,17 +299,17 @@ pub fn team_select_transition(world: &World, output: TeamSelectOutput) {
         TeamSelectOutput::PlayersInfo(..) => start_fade(
             world,
             FadeTransition {
-                hide: team_select_hide,
+                hide: TeamSelect::hide_resource,
                 prep: play_offline_prep,
-                finish: |_| {},
+                finish: MenuState::InGame,
             },
         ),
         TeamSelectOutput::Exit => start_fade(
             world,
             FadeTransition {
-                hide: team_select_hide,
-                prep: splash_prep,
-                finish: splash_finish,
+                hide: TeamSelect::hide_resource,
+                prep: Splash::show_resource,
+                finish: MenuState::Splash,
             },
         ),
     }
@@ -466,7 +364,7 @@ pub fn pause_transition(world: &World, output: PauseOutput) {
                 FadeTransition {
                     hide: play_reset,
                     prep: play_offline_prep,
-                    finish: |_| {},
+                    finish: MenuState::InGame,
                 },
             );
         }
@@ -475,10 +373,65 @@ pub fn pause_transition(world: &World, output: PauseOutput) {
                 world,
                 FadeTransition {
                     hide: play_leave,
-                    prep: splash_prep,
-                    finish: splash_finish,
+                    prep: Splash::show_resource,
+                    finish: MenuState::Splash,
                 },
             );
+        }
+    }
+}
+
+pub fn network_quit_transition(world: &World, output: NetworkQuitOutput) {
+    match output {
+        NetworkQuitOutput::Quit => {
+            start_fade(
+                world,
+                FadeTransition {
+                    hide: play_leave,
+                    prep: Splash::show_resource,
+                    finish: MenuState::Splash,
+                },
+            );
+        }
+        NetworkQuitOutput::Show => {
+            let mut sessions = world.resource_mut::<Sessions>();
+            let session = sessions.get_mut(session::PLAY).unwrap();
+            session.world.resource_mut::<Countdown>().visual.add_hide();
+            session.world.resource_mut::<MatchDone>().visual.add_hide();
+            session
+                .world
+                .resource_mut::<ScoreDisplay>()
+                .visual
+                .add_hide();
+            session
+                .world
+                .resource_mut::<WinnerBanner>()
+                .visual
+                .add_hide();
+        }
+        NetworkQuitOutput::Hide => {
+            let mut sessions = world.resource_mut::<Sessions>();
+            let session = sessions.get_mut(session::PLAY).unwrap();
+            session
+                .world
+                .resource_mut::<Countdown>()
+                .visual
+                .remove_hide();
+            session
+                .world
+                .resource_mut::<MatchDone>()
+                .visual
+                .remove_hide();
+            session
+                .world
+                .resource_mut::<ScoreDisplay>()
+                .visual
+                .remove_hide();
+            session
+                .world
+                .resource_mut::<WinnerBanner>()
+                .visual
+                .remove_hide();
         }
     }
 }
