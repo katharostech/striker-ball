@@ -3,6 +3,38 @@ use bones::*;
 use egui::*;
 use std::sync::Arc;
 
+#[derive(HasSchema, Clone, Deref, DerefMut)]
+#[schema(no_default)]
+pub struct EguiSize(pub bones::Vec2);
+
+#[derive(HasSchema, Clone, Default)]
+/// [`SessionPlugin`] for defining a particular size for egui to scale to.
+///
+/// Use `Self::default()` if you don't want the plugin to scale the ui immediatelly, then
+/// insert the [`EguiSize`] resource when you want it to start scaling.
+pub struct EguiSizePlugin(pub Option<bones::Vec2>);
+impl EguiSizePlugin {
+    pub fn size(x: f32, y: f32) -> Self {
+        Self(Some(bones::vec2(x, y)))
+    }
+}
+impl SessionPlugin for EguiSizePlugin {
+    fn install(self, session: &mut SessionBuilder) {
+        session.insert_resource(EguiSettings::default());
+        session.add_system_to_stage(
+            Update,
+            |window: Res<bones::Window>,
+             egui_size: Option<Res<EguiSize>>,
+             mut settings: ResMut<EguiSettings>| {
+                if let Some(egui_size) = egui_size {
+                    settings.scale =
+                        (window.size.y / egui_size.y).min(window.size.x / egui_size.x) as f64;
+                }
+            },
+        );
+    }
+}
+
 pub fn default_uv() -> egui::Rect {
     use egui::*;
     Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0))

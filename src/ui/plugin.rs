@@ -6,9 +6,9 @@ impl SessionPlugin for UiSessionPlugin {
         session
             .set_priority(session::UI_PRIORITY)
             .install_plugin(DefaultSessionPlugin)
-            .install_plugin(UiScalePlugin)
             .install_plugin(MenuPlugin)
-            .add_startup_system(set_egui_styles)
+            .install_plugin(EguiSizePlugin::default())
+            .add_startup_system(setup_egui)
             .add_system_to_stage(Update, show_ui);
     }
 }
@@ -26,23 +26,11 @@ pub fn show_ui(world: &World) {
     }
 }
 
-pub fn set_egui_styles(ctx: Res<EguiCtx>) {
+pub fn setup_egui(world: &World, root: Root<Data>, ctx: Res<EguiCtx>) {
+    world.resources.insert(EguiSize(root.screen_size));
     use egui::*;
     ctx.style_mut(|w| w.visuals.selection.bg_fill = Color32::YELLOW);
     ctx.style_mut(|w| w.visuals.text_cursor.color = Color32::YELLOW);
-}
-
-pub struct UiScalePlugin;
-impl SessionPlugin for UiScalePlugin {
-    fn install(self, session: &mut SessionBuilder) {
-        session.insert_resource(EguiSettings::default());
-        session.add_system_to_stage(Update, |world: &World, root: Root<Data>| {
-            let size = world.resource::<Window>().size;
-            world.resource_mut::<EguiSettings>().scale =
-                // TODO: Use resource instead of root asset & Move to utils module
-                (size.y / root.screen_size.y).min(size.x / root.screen_size.x) as f64;
-        });
-    }
 }
 
 fn fix_camera_size(root: Root<Data>, window: Res<Window>, mut cameras: CompMut<Camera>) {
