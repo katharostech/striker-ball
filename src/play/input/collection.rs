@@ -118,7 +118,6 @@ fn apply_gamepad_event_secondary(input: &mut PlayInput, event: &GamepadEvent, ga
 pub struct PlayTeamInputCollector {
     p1_source: SingleSource,
     p2_source: SingleSource,
-    // TODO: I think current may be the wrong name but I still have to nail down all the input stuff
     // TODO: FIXME: This should only include the state, but `PlayTeamInput` has just_pressed data in it.
     // NOTE: We can only change this by disolving the unnecessary type restrictions on the collector.
     current: PlayTeamInput,
