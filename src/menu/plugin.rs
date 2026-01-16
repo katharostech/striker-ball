@@ -3,6 +3,10 @@ use super::*;
 pub struct MenuPlugin;
 impl SessionPlugin for MenuPlugin {
     fn install(self, session: &mut SessionBuilder) {
+        session
+            .set_priority(session::UI_PRIORITY)
+            .install_plugin(DefaultSessionPlugin);
+
         session.init_resource::<MenuState>();
         session.init_resource::<FadeTransition>();
 
@@ -35,9 +39,12 @@ impl SessionPlugin for MenuPlugin {
             session.install_plugin(NetworkQuit::default());
         }
 
+        session.install_plugin(EguiSizePlugin::default());
+        session.add_startup_system(ui::setup_egui);
         session.add_startup_system(set_volume_scales);
         session.add_startup_system(play_menu_music);
         session.add_system_to_stage(First, update_menu);
+        session.add_system_to_stage(Update, ui::show_all);
     }
 }
 

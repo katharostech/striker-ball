@@ -23,7 +23,7 @@ pub fn run() {
     game.insert_shared_resource(ClearColor(Color::BLACK));
 
     game.install_plugin(LocalInputGamePlugin);
-    game.sessions.create_with(session::UI, UiSessionPlugin);
+    game.sessions.create_with(session::UI, MenuPlugin);
 
     BonesBevyRenderer::new(game)
         .namespace(namespace())

@@ -1,8 +1,5 @@
 use super::*;
 
-mod plugin;
-pub use plugin::*;
-
 pub mod countdown;
 pub mod credits;
 pub mod fade;
@@ -17,6 +14,7 @@ pub mod score_display;
 pub mod settings;
 pub mod splash;
 pub mod team_select;
+pub mod utils;
 pub mod winner;
 
 pub use countdown::*;
@@ -33,4 +31,5 @@ pub use score_display::*;
 pub use settings::*;
 pub use splash::*;
 pub use team_select::*;
+pub use utils::*;
 pub use winner::*;

@@ -1,18 +1,6 @@
 use super::*;
 
-pub struct UiSessionPlugin;
-impl SessionPlugin for UiSessionPlugin {
-    fn install(self, session: &mut SessionBuilder) {
-        session
-            .set_priority(session::UI_PRIORITY)
-            .install_plugin(DefaultSessionPlugin)
-            .install_plugin(MenuPlugin)
-            .install_plugin(EguiSizePlugin::default())
-            .add_startup_system(setup_egui)
-            .add_system_to_stage(Update, show_ui);
-    }
-}
-pub fn show_ui(world: &World) {
+pub fn show_all(world: &World) {
     fade::show(world);
 
     if let Some(world) = world.resource_mut::<Sessions>().get_world(session::PLAY) {
@@ -33,7 +21,7 @@ pub fn setup_egui(world: &World, root: Root<Data>, ctx: Res<EguiCtx>) {
     ctx.style_mut(|w| w.visuals.text_cursor.color = Color32::YELLOW);
 }
 
-fn fix_camera_size(root: Root<Data>, window: Res<Window>, mut cameras: CompMut<Camera>) {
+pub fn fix_camera_size(root: Root<Data>, window: Res<Window>, mut cameras: CompMut<Camera>) {
     for camera in cameras.iter_mut() {
         let size = root.court.size();
         let ratio = size.x / size.y;

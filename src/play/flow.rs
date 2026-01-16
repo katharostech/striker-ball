@@ -154,7 +154,7 @@ fn podium_update(play: &World) {
                 ui,
                 FadeTransition {
                     hide: play_leave,
-                    prep: lan_ui_prep,
+                    prep: network::lan_ui_prep,
                     finish: MenuState::Lan,
                 },
             );
@@ -282,7 +282,7 @@ fn handle_disconnections(play: &World) -> Option<()> {
                 ui,
                 FadeTransition {
                     hide: play_leave,
-                    prep: lan_ui_prep,
+                    prep: network::lan_ui_prep,
                     finish: MenuState::Lan,
                 },
             );
