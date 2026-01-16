@@ -17,7 +17,8 @@ pub struct CreditsUi {
 }
 impl ShowHide for CreditsUi {
     fn show(&mut self) {
-        self.visible = true
+        self.visible = true;
+        self.scroll = 0.0;
     }
     fn hide(&mut self) {
         self.visible = false
