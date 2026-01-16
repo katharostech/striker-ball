@@ -35,7 +35,7 @@ pub enum HowToPlay {
 }
 impl ShowHide for HowToPlay {
     fn show(&mut self) {
-        *self = Self::Hidden
+        *self = Self::GameOverview
     }
     fn hide(&mut self) {
         *self = Self::Hidden
