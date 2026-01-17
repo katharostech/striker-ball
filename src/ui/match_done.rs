@@ -15,6 +15,9 @@ pub struct MatchDone {
     pub visual: Visual,
     #[deref]
     pub state: MatchDoneState,
+    /// The output is stored here for the play session
+    /// since the ui can produce an output ( and a `None` output )
+    /// quicker than the play session can catch it.
     pub output: Option<MatchDoneOutput>,
 }
 #[derive(HasSchema, Clone, Default, Copy)]
@@ -49,15 +52,13 @@ impl SessionPlugin for MatchDone {
 
 type MatchDoneOutput = MatchDoneState;
 
+// This still has the output return types which aren't currently used.
+// TODO: maybe handle game flow outside the play session or remove unused code.
 impl MatchDone {
     pub fn process_input(&mut self, world: &World) -> Option<MatchDoneOutput> {
         let mut output = None;
 
         if !self.visual.shown() {
-            // TODO: In general, for the sake of clarity, the outputs,
-            // if stored like they are here, should not be set if the `Some` value
-            // hasn't been read yet.
-            self.output = output;
             return output;
         }
         let inputs = world.resource::<LocalInputs>();
@@ -69,6 +70,7 @@ impl MatchDone {
                     MatchDoneState::TeamSelect => MatchDoneOutput::TeamSelect.into(),
                     MatchDoneState::Quit => MatchDoneOutput::Quit.into(),
                 };
+                self.output.get_or_insert(output.unwrap());
                 self.visual.hide();
             }
             if input.menu_up.just_pressed() {
@@ -78,14 +80,12 @@ impl MatchDone {
                 self.cycle_down();
             }
         }
-        self.output = output;
         output
     }
     pub fn process_ui(&mut self, world: &World) -> Option<MatchDoneOutput> {
         let mut output = None;
 
         if !self.visual.shown() {
-            self.output = output;
             return output;
         }
         let asset_server = world.resource::<AssetServer>();
@@ -165,7 +165,9 @@ impl MatchDone {
                     }
                 });
             });
-        self.output = output;
+        if let Some(output) = output {
+            self.output.get_or_insert(output);
+        }
         output
     }
 }

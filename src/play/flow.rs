@@ -171,9 +171,9 @@ fn podium_update(play: &World) {
 }
 
 fn match_done_update(play: &World) {
-    let match_done = *play.resource::<MatchDone>();
+    let mut match_done = play.resource_mut::<MatchDone>();
 
-    let Some(output) = match_done.output else {
+    let Some(output) = match_done.output.take() else {
         return;
     };
 
