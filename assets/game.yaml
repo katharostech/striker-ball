@@ -239,25 +239,28 @@ menu:
       *screen_height,
     ]
     credits_header: [ui/credits/creditsTitle.png, 375, 126]
-    credits_offset: [118, 120]
-    credits_scroll_max: 220
-    credits_text: |
-      TekhnaeRaav - Lead Developer
-
-      HarsulinsGhost - Lead Artist
+    credits_offset: [100, 120]
+    credits_scroll_max: 260
+    credits_text: |2
+               - Striker Ball Game -
 
 
+      Developer - Latency (@tekhnaeraav)
 
-      - BONES GAME ENGINE -
-
-
-      zicklag - Lead Developer
-
-      MaxCWhitehead - Maintainer / Developer
+      Artist - Harsulin
 
 
 
-      - BONES CONTRIBUTORS -
+              - BONES GAME ENGINE -
+
+
+      Lead Developer - zicklag
+
+      Maintainer / Developer - MaxCWhitehead
+
+
+
+             - BONES CONTRIBUTORS -
 
 
       TekhnaeRaav
@@ -281,3 +284,5 @@ menu:
       PieKing1215
 
       rbran
+
+      ------------------------------------
