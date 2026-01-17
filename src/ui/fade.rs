@@ -45,6 +45,8 @@ impl Fade {
         self.order = order;
         self
     }
+    // This is used in the `PLAY` session so that the fade timing is synced in lan
+    // matches.
     /// Restarts the `Fade` with the `fade_out` timer already finished.
     pub fn restart_at_wait(&mut self) {
         self.restart();
