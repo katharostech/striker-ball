@@ -159,7 +159,7 @@ pub fn fade_transition(ui: &World) {
 
 pub fn start_fade(world: &World, transition: FadeTransition) {
     let mut fade = world.resource_mut::<Fade>();
-    if !fade.finished() {
+    if !fade.finished() && !fade.elapsed().is_zero() {
         tracing::warn!("fade interupted, restarting.");
     }
     fade.restart();

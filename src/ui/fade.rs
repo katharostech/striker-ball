@@ -60,6 +60,9 @@ impl Fade {
         self.fade_in.reset();
         self.fade_in.pause();
     }
+    pub fn elapsed(&self) -> std::time::Duration {
+        self.fade_out.elapsed() + self.fade_wait.elapsed() + self.fade_in.elapsed()
+    }
     pub fn finished(&self) -> bool {
         self.fade_out.finished() && self.fade_wait.finished() && self.fade_in.finished()
     }
