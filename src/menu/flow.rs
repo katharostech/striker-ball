@@ -204,7 +204,7 @@ pub fn play_offline_prep(ui: &World) {
             default()
         });
 
-    tracing::info!("fade_out, recreating PLAY session; assignments:{player_signs:?}");
+    tracing::debug!(?player_signs, "creating offline PLAY session");
 
     sessions.create_play(PlayMode::Offline(player_signs));
     *ui.resource_mut() = MenuState::InGame;
