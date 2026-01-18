@@ -43,17 +43,21 @@ impl CreditsUi {
 
         let local_inputs = world.resource::<LocalInputs>();
 
+        let mut delta_scroll: f32 = 0.0;
+
         for (_source, input) in local_inputs.iter() {
             if input.menu_back.just_pressed() {
                 output = Some(CreditsOutput)
             }
             if input.menu_down.pressed() {
-                self.scroll -= 0.6;
+                delta_scroll -= 0.6;
             }
             if input.menu_up.pressed() {
-                self.scroll += 0.6;
+                delta_scroll += 0.6;
             }
         }
+        self.scroll += delta_scroll.clamp(-0.6, 0.6);
+
         output
     }
 
