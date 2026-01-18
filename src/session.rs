@@ -27,6 +27,11 @@ impl SessionCreation for Sessions {
     }
 }
 
+#[derive(HasSchema, Clone, Default)]
+/// This is read by the offline runner to indicate that it needs to pause its
+/// processes.
+pub struct PauseGame;
+
 #[derive(Default)]
 /// A fixed time step runner.
 ///
@@ -57,6 +62,12 @@ impl SessionRunner for OfflineRunner {
         pub const STEP: f64 = TARGET_STEP;
 
         let last_run = self.last_run.unwrap_or(frame_start);
+
+        if world.get_resource::<PauseGame>().is_some() {
+            self.last_run = Some(frame_start);
+            return;
+        }
+
         let delta = (frame_start - last_run).as_secs_f64();
         self.accumulator += delta;
 

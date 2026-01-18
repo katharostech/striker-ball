@@ -339,7 +339,7 @@ pub fn pause_transition(world: &World, output: PauseOutput) {
                 .resource_mut::<WinnerBanner>()
                 .visual
                 .remove_hide();
-            session.active = true;
+            session.world.resources.remove::<PauseGame>();
         }
         PauseOutput::Show => {
             let mut sessions = world.resource_mut::<Sessions>();
@@ -356,7 +356,7 @@ pub fn pause_transition(world: &World, output: PauseOutput) {
                 .resource_mut::<WinnerBanner>()
                 .visual
                 .add_hide();
-            session.active = false;
+            session.world.resources.insert(PauseGame);
         }
         PauseOutput::Restart => {
             start_fade(
