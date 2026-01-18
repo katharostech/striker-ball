@@ -100,6 +100,7 @@ impl LanUI {
         let asset_server = world.resource::<AssetServer>();
         let root = asset_server.root::<Data>();
         let locale = &asset_server.get(root.localization);
+        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation;
         let mut matchmaker = world.resource_mut::<Matchmaker>();
 
         let inner_font = asset_server
@@ -445,7 +446,7 @@ impl LanUI {
                                 if ctx.clicked_rect(rect) {
                                     output = Some(LanUIOutput::Server(i));
                                 }
-                                if ctx.hovered_rect(rect) {
+                                if ctx.hovered_rect(rect) && pointer_navigation {
                                     *state = LanUIState::Server(i);
                                 }
                             }
@@ -457,7 +458,7 @@ impl LanUI {
             origin + root.menu.back_button_pos.to_array().into(),
             root.menu.back_button.egui_size(),
         );
-        let image = if ctx.hovered_rect(rect) {
+        let image = if ctx.hovered_rect(rect) && pointer_navigation {
             root.menu.back_button_blink
         } else {
             root.menu.back_button

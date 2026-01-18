@@ -68,6 +68,7 @@ impl CreditsUi {
         let root = asset_server.root::<Data>();
         let textures = world.resource::<EguiTextures>();
         let ctx = world.resource::<EguiCtx>();
+        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation;
 
         let CreditsAssets {
             credits_header,
@@ -127,7 +128,7 @@ impl CreditsUi {
             origin + root.menu.back_button_pos.to_array().into(),
             root.menu.back_button.egui_size(),
         );
-        let image = if ctx.hovered_rect(rect) {
+        let image = if ctx.hovered_rect(rect) && pointer_navigation {
             root.menu.back_button_blink
         } else {
             root.menu.back_button

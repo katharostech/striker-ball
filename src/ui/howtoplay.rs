@@ -103,6 +103,7 @@ impl HowToPlay {
         let ctx = world.resource::<EguiCtx>();
         let asset_server = world.resource::<AssetServer>();
         let root = asset_server.root::<Data>();
+        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation;
         let locale = &asset_server.get(root.localization);
 
         let HowToPlayAssets {
@@ -306,7 +307,7 @@ impl HowToPlay {
             origin + root.menu.back_button_pos.to_array().into(),
             root.menu.back_button.egui_size(),
         );
-        let image = if ctx.hovered_rect(rect) {
+        let image = if ctx.hovered_rect(rect) && pointer_navigation {
             root.menu.back_button_blink
         } else {
             root.menu.back_button

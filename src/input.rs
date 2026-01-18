@@ -155,6 +155,11 @@ pub struct LocalInputs {
     #[deref]
     pub sources: HashMap<SingleSource, LocalInput>,
     pub key_consumers: HashMap<KeyCode, usize>,
+    /// Whether pointer navigation should be considered.
+    ///
+    /// This is generally going to be toggled off whenever a
+    /// button is pressed and toggled back on when the mouse moves.
+    pub pointer_navigation: bool,
 }
 impl LocalInputs {
     pub fn get_input(&mut self, source: SingleSource) -> &LocalInput {
@@ -175,6 +180,7 @@ impl LocalInputs {
         let LocalInputs {
             sources,
             key_consumers,
+            pointer_navigation,
         } = &mut *game.shared_resource_mut::<LocalInputs>().unwrap();
         let gamepad_inputs = game.shared_resource::<GamepadInputs>().unwrap();
         let keyboard_inputs = game.shared_resource::<KeyboardInputs>().unwrap();
@@ -207,6 +213,18 @@ impl LocalInputs {
                 sources.get_mut(id).unwrap()
             };
             local_input.apply_keyboard_input(event);
+        }
+        for input in sources.values() {
+            if (input.menu_up
+                | input.menu_down
+                | input.menu_left
+                | input.menu_right
+                | input.menu_select
+                | input.menu_back)
+                .just_pressed()
+            {
+                *pointer_navigation = false;
+            }
         }
     }
     pub fn advance(game: &mut Game) {

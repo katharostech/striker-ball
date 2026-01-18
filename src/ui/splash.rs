@@ -179,6 +179,7 @@ impl Splash {
         let root = asset_server.root::<Data>();
         let textures = world.resource::<EguiTextures>();
         let ctx = world.resource::<EguiCtx>();
+        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation;
 
         let SplashAssets {
             slots,
@@ -252,7 +253,7 @@ impl Splash {
         if ctx.clicked_rect(offline_rect) {
             output = Some(SplashState::Offline);
         }
-        if ctx.hovered_rect(offline_rect) {
+        if ctx.hovered_rect(offline_rect) && pointer_navigation {
             self.state = SplashState::Offline;
         }
 
@@ -277,7 +278,7 @@ impl Splash {
         if ctx.clicked_rect(howtoplay_rect) {
             output = Some(SplashState::HowToPlay);
         }
-        if ctx.hovered_rect(howtoplay_rect) {
+        if ctx.hovered_rect(howtoplay_rect) && pointer_navigation {
             self.state = SplashState::HowToPlay;
         }
 
@@ -299,7 +300,7 @@ impl Splash {
             if ctx.clicked_rect(lan_rect) {
                 output = Some(SplashState::Lan);
             }
-            if ctx.hovered_rect(lan_rect) {
+            if ctx.hovered_rect(lan_rect) && pointer_navigation {
                 self.state = SplashState::Lan;
             }
         }
@@ -319,7 +320,7 @@ impl Splash {
         if ctx.clicked_rect(settings_rect) {
             output = Some(SplashState::Settings);
         }
-        if ctx.hovered_rect(settings_rect) {
+        if ctx.hovered_rect(settings_rect) && pointer_navigation {
             self.state = SplashState::Settings;
         }
 
@@ -338,7 +339,7 @@ impl Splash {
         if ctx.clicked_rect(credits_rect) {
             output = Some(SplashState::Credits);
         }
-        if ctx.hovered_rect(credits_rect) {
+        if ctx.hovered_rect(credits_rect) && pointer_navigation {
             self.state = SplashState::Credits;
         }
 

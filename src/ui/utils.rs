@@ -1,6 +1,13 @@
 use super::*;
 
 pub fn show_all(world: &World) {
+    let pointer_moved = world
+        .resource::<EguiCtx>()
+        .input(|r| r.pointer.delta() != egui::Vec2::ZERO);
+    if pointer_moved {
+        world.resource_mut::<LocalInputs>().pointer_navigation = true;
+    }
+
     fade::show(world);
 
     if let Some(world) = world.resource_mut::<Sessions>().get_world(session::PLAY) {

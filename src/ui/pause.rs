@@ -102,6 +102,7 @@ impl Pause {
         let root = asset_server.root::<Data>();
         let ctx = world.resource::<EguiCtx>();
         let textures = world.resource::<EguiTextures>();
+        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation;
 
         let PauseAssets {
             menu,
@@ -156,13 +157,13 @@ impl Pause {
             egui::vec2(rect.width(), button_height),
         );
 
-        if ctx.hovered_rect(continue_rect) {
+        if ctx.hovered_rect(continue_rect) && pointer_navigation {
             *self = Pause::Continue;
         }
-        if ctx.hovered_rect(restart_rect) {
+        if ctx.hovered_rect(restart_rect) && pointer_navigation {
             *self = Pause::Restart;
         }
-        if ctx.hovered_rect(team_select_rect) {
+        if ctx.hovered_rect(team_select_rect) && pointer_navigation {
             *self = Pause::Quit;
         }
 
