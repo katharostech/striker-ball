@@ -42,6 +42,12 @@ impl SessionRunner for OfflineRunner {
         let delta = (frame_start - last_run).as_secs_f64();
         self.accumulator += delta;
 
+        let steps = self.accumulator / STEP;
+
+        if steps >= 2.0 {
+            tracing::debug!(?steps, "multi-step frame");
+        }
+
         for collector in &mut self.collectors {
             collector.apply_inputs(world);
         }
