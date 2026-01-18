@@ -46,10 +46,10 @@ impl SessionRunner for OfflineRunner {
             collector.apply_inputs(world);
         }
 
-        let step_start = Instant::now();
+        let loop_start = Instant::now();
 
         while self.accumulator >= STEP {
-            let loop_too_long = (Instant::now() - step_start).as_secs_f64() > STEP;
+            let loop_too_long = loop_start.elapsed().as_secs_f64() > STEP;
 
             if loop_too_long {
                 tracing::warn!("fixed time step took too long. (game will slow)");
