@@ -28,6 +28,24 @@ impl SessionCreation for Sessions {
 }
 
 #[derive(Default)]
+/// A fixed time step runner.
+///
+/// This runner is meant to process frames once per 60th of a second. Typically,
+/// when `Self::step` is called, the amount of time elapsed in between calls is
+/// not going to be exactly the same. This fixed time step runner uses its
+/// accumulator to track that difference in elapsed time and either wait to step
+/// if the call was too soon, or run an extra step if it was a 60th of a second
+/// late. Calls won't ever be exactly on time but this runner helps
+/// significantly for maintaining speed.
+///
+/// If the runner starts running a deficit, this means that the time it took to
+/// run its steps so far took longer than a 60th of a second. When that happens,
+/// the runner resets the accumulator and skips any remaining steps, slowing the
+/// game down more than the target speed.
+///
+/// Visually, when multiple steps are made to catch up in speed, you will miss
+/// some rendered frames. The runner's steps are processed before rendering, so
+/// you will still see only the last frame rendered for every "multi-step".
 pub struct OfflineRunner {
     pub accumulator: f64,
     pub last_run: Option<Instant>,
