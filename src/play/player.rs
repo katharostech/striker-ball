@@ -88,6 +88,20 @@ impl Team {
             Team::B => 1.0,
         }
     }
+    /// Returns a [`Vec2`] pointing in the attacking direction of the team.
+    pub fn attacking_angle(&self) -> Vec2 {
+        match self {
+            Team::A => Vec2::X,
+            Team::B => -Vec2::X,
+        }
+    }
+    /// Returns a [`Vec2`] pointing in the defending direction of the team.
+    pub fn defending_angle(&self) -> Vec2 {
+        match self {
+            Team::A => -Vec2::X,
+            Team::B => Vec2::X,
+        }
+    }
 }
 
 #[derive(HasSchema, Clone, Default, Copy, PartialEq, Eq, Hash, Debug)]

@@ -101,6 +101,7 @@ pub fn score_display_update(
             entities.iter_with((&mut players, &mut state, &mut transforms))
         {
             *transform = new_player_transform(player.id, &root);
+            player.angle = player.id.team().attacking_angle();
 
             if score.winner().is_none() {
                 state.current = player::state::wait();
