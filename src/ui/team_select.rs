@@ -307,9 +307,9 @@ impl TeamSelect {
                         .color(Color32::BLACK)
                         .paint(&painter);
                 }
-                // dual stick ready text
+                // twin stick ready text
                 if join.is_double() {
-                    if join.is_dual_stick() {
+                    if join.is_twin_stick() {
                         player_icon.paint_at(
                             origin
                                 + partner_slot.to_array().into()

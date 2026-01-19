@@ -21,13 +21,13 @@ impl ServiceType {
             ServiceType::OnePlayer(gamepad_id) => PlayerInfo::Local {
                 number: 0,
                 source: SingleSource::Gamepad(*gamepad_id),
-                dual_stick: true,
+                twin_stick: true,
             },
             ServiceType::TwoPlayer(single_source_primary, _single_source_secondary) => {
                 PlayerInfo::Local {
                     number: 0,
                     source: *single_source_primary,
-                    dual_stick: false,
+                    twin_stick: false,
                 }
             }
         }
@@ -37,13 +37,13 @@ impl ServiceType {
             ServiceType::OnePlayer(gamepad_id) => PlayerInfo::Local {
                 number: 0,
                 source: SingleSource::Gamepad(*gamepad_id),
-                dual_stick: true,
+                twin_stick: true,
             },
             ServiceType::TwoPlayer(_single_source_primary, single_source_secondary) => {
                 PlayerInfo::Local {
                     number: 1,
                     source: *single_source_secondary,
-                    dual_stick: false,
+                    twin_stick: false,
                 }
             }
         }

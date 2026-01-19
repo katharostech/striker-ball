@@ -229,9 +229,9 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
         })
         .insert(Transform::from_z(layers::PLAYER_SHADOW));
 
-    // dual stick left or right indicator
+    // twin stick left or right indicator
     if let PlayerInfo::Local {
-        dual_stick: true, ..
+        twin_stick: true, ..
     } = player_info
     {
         world

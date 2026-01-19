@@ -30,7 +30,7 @@ pub enum HowToPlay {
     Hidden,
     GameOverview,
     SingleStickControls,
-    DualStickControls,
+    TwinStickControls,
     KeyboardControls,
 }
 impl ShowHide for HowToPlay {
@@ -47,16 +47,16 @@ impl HowToPlay {
             Self::Hidden => {}
             Self::GameOverview => {}
             Self::SingleStickControls => *self = Self::GameOverview,
-            Self::DualStickControls => *self = Self::SingleStickControls,
-            Self::KeyboardControls => *self = Self::DualStickControls,
+            Self::TwinStickControls => *self = Self::SingleStickControls,
+            Self::KeyboardControls => *self = Self::TwinStickControls,
         }
     }
     pub fn right(&mut self) {
         match self {
             Self::Hidden => {}
             Self::GameOverview => *self = Self::SingleStickControls,
-            Self::SingleStickControls => *self = Self::DualStickControls,
-            Self::DualStickControls => *self = Self::KeyboardControls,
+            Self::SingleStickControls => *self = Self::TwinStickControls,
+            Self::TwinStickControls => *self = Self::KeyboardControls,
             Self::KeyboardControls => {}
         }
     }
@@ -153,7 +153,7 @@ impl HowToPlay {
         let target_offset_x = match *self {
             HowToPlay::GameOverview => 0.,
             HowToPlay::SingleStickControls => -root.screen_size.x,
-            HowToPlay::DualStickControls => -root.screen_size.x * 2.,
+            HowToPlay::TwinStickControls => -root.screen_size.x * 2.,
             HowToPlay::KeyboardControls => -root.screen_size.x * 3.,
             HowToPlay::Hidden => unreachable!(),
         };
@@ -272,7 +272,7 @@ impl HowToPlay {
                     self.right();
                 }
             }
-            HowToPlay::SingleStickControls | HowToPlay::DualStickControls => {
+            HowToPlay::SingleStickControls | HowToPlay::TwinStickControls => {
                 let left_rect = left_arrow.paint_at(
                     origin + slots.left_arrow.to_array().into(),
                     &painter,

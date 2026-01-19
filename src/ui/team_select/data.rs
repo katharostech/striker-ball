@@ -169,7 +169,7 @@ impl Join {
     pub fn is_double(&self) -> bool {
         matches!(self, Self::Double { .. })
     }
-    pub fn is_dual_stick(&self) -> bool {
+    pub fn is_twin_stick(&self) -> bool {
         matches!(
             self,
             Self::Single {
@@ -242,7 +242,7 @@ impl TeamSelect {
         let Some(slot) = self.joins[index].get_player_slot() else {
             return;
         };
-        let dual_able = !self.is_player_slot_hovered(slot.partner());
+        let twin_stick_able = !self.is_player_slot_hovered(slot.partner());
 
         let join = &mut self.joins[index];
 
@@ -251,7 +251,7 @@ impl TeamSelect {
                 join.single();
             } else if join.is_single()
                 && !join.is_double()
-                && dual_able
+                && twin_stick_able
                 && !join.is_source(SingleSource::KeyboardMouse)
             {
                 join.double();
@@ -409,10 +409,10 @@ impl TeamSelect {
             .iter()
             .any(|join| join.is_hovered() && join.is_player_slot(slot))
     }
-    pub fn is_player_slot_dual_stick(&self, id: PlayerSlot) -> bool {
+    pub fn is_player_slot_twin_stick(&self, id: PlayerSlot) -> bool {
         self.joins
             .iter()
-            .any(|join| join.is_player_slot(id) && join.is_dual_stick())
+            .any(|join| join.is_player_slot(id) && join.is_twin_stick())
     }
     pub fn is_player_slot_double(&self, id: PlayerSlot) -> bool {
         self.joins.iter().any(|join| {
@@ -446,7 +446,7 @@ impl TeamSelect {
                                 PlayerInfo::Local {
                                     number,
                                     source: *source,
-                                    dual_stick: false,
+                                    twin_stick: false,
                                 },
                             );
                             builder.insert(slot.partner(), PlayerInfo::CPU);
@@ -459,7 +459,7 @@ impl TeamSelect {
                             PlayerInfo::Local {
                                 number,
                                 source: *source,
-                                dual_stick: false,
+                                twin_stick: false,
                             },
                         );
                     }
@@ -475,7 +475,7 @@ impl TeamSelect {
                             PlayerInfo::Local {
                                 number,
                                 source: *source,
-                                dual_stick: false,
+                                twin_stick: false,
                             },
                         );
                         builder.insert(slot.partner(), PlayerInfo::CPU);
@@ -486,7 +486,7 @@ impl TeamSelect {
                             PlayerInfo::Local {
                                 number,
                                 source: *source,
-                                dual_stick: true,
+                                twin_stick: true,
                             },
                         );
                         builder.insert(
@@ -494,7 +494,7 @@ impl TeamSelect {
                             PlayerInfo::Local {
                                 number,
                                 source: *source,
-                                dual_stick: true,
+                                twin_stick: true,
                             },
                         );
                     }

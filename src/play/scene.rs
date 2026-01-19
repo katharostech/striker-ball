@@ -37,8 +37,8 @@ pub enum PlayerInfo {
         /// The input source of the player.
         source: SingleSource,
         /// Whether or not this player is being controlled with
-        /// dual stick controls.
-        dual_stick: bool,
+        /// twin stick controls.
+        twin_stick: bool,
     },
 }
 impl Default for PlayerInfo {
@@ -47,7 +47,7 @@ impl Default for PlayerInfo {
         Self::Local {
             number: 0,
             source: SingleSource::Gamepad(0),
-            dual_stick: true,
+            twin_stick: true,
         }
     }
 }
