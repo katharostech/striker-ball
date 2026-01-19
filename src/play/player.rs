@@ -176,7 +176,7 @@ pub struct Player {
     /// Used for tracking the angle that the player tackled or is shooting from.
     pub action_angle: Vec2,
     // Used to tell which team the player is on and where the player needs to respawn.
-    pub id: PlayerSlot,
+    pub slot: PlayerSlot,
     pub flip_x: bool,
     pub animation: Ustr,
 }
@@ -188,13 +188,13 @@ impl Player {
                 Team::B => -Vec2::X,
             },
             action_angle: Vec2::X,
-            id,
+            slot: id,
             flip_x: false,
             animation: ustr("idle"),
         }
     }
     pub fn team(&self) -> Team {
-        self.id.team()
+        self.slot.team()
     }
 }
 impl Default for Player {
@@ -388,7 +388,7 @@ fn dribble_out_transition(
     mut players: CompMut<Player>,
     mut states: CompMut<State>,
 ) {
-    let control = inputs.get_character_control(players.get(player_e).unwrap().id);
+    let control = inputs.get_character_control(players.get(player_e).unwrap().slot);
 
     // pass
     if control.pass.just_pressed() {
@@ -499,7 +499,7 @@ fn to_tackle_transition(
 ) {
     let player = players.get_mut(player_e).unwrap();
     let state = states.get_mut(player_e).unwrap();
-    let control = inputs.get_character_control(player.id);
+    let control = inputs.get_character_control(player.slot);
     let Sounds { player_tackle, .. } = root.sound;
 
     if control.pass.just_pressed() && state.age() > 0 {
@@ -521,7 +521,7 @@ fn shoot_out_transition(
 ) {
     let player = players.get_mut(player_e).unwrap();
     let state = states.get_mut(player_e).unwrap();
-    let control = inputs.get_character_control(player.id);
+    let control = inputs.get_character_control(player.slot);
 
     if !control.shoot.pressed() {
         state.current = state::kick();
@@ -571,7 +571,7 @@ fn shoot_update(
             continue;
         }
         let player = players.get_mut(player_e).unwrap();
-        let control = inputs.get_character_control(player.id);
+        let control = inputs.get_character_control(player.slot);
         let direction = Vec2::new(control.x, control.y);
 
         if direction.length() > 0.2 {
@@ -678,7 +678,7 @@ fn walk(In(player_e): In<Entity>, world: &World) {
             id if id == state::dribble() => root.constant.dribble_speed,
             _ => return,
         };
-        let control = inputs.get_character_control(player.id);
+        let control = inputs.get_character_control(player.slot);
         let direction = Vec2::new(control.x, control.y);
 
         if direction.length() > 0.2 {

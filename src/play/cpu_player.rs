@@ -71,7 +71,7 @@ pub fn apply_cpu_input(
     let partner_e = player_ent_signs.get_partner(self_e);
     let self_player = players.get(self_e).unwrap();
     let partner_player = players.get(partner_e).unwrap();
-    let attacking_direction = self_player.id.team().attacking_direction();
+    let attacking_direction = self_player.slot.team().attacking_direction();
     let defending_direction = -attacking_direction;
 
     let (ball_e, ball) = entities.get_single_with(&balls).unwrap();
@@ -86,7 +86,7 @@ pub fn apply_cpu_input(
 
     let closest_enemy_pos = {
         let mut closest_enemy_pos: Option<Vec2> = None;
-        for enemy_e in player_ent_signs.get_enemies(self_player.id) {
+        for enemy_e in player_ent_signs.get_enemies(self_player.slot) {
             let new_pos = transforms.get(enemy_e).unwrap().translation.xy();
             if closest_enemy_pos
                 .is_some_and(|pos| pos.distance(self_pos) > new_pos.distance(self_pos))
@@ -100,7 +100,7 @@ pub fn apply_cpu_input(
 
     let offensive_enemy_pos = {
         let mut offensive_enemy_pos: Option<Vec2> = None;
-        for enemy_e in player_ent_signs.get_enemies(self_player.id) {
+        for enemy_e in player_ent_signs.get_enemies(self_player.slot) {
             let new_pos = transforms.get(enemy_e).unwrap().translation.xy();
             if offensive_enemy_pos.is_some_and(|pos| {
                 if defending_direction.is_sign_negative() {
@@ -122,7 +122,7 @@ pub fn apply_cpu_input(
     let closest_enemy_pin_pos = {
         let mut closest_pin_pos: Option<Vec2> = None;
         for (_pin_e, (_pin, team, transform)) in entities.iter_with((&pins, &teams, &transforms)) {
-            if *team == self_player.id.team() {
+            if *team == self_player.slot.team() {
                 continue;
             }
             let new_pos = transform.translation.xy();
@@ -140,7 +140,7 @@ pub fn apply_cpu_input(
     let dibs_on = |target_pos: Vec2| {
         target_pos.distance(self_pos) < target_pos.distance(partner_pos)
             || target_pos.distance(self_pos) == target_pos.distance(partner_pos)
-                && self_player.id.is_primary()
+                && self_player.slot.is_primary()
     };
 
     let tackle_distance = player_radius * 5.0;
@@ -149,7 +149,7 @@ pub fn apply_cpu_input(
         || attacking_direction.is_sign_negative() && partner_pos.x < self_pos.x;
 
     let partner_is_tackleable = 'pressured: {
-        for enemy_e in player_ent_signs.get_enemies(partner_player.id) {
+        for enemy_e in player_ent_signs.get_enemies(partner_player.slot) {
             if transforms
                 .get(enemy_e)
                 .unwrap()
@@ -164,7 +164,7 @@ pub fn apply_cpu_input(
         false
     };
     let partner_is_pressured = 'pressured: {
-        for enemy_e in player_ent_signs.get_enemies(partner_player.id) {
+        for enemy_e in player_ent_signs.get_enemies(partner_player.slot) {
             if transforms
                 .get(enemy_e)
                 .unwrap()
