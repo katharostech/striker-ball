@@ -60,7 +60,7 @@ impl ShowHide for LanSelect {
         self.visible = true
     }
     fn hide(&mut self) {
-        self.visible = false
+        *self = default();
     }
 }
 
@@ -138,13 +138,7 @@ impl LanSelect {
                 }
             }
             if input.menu_back.just_pressed() {
-                match self.selection {
-                    LanSelection::OnePlayer | LanSelection::TwoPlayer => {
-                        output = LanSelectOutput::Exit.into()
-                    }
-                    LanSelection::OnePlayerBind => self.selection = LanSelection::OnePlayer,
-                    LanSelection::TwoPlayerBind { .. } => self.selection = LanSelection::TwoPlayer,
-                }
+                output = LanSelectOutput::Exit.into()
             }
             if input.menu_up.just_pressed() || input.menu_down.just_pressed() {
                 match self.selection {
@@ -299,10 +293,8 @@ impl LanSelect {
             origin + root.menu.back_button_pos.to_array().into(),
             root.menu.back_button.egui_size(),
         );
-        let show_pressed = ctx.data_mut(|w| {
-            w.get_temp::<()>(Id::new("back_button_pressed"))
-                .is_some()
-        });
+        let show_pressed =
+            ctx.data_mut(|w| w.get_temp::<()>(Id::new("back_button_pressed")).is_some());
         if !show_pressed
             && world.resource::<MenuState>() == MenuState::LanSelect
             && (ctx.clicked_rect(rect)

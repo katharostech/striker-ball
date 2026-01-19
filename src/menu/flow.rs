@@ -428,7 +428,7 @@ pub mod network {
                 start_fade(
                     world,
                     FadeTransition {
-                        hide: LanSelect::show_resource,
+                        hide: LanSelect::hide_resource,
                         prep: lan_ui_prep,
                         finish: MenuState::Lan,
                     },
