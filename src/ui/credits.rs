@@ -68,6 +68,7 @@ impl CreditsUi {
             return output;
         }
 
+        let local_inputs = world.resource::<LocalInputs>();
         let asset_server = world.resource::<AssetServer>();
         let root = asset_server.root::<Data>();
         let textures = world.resource::<EguiTextures>();
@@ -132,7 +133,22 @@ impl CreditsUi {
             origin + root.menu.back_button_pos.to_array().into(),
             root.menu.back_button.egui_size(),
         );
-        let image = if ctx.hovered_rect(rect) && pointer_navigation {
+        let show_pressed =
+            ctx.data_mut(|w| w.get_temp::<()>(Id::new("back_button_pressed")).is_some());
+        if !show_pressed
+            && world.resource::<MenuState>() == MenuState::Credits
+            && (ctx.clicked_rect(rect)
+                || local_inputs
+                    .values()
+                    .any(|input| input.menu_back.just_pressed()))
+        {
+            ctx.data_mut(|w| {
+                w.get_temp_mut_or_default::<()>(Id::new("back_button_pressed"));
+            });
+        }
+        let image = if show_pressed {
+            root.menu.back_button_pressed
+        } else if ctx.hovered_rect(rect) && pointer_navigation {
             root.menu.back_button_blink
         } else {
             root.menu.back_button

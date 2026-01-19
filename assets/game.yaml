@@ -80,6 +80,7 @@ menu:
   numbers: ui/numbers.atlas.yaml
   back_button: [ui/goBackButton.png, 55, 15]
   back_button_blink: [ui/goBackButtonBlink.png, 55, 15]
+  back_button_pressed: [ui/goBackButtonPressedBlink.png, 55, 15]
   back_button_pos: [161, 193]
   bframe:
     image: ui/borderedFrame.png

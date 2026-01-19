@@ -151,6 +151,8 @@ pub fn fade_transition(ui: &World) {
         (transition.prep)(ui);
 
         ui.resource::<EguiCtx>().clear_animations();
+        ui.resource::<EguiCtx>()
+            .data_mut(|w| w.remove::<()>(egui::Id::new("back_button_pressed")));
     }
     if fade.fade_in.just_finished() {
         *ui.resource_mut() = transition.finish;

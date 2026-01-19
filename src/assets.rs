@@ -113,6 +113,7 @@ pub struct Menus {
     pub bframe: BorderImageMeta,
     pub back_button: SizedImageAsset,
     pub back_button_blink: SizedImageAsset,
+    pub back_button_pressed: SizedImageAsset,
     pub back_button_pos: Vec2,
     pub score_bg: SizedImageAsset,
     pub go_text: SizedImageAsset,
