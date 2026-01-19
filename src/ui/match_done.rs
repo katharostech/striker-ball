@@ -88,6 +88,7 @@ impl MatchDone {
         if !self.visual.shown() {
             return output;
         }
+        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation;
         let asset_server = world.resource::<AssetServer>();
         let root = asset_server.root::<Data>();
         let MatchDoneAssets {
@@ -141,13 +142,13 @@ impl MatchDone {
                         egui::vec2(response.rect.width(), button_height),
                     );
 
-                    if ui.ctx().hovered_rect(play_again_rect) {
+                    if ui.ctx().hovered_rect(play_again_rect) && pointer_navigation {
                         self.state = MatchDoneState::PlayAgain;
                     }
-                    if ui.ctx().hovered_rect(team_select_rect) {
+                    if ui.ctx().hovered_rect(team_select_rect) && pointer_navigation {
                         self.state = MatchDoneState::TeamSelect;
                     }
-                    if ui.ctx().hovered_rect(quit_rect) {
+                    if ui.ctx().hovered_rect(quit_rect) && pointer_navigation {
                         self.state = MatchDoneState::Quit;
                     }
 
