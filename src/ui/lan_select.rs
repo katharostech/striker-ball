@@ -315,7 +315,10 @@ impl LanSelect {
         }
         let image = if show_pressed {
             root.menu.back_button_pressed
-        } else if ctx.hovered_rect(rect) && pointer_navigation {
+        } else if ctx.hovered_rect(rect)
+            && pointer_navigation
+            && world.resource::<MenuState>() == MenuState::LanSelect
+        {
             root.menu.back_button_blink
         } else {
             root.menu.back_button
