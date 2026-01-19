@@ -145,7 +145,7 @@ impl Join {
             | Join::Double { source: eq, .. } if *eq == source,
         )
     }
-    pub fn is_player_id(&self, id: PlayerSlot) -> bool {
+    pub fn is_player_slot(&self, id: PlayerSlot) -> bool {
         matches!(self, Join::Hover {slot, ..} | Join::Single { slot, .. } | Join::Double { slot, .. } if *slot == id)
     }
     pub fn is_empty(&self) -> bool {
@@ -219,10 +219,10 @@ impl TeamSelect {
         }
     }
     pub fn get_join_from_slot(&self, slot: PlayerSlot) -> Option<&Join> {
-        self.joins.iter().find(|join| join.is_player_id(slot))
+        self.joins.iter().find(|join| join.is_player_slot(slot))
     }
     pub fn get_mut_join_from_slot(&mut self, slot: PlayerSlot) -> Option<&mut Join> {
-        self.joins.iter_mut().find(|join| join.is_player_id(slot))
+        self.joins.iter_mut().find(|join| join.is_player_slot(slot))
     }
     pub fn get_index_from_source(&self, source: SingleSource) -> Option<usize> {
         for (index, join) in self.joins.iter().enumerate() {
@@ -277,13 +277,13 @@ impl TeamSelect {
         let mut a1 = false;
         let mut a2 = false;
         for join in &self.joins {
-            if join.is_player_id(PlayerSlot::A1) {
+            if join.is_player_slot(PlayerSlot::A1) {
                 a1 = true;
                 if join.is_double() {
                     a2 = true
                 }
             }
-            if join.is_player_id(PlayerSlot::A2) {
+            if join.is_player_slot(PlayerSlot::A2) {
                 a2 = true;
                 if join.is_double() {
                     a1 = true
@@ -302,13 +302,13 @@ impl TeamSelect {
         let mut b1 = false;
         let mut b2 = false;
         for join in &self.joins {
-            if join.is_player_id(PlayerSlot::B1) {
+            if join.is_player_slot(PlayerSlot::B1) {
                 b1 = true;
                 if join.is_double() {
                     b2 = true
                 }
             }
-            if join.is_player_id(PlayerSlot::B2) {
+            if join.is_player_slot(PlayerSlot::B2) {
                 b2 = true;
                 if join.is_double() {
                     b1 = true
@@ -335,8 +335,8 @@ impl TeamSelect {
                             join.unhover();
                         }
                     } else if let Join::Joined { .. } = join {
-                        if let Some(player_id) = next_slot_a {
-                            join.hover(player_id);
+                        if let Some(player_slot) = next_slot_a {
+                            join.hover(player_slot);
                         }
                     }
                 }
@@ -371,8 +371,8 @@ impl TeamSelect {
                             join.unhover();
                         }
                     } else if let Join::Joined { .. } = join {
-                        if let Some(player_id) = next_slot_b {
-                            join.hover(player_id);
+                        if let Some(player_slot) = next_slot_b {
+                            join.hover(player_slot);
                         }
                     }
                 }
@@ -407,28 +407,28 @@ impl TeamSelect {
         !self
             .joins
             .iter()
-            .any(|join| join.is_hovered() && join.is_player_id(slot))
+            .any(|join| join.is_hovered() && join.is_player_slot(slot))
     }
     pub fn is_player_slot_dual_stick(&self, id: PlayerSlot) -> bool {
         self.joins
             .iter()
-            .any(|join| join.is_player_id(id) && join.is_dual_stick())
+            .any(|join| join.is_player_slot(id) && join.is_dual_stick())
     }
     pub fn is_player_slot_double(&self, id: PlayerSlot) -> bool {
         self.joins.iter().any(|join| {
-            join.is_player_id(id) && join.is_double()
-                || join.is_player_id(id.partner()) && join.is_double()
+            join.is_player_slot(id) && join.is_double()
+                || join.is_player_slot(id.partner()) && join.is_double()
         })
     }
     pub fn is_player_slot_set(&self, id: PlayerSlot) -> bool {
         self.joins
             .iter()
-            .any(|join| join.is_player_id(id) && join.is_single())
+            .any(|join| join.is_player_slot(id) && join.is_single())
     }
     pub fn is_player_slot_hovered(&self, id: PlayerSlot) -> bool {
         self.joins
             .iter()
-            .any(|join| join.is_player_id(id) && join.is_hovered())
+            .any(|join| join.is_player_slot(id) && join.is_hovered())
     }
     pub fn get_player_signs(&self) -> Option<PlayersInfo> {
         if self.joins.iter().all(Join::is_empty) {

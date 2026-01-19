@@ -196,8 +196,8 @@ impl TeamSelect {
 
             // Pad BGs
             let target_size = if self.joins.iter().any(|join| {
-                join.is_player_id(player_slot) && join.is_single()
-                    || join.is_player_id(player_slot.partner()) && join.is_double()
+                join.is_player_slot(player_slot) && join.is_single()
+                    || join.is_player_slot(player_slot.partner()) && join.is_double()
             }) {
                 pad_slot_bg.egui_size() * 1.2
             } else {

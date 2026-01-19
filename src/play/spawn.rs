@@ -150,11 +150,11 @@ pub fn pins(world: &World, root: Root<Data>) {
     }
 }
 
-pub fn new_player_transform(player_id: PlayerSlot, root: &Data) -> Transform {
+pub fn new_player_transform(player_slot: PlayerSlot, root: &Data) -> Transform {
     let bounds = root.constant.player_bounds;
     let mut pos = Vec2::new(bounds.x / 2., bounds.y / 2.);
 
-    match player_id {
+    match player_slot {
         PlayerSlot::A1 => pos *= vec2(-1., 1.),
         PlayerSlot::A2 => pos *= vec2(-1., -1.),
         PlayerSlot::B1 => (),
