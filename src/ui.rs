@@ -4,6 +4,7 @@ pub mod countdown;
 pub mod credits;
 pub mod fade;
 pub mod howtoplay;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod lan_select;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod lan_ui;
@@ -21,6 +22,7 @@ pub use countdown::*;
 pub use credits::*;
 pub use fade::*;
 pub use howtoplay::*;
+#[cfg(not(target_arch = "wasm32"))]
 pub use lan_select::*;
 #[cfg(not(target_arch = "wasm32"))]
 pub use lan_ui::*;
