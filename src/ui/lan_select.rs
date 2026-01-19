@@ -159,6 +159,7 @@ impl LanSelect {
         let local_inputs = world.resource::<LocalInputs>();
         let asset_server = world.resource::<AssetServer>();
         let root = asset_server.root::<Data>();
+        let locale = &asset_server.get(root.localization);
         let textures = world.resource::<EguiTextures>();
         let ctx = world.resource::<EguiCtx>();
         let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation;
@@ -260,7 +261,7 @@ impl LanSelect {
                     self.selection = LanSelection::OnePlayer;
                 }
             }
-            LanSelection::TwoPlayerBind { .. } => {
+            LanSelection::TwoPlayerBind { player1 } => {
                 let irsp = Area::new("two_player_bind_popup")
                     .anchor(Align2::CENTER_CENTER, [0., 0.])
                     .order(Order::Foreground)
@@ -268,12 +269,18 @@ impl LanSelect {
                         BorderedFrame::new(&root.menu.bframe)
                             .padding(Margin::same(50.0))
                             .show(ui, |ui| {
-                                let text = "Player 2 - Press Select On A Gamepad";
+                                let text = if let SingleSource::Gamepad(..) = player1 {
+                                    locale.get("player2-join-controller-keyboard")
+                                } else {
+                                    locale.get("player2-join-controller")
+                                };
                                 let response = ui.label(
-                                    RichText::new(text).color(Color32::WHITE).font(FontId {
-                                        size: 7.0,
-                                        family: FontFamily::Name(inner_font),
-                                    }),
+                                    RichText::new(text.clone()).color(Color32::WHITE).font(
+                                        FontId {
+                                            size: 7.0,
+                                            family: FontFamily::Name(inner_font),
+                                        },
+                                    ),
                                 );
                                 TextPainter::new(text)
                                     .size(7.0)

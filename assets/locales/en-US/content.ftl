@@ -16,3 +16,14 @@ get-multiples =
     Get Close And
 
     Go For Multiples
+player2-join-controller-keyboard =
+                        Player 2
+    
+
+    Press Select On A Gamepad Or Keyboard
+
+player2-join-controller =
+                Player 2
+    
+    
+    Press Select On A Gamepad
