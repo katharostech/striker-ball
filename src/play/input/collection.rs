@@ -8,11 +8,7 @@ pub enum SingleSource {
     Gamepad(u32),
 }
 
-fn apply_keyboard_state_primary(
-    input: &mut PlayInput,
-    key: &KeyCode,
-    keyboard_state: &KeyboardState,
-) {
+fn apply_keyboard_state(input: &mut PlayInput, key: &KeyCode, keyboard_state: &KeyboardState) {
     match key {
         KeyCode::W | KeyCode::S => {
             input.y = keyboard_state.is_pressed(&KeyCode::W) as i8 as f32
@@ -31,7 +27,7 @@ fn apply_keyboard_state_primary(
         _ => {}
     }
 }
-fn apply_mouse_event_primary(input: &mut PlayInput, event: &MouseButtonEvent) {
+fn apply_mouse_event(input: &mut PlayInput, event: &MouseButtonEvent) {
     let MouseButtonEvent { button, state } = event;
     match button {
         MouseButton::Left => input.shoot.apply_bool(state.pressed()),
@@ -67,9 +63,6 @@ fn apply_gamepad_event_primary(input: &mut PlayInput, event: &GamepadEvent, game
                 input.shoot.apply_value(*value);
             }
             GamepadButton::LeftTrigger => {
-                input.pass.apply_value(*value);
-            }
-            GamepadButton::RightTrigger => {
                 input.pass.apply_value(*value);
             }
             _ => {}
@@ -150,10 +143,10 @@ impl InputCollector<'_, Mapping, BlankSource, PlayTeamInput> for PlayTeamInputCo
                     let Maybe::Set(key) = &event.key_code else {
                         continue;
                     };
-                    apply_keyboard_state_primary(&mut self.current.p1, key, &keyboard_state);
+                    apply_keyboard_state(&mut self.current.p1, key, &keyboard_state);
                 }
                 for event in &mouse.button_events {
-                    apply_mouse_event_primary(&mut self.current.p1, event);
+                    apply_mouse_event(&mut self.current.p1, event);
                 }
             }
             SingleSource::Gamepad(gamepad_id) => {
@@ -173,10 +166,10 @@ impl InputCollector<'_, Mapping, BlankSource, PlayTeamInput> for PlayTeamInputCo
                     let Maybe::Set(key) = &event.key_code else {
                         continue;
                     };
-                    apply_keyboard_state_primary(&mut self.current.p2, key, &keyboard_state);
+                    apply_keyboard_state(&mut self.current.p2, key, &keyboard_state);
                 }
                 for event in &mouse.button_events {
-                    apply_mouse_event_primary(&mut self.current.p2, event);
+                    apply_mouse_event(&mut self.current.p2, event);
                 }
             }
             SingleSource::Gamepad(gamepad_id) => {
