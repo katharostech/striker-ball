@@ -21,7 +21,7 @@ pub fn show_all(world: &World) {
 }
 
 pub fn setup_egui(world: &World, root: Root<Data>, ctx: Res<EguiCtx>) {
-    world.resources.insert(EguiSize(root.screen_size));
+    world.insert_resource(EguiSize(root.screen_size));
     use egui::*;
     ctx.style_mut(|w| w.visuals.selection.bg_fill = Color32::YELLOW);
     ctx.style_mut(|w| w.visuals.text_cursor.color = Color32::YELLOW);

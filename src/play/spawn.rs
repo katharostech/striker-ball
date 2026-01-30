@@ -99,7 +99,7 @@ pub fn scene(world: &World) {
             b2: self::player(world, *b2, PlayerSlot::B2),
         },
     };
-    world.resources.insert(ent_signs);
+    world.insert_resource(ent_signs);
 
     // Pins
     world.run_system(self::pins, ());

@@ -358,7 +358,7 @@ pub fn pause_transition(world: &World, output: PauseOutput) {
                 .resource_mut::<WinnerBanner>()
                 .visual
                 .add_hide();
-            session.world.resources.insert(PauseGame);
+            session.world.insert_resource(PauseGame);
         }
         PauseOutput::Restart => {
             start_fade(
@@ -441,7 +441,7 @@ pub mod network {
         let mut matchmaker = world.resource_mut::<Matchmaker>();
 
         if matchmaker.network_match_socket().is_some() {
-            world.resources.insert(lan_ui.service);
+            world.insert_resource(lan_ui.service);
             start_fade(
                 world,
                 FadeTransition {
