@@ -11,7 +11,6 @@ pub fn show_all(world: &World) {
     fade::show(world);
 
     if let Some(world) = world.resource_mut::<Sessions>().get_world(session::PLAY) {
-        world.run_system(fix_camera_size, ());
         world.resource_mut::<MatchDone>().process_input(world);
         world.resource_mut::<MatchDone>().process_ui(world);
         fade::show(world);
@@ -26,19 +25,6 @@ pub fn setup_egui(world: &World, root: Root<Data>, ctx: Res<EguiCtx>) {
     use egui::*;
     ctx.style_mut(|w| w.visuals.selection.bg_fill = Color32::YELLOW);
     ctx.style_mut(|w| w.visuals.text_cursor.color = Color32::YELLOW);
-}
-
-pub fn fix_camera_size(root: Root<Data>, window: Res<Window>, mut cameras: CompMut<Camera>) {
-    for camera in cameras.iter_mut() {
-        let size = root.court.size();
-        let ratio = size.x / size.y;
-        let wratio = window.size.x / window.size.y;
-        if wratio > ratio {
-            camera.size = CameraSize::FixedHeight(size.y);
-        } else {
-            camera.size = CameraSize::FixedWidth(size.x);
-        }
-    }
 }
 
 pub trait ShowHide: HasSchema + Sized {

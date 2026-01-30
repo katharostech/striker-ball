@@ -16,7 +16,10 @@ pub fn scene(world: &World) {
     world
         .spawn()
         .insert(Camera {
-            size: CameraSize::FixedWidth(screen.x),
+            size: CameraSize::Min {
+                min_width: screen.x,
+                min_height: screen.y,
+            },
             ..Default::default()
         })
         .insert(Transform::from_z(layers::CAMERA));
