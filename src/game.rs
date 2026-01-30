@@ -3,11 +3,13 @@ use crate::*;
 use bones_bevy_renderer::BonesBevyRenderer;
 use bones_framework::prelude::*;
 
+/// For logging and game storage/save location.
 pub const fn namespace() -> (&'static str, &'static str, &'static str) {
     ("ktech", "studio", "striker_ball")
 }
 
 pub fn run() {
+    // This is currently needed for debug logging.
     setup_logs!(namespace());
 
     crate::register_schemas();
@@ -19,7 +21,7 @@ pub fn run() {
 
     // By inserting `ClearColor` as a shared resource, every session
     // will by default read its own `ClearColor` as `BLACK` unless
-    // overwritten by inserting its own `ClearColor` on the session.
+    // overwritten by inserting its own `ClearColor`.
     game.insert_shared_resource(ClearColor(Color::BLACK));
 
     game.install_plugin(LocalInputGamePlugin);
