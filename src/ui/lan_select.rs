@@ -206,7 +206,7 @@ impl LanSelect {
                                         ui,
                                     );
                                 });
-                            if irsp.response.hovered() {
+                            if irsp.response.hovered() && pointer_navigation {
                                 self.selection = LanSelection::OnePlayer;
                             }
                             if ctx.clicked_rect(irsp.response.rect) {
@@ -222,7 +222,7 @@ impl LanSelect {
                                         ui,
                                     );
                                 });
-                            if irsp.response.hovered() {
+                            if irsp.response.hovered() && pointer_navigation {
                                 self.selection = LanSelection::TwoPlayer;
                             }
                             // `irsp.response.clicked()` doesn't work for some reason (maybe a layering problem)
