@@ -4,14 +4,15 @@ use super::*;
 pub enum LanUIState {
     #[default]
     Host,
+    // HostNameHover, // TODO: Add with on-screen keyboard
+    HostEditing,
     Disconnected,
     Server(usize),
 }
 impl LanUIState {
     pub fn cycle_up(&mut self) {
         match self {
-            Self::Disconnected => {}
-            Self::Host => {}
+            Self::HostEditing | Self::Disconnected | Self::Host => {}
             Self::Server(i) => {
                 if let Some(reduced) = i.checked_sub(1) {
                     *i = reduced;
@@ -23,11 +24,24 @@ impl LanUIState {
     }
     pub fn cycle_down(&mut self) {
         match self {
-            Self::Disconnected => {}
+            Self::HostEditing | Self::Disconnected => {}
             Self::Host => *self = Self::Server(0),
             Self::Server(i) => *i = i.saturating_add(1), // This is capped in the `show` function
         }
     }
+    // TODO: Add with on-screen keyboard
+    // pub fn cycle_right(&mut self) {
+    //     match self {
+    //         Self::HostEditing | Self::Disconnected => {}
+    //         Self::Host | Self::Server(_) => *self = Self::HostNameHover,
+    //     }
+    // }
+    // pub fn cycle_left(&mut self) {
+    //     match self {
+    //         Self::HostEditing | Self::Disconnected | Self::Host | Self::Server(_) => {}
+    //         Self::HostNameHover => *self = Self::Host,
+    //     }
+    // }
 }
 
 pub enum LanUIOutput {
@@ -63,8 +77,19 @@ impl LanUI {
         let local_inputs = world.resource::<LocalInputs>();
 
         for (_gamepad, input) in local_inputs.iter() {
+            if input.start.just_pressed() {
+                if let LanUIState::HostEditing = self.state {
+                    // TODO: Replace with on-screen keyboard
+                    // self.state = LanUIState::HostNameHover;
+                    self.state = LanUIState::Host;
+                }
+            }
+
             if input.menu_select.just_pressed() {
                 match self.state {
+                    // TODO: Add with on-screen keyboard
+                    // LanUIState::HostNameHover => { self.state = LanUIState::HostEditing }
+                    LanUIState::HostEditing => {}
                     LanUIState::Host => output = LanUIOutput::HostCancel.into(),
                     LanUIState::Server(index) => output = LanUIOutput::Server(index).into(),
                     LanUIState::Disconnected => self.state = LanUIState::Host,
@@ -79,6 +104,13 @@ impl LanUI {
             if input.menu_down.just_pressed() {
                 self.state.cycle_down();
             }
+            // TODO: Add with on-screen keyboard
+            // if input.menu_left.just_pressed() {
+            //     self.state.cycle_left();
+            // }
+            // if input.menu_right.just_pressed() {
+            //     self.state.cycle_right();
+            // }
         }
         output
     }
@@ -95,7 +127,7 @@ impl LanUI {
             return output;
         }
 
-        let local_inputs = world.resource::<LocalInputs>();
+        let mut local_inputs = world.resource_mut::<LocalInputs>();
         let textures = world.resource::<EguiTextures>();
         let ctx = world.resource::<EguiCtx>();
         let asset_server = world.resource::<AssetServer>();
@@ -255,7 +287,7 @@ impl LanUI {
                                 if response.response.clicked() {
                                     output = Some(LanUIOutput::HostCancel);
                                 }
-                                if response.response.hovered() {
+                                if response.response.hovered() && pointer_navigation {
                                     *state = LanUIState::Host;
                                 }
 
@@ -280,10 +312,18 @@ impl LanUI {
                                                 Sense::focusable_noninteractive(),
                                             );
 
-                                            BorderedFrame::new(&root.menu.bframe)
-                                                .padding(Margin::same(2.0))
-                                                .margin(Margin::ZERO)
-                                                .show(ui, |ui| {
+                                            BorderedFrame::new(
+                                                if *state == LanUIState::HostEditing {
+                                                    &root.menu.bframe_blink
+                                                } else {
+                                                    &root.menu.bframe
+                                                },
+                                            )
+                                            .padding(Margin::same(2.0))
+                                            .margin(Margin::ZERO)
+                                            .show(
+                                                ui,
+                                                |ui| {
                                                     let outer_font_id = FontId {
                                                         size: 7.0,
                                                         family: FontFamily::Name(outer_font),
@@ -321,15 +361,17 @@ impl LanUI {
                                                         }
                                                         matchmaker.host_name = new;
                                                     }
+                                                    // TODO: Add with on-screen keyboard
+                                                    // if response.hovered() {
+                                                    //     *state = LanUIState::HostEdit;
+                                                    // }
                                                     if response.gained_focus() {
-                                                        world
-                                                            .resource_mut::<LocalInputs>()
-                                                            .add_key_consumption(KeyCode::Space);
+                                                        local_inputs.typing = true;
+                                                        *state = LanUIState::HostEditing;
                                                     }
                                                     if response.lost_focus() {
-                                                        world
-                                                            .resource_mut::<LocalInputs>()
-                                                            .remove_key_consumption(KeyCode::Space);
+                                                        local_inputs.typing = false;
+                                                        *state = LanUIState::Host;
                                                     }
 
                                                     ui.painter().text(
@@ -346,7 +388,8 @@ impl LanUI {
                                                         outer_font_id,
                                                         Color32::BLACK,
                                                     );
-                                                });
+                                                },
+                                            );
                                         });
                                     });
                             });

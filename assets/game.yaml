@@ -91,6 +91,15 @@ menu:
       right: *margin
       bottom: *margin
     scale: 1
+  bframe_blink:
+    image: ui/borderedFrameBlink.png
+    image_size: [12, 12]
+    border_size:
+      top: *margin
+      left: *margin
+      right: *margin
+      bottom: *margin
+    scale: 1
 
   score_bg: [ui/scoreBoardBackground.png, 91, 45]
   countdown_bg: [ui/countDownBackground.png, 52, 38]
