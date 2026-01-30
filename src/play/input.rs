@@ -53,11 +53,6 @@ impl PlayTeamInputs {
     }
 }
 
-//
-// Network Input Configuration
-//
-
-#[cfg(not(target_arch = "wasm32"))]
 impl Controls<'_, PlayTeamInput> for PlayTeamInputs {
     fn get_control(&self, player_idx: usize) -> &PlayTeamInput {
         &self.clients[player_idx]
@@ -68,10 +63,9 @@ impl Controls<'_, PlayTeamInput> for PlayTeamInputs {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-pub struct PlayTeamNetworkInputConfig;
+pub struct PlayTeamDenseInputConfig;
 
-impl<'a> DenseInputConfig<'a> for PlayTeamNetworkInputConfig {
+impl<'a> DenseInputConfig<'a> for PlayTeamDenseInputConfig {
     type Dense = PlayTeamInputDense;
     type Control = PlayTeamInput;
     type Controls = PlayTeamInputs;

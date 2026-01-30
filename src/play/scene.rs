@@ -110,7 +110,7 @@ pub fn lan_session_runner(
 ) -> Box<dyn SessionRunner> {
     use bones_framework::networking::{GgrsSessionRunner, GgrsSessionRunnerInfo};
 
-    let mut runner = GgrsSessionRunner::<PlayTeamNetworkInputConfig>::new(
+    let mut runner = GgrsSessionRunner::<PlayTeamDenseInputConfig>::new(
         Some(60.0),
         GgrsSessionRunnerInfo::new(socket.ggrs_socket(), Some(7), Some(2), 0),
     );
