@@ -5,7 +5,7 @@ pub fn show_all(world: &World) {
         .resource::<EguiCtx>()
         .input(|r| r.pointer.delta() != egui::Vec2::ZERO);
     if pointer_moved {
-        world.resource_mut::<LocalInputs>().pointer_navigation = true;
+        world.resource_mut::<LocalInputs>().button_navigated = false;
     }
 
     fade::show(world);

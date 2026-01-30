@@ -104,7 +104,7 @@ impl HowToPlay {
         let ctx = world.resource::<EguiCtx>();
         let asset_server = world.resource::<AssetServer>();
         let root = asset_server.root::<Data>();
-        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation;
+        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation();
         let locale = &asset_server.get(root.localization);
 
         let HowToPlayAssets {

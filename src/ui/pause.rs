@@ -102,7 +102,7 @@ impl Pause {
         let root = asset_server.root::<Data>();
         let ctx = world.resource::<EguiCtx>();
         let textures = world.resource::<EguiTextures>();
-        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation;
+        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation();
 
         let PauseAssets {
             menu,

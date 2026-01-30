@@ -162,7 +162,7 @@ impl LanSelect {
         let locale = &asset_server.get(root.localization);
         let textures = world.resource::<EguiTextures>();
         let ctx = world.resource::<EguiCtx>();
-        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation;
+        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation();
 
         use egui::*;
 

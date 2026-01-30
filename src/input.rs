@@ -154,67 +154,56 @@ impl LocalInput {
 pub struct LocalInputs {
     #[deref]
     pub sources: HashMap<SingleSource, LocalInput>,
-    pub key_consumers: HashMap<KeyCode, usize>,
-    /// Whether pointer navigation should be considered.
+
+    /// This is generally going to be toggled off whenever a button is pressed
+    /// and toggled back on when the mouse moves.
     ///
-    /// This is generally going to be toggled off whenever a
-    /// button is pressed and toggled back on when the mouse moves.
-    pub pointer_navigation: bool,
+    /// This is used to track whether or not pointer navigation should be
+    /// considered.
+    pub button_navigated: bool,
+    /// This is generally going to be toggled on and off for when the user is
+    /// typing into a text editor or not.
+    ///
+    /// This is used to track whether or not pointer navigation should be
+    /// considered.
+    pub typing: bool,
 }
 impl LocalInputs {
+    pub fn pointer_navigation(&self) -> bool {
+        !(self.button_navigated || self.typing)
+    }
     pub fn get_input(&mut self, source: SingleSource) -> &LocalInput {
         if !self.sources.contains_key(&source) {
             self.sources.insert(source, default());
         }
         self.sources.get(&source).unwrap()
     }
-    pub fn add_key_consumption(&mut self, key: KeyCode) {
-        *self.key_consumers.entry(key).or_default() += 1;
-    }
-    pub fn remove_key_consumption(&mut self, key: KeyCode) {
-        if let Some(consumers) = self.key_consumers.get_mut(&key) {
-            *consumers = consumers.saturating_sub(1);
-        }
-    }
     pub fn update(game: &mut Game) {
-        let LocalInputs {
-            sources,
-            key_consumers,
-            pointer_navigation,
-        } = &mut *game.shared_resource_mut::<LocalInputs>();
+        let inputs = &mut *game.shared_resource_mut::<LocalInputs>();
         let gamepad_inputs = game.shared_resource::<GamepadInputs>();
         let keyboard_inputs = game.shared_resource::<KeyboardInputs>();
 
         for event in &gamepad_inputs.gamepad_events {
             let id = &SingleSource::Gamepad(*event.gamepad_id());
-            let local_input = if sources.contains_key(id) {
-                sources.get_mut(id).unwrap()
+            let input = if inputs.contains_key(id) {
+                inputs.get_mut(id).unwrap()
             } else {
-                sources.insert(*id, default());
-                sources.get_mut(id).unwrap()
+                inputs.insert(*id, default());
+                inputs.get_mut(id).unwrap()
             };
-            local_input.apply_gamepad_input(event);
+            input.apply_gamepad_input(event);
         }
         for event in &keyboard_inputs.key_events {
-            if let KeyboardEvent {
-                key_code: Maybe::Set(key),
-                ..
-            } = event
-            {
-                if *key_consumers.get(key).unwrap_or(&0) > 0 {
-                    continue;
-                }
-            }
             let id = &SingleSource::KeyboardMouse;
-            let local_input = if sources.contains_key(id) {
-                sources.get_mut(id).unwrap()
+            let input = if inputs.contains_key(id) {
+                inputs.get_mut(id).unwrap()
             } else {
-                sources.insert(*id, default());
-                sources.get_mut(id).unwrap()
+                inputs.insert(*id, default());
+                inputs.get_mut(id).unwrap()
             };
-            local_input.apply_keyboard_input(event);
+            input.apply_keyboard_input(event);
         }
-        for input in sources.values() {
+        for input in inputs.sources.values() {
             if (input.menu_up
                 | input.menu_down
                 | input.menu_left
@@ -223,7 +212,7 @@ impl LocalInputs {
                 | input.menu_back)
                 .just_pressed()
             {
-                *pointer_navigation = false;
+                inputs.button_navigated = true;
             }
         }
     }

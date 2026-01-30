@@ -73,7 +73,7 @@ impl CreditsUi {
         let root = asset_server.root::<Data>();
         let textures = world.resource::<EguiTextures>();
         let ctx = world.resource::<EguiCtx>();
-        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation;
+        let pointer_navigation = world.resource::<LocalInputs>().pointer_navigation();
 
         let CreditsAssets {
             credits_header,
