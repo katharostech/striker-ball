@@ -184,24 +184,18 @@ impl LocalInputs {
         let keyboard_inputs = game.shared_resource::<KeyboardInputs>();
 
         for event in &gamepad_inputs.gamepad_events {
-            let id = &SingleSource::Gamepad(*event.gamepad_id());
-            let input = if inputs.contains_key(id) {
-                inputs.get_mut(id).unwrap()
-            } else {
-                inputs.insert(*id, default());
-                inputs.get_mut(id).unwrap()
-            };
-            input.apply_gamepad_input(event);
+            inputs
+                .sources
+                .entry(SingleSource::Gamepad(*event.gamepad_id()))
+                .or_default()
+                .apply_gamepad_input(event);
         }
         for event in &keyboard_inputs.key_events {
-            let id = &SingleSource::KeyboardMouse;
-            let input = if inputs.contains_key(id) {
-                inputs.get_mut(id).unwrap()
-            } else {
-                inputs.insert(*id, default());
-                inputs.get_mut(id).unwrap()
-            };
-            input.apply_keyboard_input(event);
+            inputs
+                .sources
+                .entry(SingleSource::KeyboardMouse)
+                .or_default()
+                .apply_keyboard_input(event);
         }
         for input in inputs.sources.values() {
             if (input.menu_up
