@@ -181,9 +181,9 @@ impl LocalInputs {
             sources,
             key_consumers,
             pointer_navigation,
-        } = &mut *game.shared_resource_mut::<LocalInputs>().unwrap();
-        let gamepad_inputs = game.shared_resource::<GamepadInputs>().unwrap();
-        let keyboard_inputs = game.shared_resource::<KeyboardInputs>().unwrap();
+        } = &mut *game.shared_resource_mut::<LocalInputs>();
+        let gamepad_inputs = game.shared_resource::<GamepadInputs>();
+        let keyboard_inputs = game.shared_resource::<KeyboardInputs>();
 
         for event in &gamepad_inputs.gamepad_events {
             let id = &SingleSource::Gamepad(*event.gamepad_id());
@@ -228,7 +228,7 @@ impl LocalInputs {
         }
     }
     pub fn advance(game: &mut Game) {
-        for (_id, local_input) in &mut game.shared_resource_mut::<LocalInputs>().unwrap().sources {
+        for (_id, local_input) in &mut game.shared_resource_mut::<LocalInputs>().sources {
             local_input.advance()
         }
     }
@@ -243,8 +243,7 @@ impl GamePlugin for KeyboardState {
         game.insert_shared_resource(self);
         game.systems.add_before_system(|game: &mut Game| {
             game.shared_resource_mut::<Self>()
-                .unwrap()
-                .apply_keyboard_events(&game.shared_resource().unwrap())
+                .apply_keyboard_events(&game.shared_resource())
         });
     }
 }
