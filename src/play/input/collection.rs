@@ -129,7 +129,7 @@ impl PlayTeamInputCollector {
         self.p2_source = p2_source;
     }
 }
-impl InputCollector<'_, Mapping, BlankSource, PlayTeamInput> for PlayTeamInputCollector {
+impl InputCollector<'_, PlayTeamInput> for PlayTeamInputCollector {
     // Called on cpu cycle as opposed to the frame update.
     fn apply_inputs(&mut self, world: &World) {
         let keyboard = world.resource::<KeyboardInputs>();
@@ -208,7 +208,7 @@ impl InputCollector<'_, Mapping, BlankSource, PlayTeamInput> for PlayTeamInputCo
     //
     // I'm skipping use of the control_source to opt for chosen source directly on
     // the collector.
-    fn get_control(&self, _player_idx: usize, _control_source: BlankSource) -> &PlayTeamInput {
+    fn get_control(&self) -> &PlayTeamInput {
         &self.current
     }
 }

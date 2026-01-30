@@ -109,11 +109,7 @@ impl SessionRunner for OfflineRunner {
                     .iter_mut()
                     .enumerate()
                 {
-                    client.update_from_dense(
-                        &self.collectors[i]
-                            .get_control(/* both of these are unused */ 0, Default::default())
-                            .get_dense_input(),
-                    );
+                    client.update_from_dense(&self.collectors[i].get_control().get_dense_input());
                 }
             };
 

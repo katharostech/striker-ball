@@ -10,9 +10,9 @@ bitfield::bitfield! {
     pub some_angle, set_some_angle: 2;
     pub from into DenseAngle, angle, set_angle: 32, 3;
 }
-// TODO: replace with trait after bones exposes the traits for wasm32
-impl PlayInput {
-    pub fn get_dense_input(&self) -> PlayInputDense {
+
+impl DenseControl<PlayInputDense> for PlayInput {
+    fn get_dense_input(&self) -> PlayInputDense {
         let vec2 = Vec2::new(self.x, self.y);
         let angle = (vec2.length() > 0.1).then_some(vec2.angle_between(Vec2::X));
 
@@ -26,22 +26,12 @@ impl PlayInput {
         }
         dense
     }
-    pub fn update_from_dense(&mut self, dense: &PlayInputDense) {
+    fn update_from_dense(&mut self, dense: &PlayInputDense) {
         let Vec2 { x, y } = Vec2::from_angle(*dense.angle());
         self.x = x;
         self.y = y;
         self.shoot.apply_bool(dense.shoot());
         self.pass.apply_bool(dense.pass());
-    }
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-impl bones_framework::networking::input::NetworkPlayerControl<PlayInputDense> for PlayInput {
-    fn get_dense_input(&self) -> PlayInputDense {
-        self.get_dense_input()
-    }
-    fn update_from_dense(&mut self, dense: &PlayInputDense) {
-        self.update_from_dense(dense);
     }
 }
 impl From<u64> for PlayInputDense {
@@ -63,29 +53,17 @@ bitfield::bitfield! {
     pub from into PlayInputDense, p1, set_p1: 31, 0;
     pub from into PlayInputDense, p2, set_p2: 63, 32;
 }
-// TODO: replace with trait after bones exposes the traits for wasm32
-impl PlayTeamInput {
-    pub fn get_dense_input(&self) -> PlayTeamInputDense {
+
+impl DenseControl<PlayTeamInputDense> for PlayTeamInput {
+    fn get_dense_input(&self) -> PlayTeamInputDense {
         let mut dense = PlayTeamInputDense::default();
         dense.set_p1(self.p1.get_dense_input());
         dense.set_p2(self.p2.get_dense_input());
         dense
     }
-    pub fn update_from_dense(&mut self, new_control: &PlayTeamInputDense) {
+    fn update_from_dense(&mut self, new_control: &PlayTeamInputDense) {
         self.p1.update_from_dense(&new_control.p1());
         self.p2.update_from_dense(&new_control.p2());
-    }
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-impl bones_framework::networking::input::NetworkPlayerControl<PlayTeamInputDense>
-    for PlayTeamInput
-{
-    fn get_dense_input(&self) -> PlayTeamInputDense {
-        self.get_dense_input()
-    }
-    fn update_from_dense(&mut self, new_control: &PlayTeamInputDense) {
-        self.update_from_dense(new_control);
     }
 }
 

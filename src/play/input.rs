@@ -53,34 +53,12 @@ impl PlayTeamInputs {
     }
 }
 
-#[derive(HasSchema, Clone, Default)]
-pub struct Mapping;
-
-/// Just a type filler because I'm not using this for input sourcing.
-#[derive(HasSchema, Clone, Default)]
-pub struct BlankSource;
-
 //
 // Network Input Configuration
 //
 
 #[cfg(not(target_arch = "wasm32"))]
-use bones_framework::networking::input::*;
-
-#[cfg(not(target_arch = "wasm32"))]
-impl PlayerControls<'_, PlayTeamInput> for PlayTeamInputs {
-    type InputCollector = PlayTeamInputCollector;
-    type ControlMapping = Mapping;
-    type ControlSource = BlankSource;
-
-    fn update_controls(&mut self, _collector: &mut Self::InputCollector) {
-        panic!("incorrect assumption") // This is currently an unused function I believe, so no need to do.
-    }
-
-    fn get_control_source(&self, local_player_idx: usize) -> Option<Self::ControlSource> {
-        Some(BlankSource)
-    }
-
+impl Controls<'_, PlayTeamInput> for PlayTeamInputs {
     fn get_control(&self, player_idx: usize) -> &PlayTeamInput {
         &self.clients[player_idx]
     }
@@ -93,10 +71,9 @@ impl PlayerControls<'_, PlayTeamInput> for PlayTeamInputs {
 #[cfg(not(target_arch = "wasm32"))]
 pub struct PlayTeamNetworkInputConfig;
 
-#[cfg(not(target_arch = "wasm32"))]
-impl<'a> NetworkInputConfig<'a> for PlayTeamNetworkInputConfig {
+impl<'a> DenseInputConfig<'a> for PlayTeamNetworkInputConfig {
     type Dense = PlayTeamInputDense;
     type Control = PlayTeamInput;
-    type PlayerControls = PlayTeamInputs;
+    type Controls = PlayTeamInputs;
     type InputCollector = PlayTeamInputCollector;
 }
