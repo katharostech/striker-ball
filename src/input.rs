@@ -1,5 +1,7 @@
 use super::*;
 
+/// Inserts the [`LocalInputs`] resource and updates and advances it on the
+/// before and after systems on the [`Game`].
 pub struct LocalInputGamePlugin;
 impl GamePlugin for LocalInputGamePlugin {
     fn install(self, game: &mut Game) {
@@ -149,7 +151,12 @@ impl LocalInput {
     }
 }
 
-/// The primary layer of collective inputs.
+/// In Striker Ball, this is pretty much just menu inputs.
+///
+/// Dereferences to a [`HashMap`] of [`SingleSource`] mapping to the a [`LocalInput`].
+///
+/// [`Self::pointer_navigation`] is used to track whether or not hovers should
+/// be able to change menu states.
 #[derive(HasSchema, Clone, Default, Deref, DerefMut)]
 pub struct LocalInputs {
     #[deref]
@@ -169,6 +176,8 @@ pub struct LocalInputs {
     pub typing: bool,
 }
 impl LocalInputs {
+    /// Whether or not pointer hovers should generally be able to change menu
+    /// states.
     pub fn pointer_navigation(&self) -> bool {
         !(self.button_navigated || self.typing)
     }
@@ -217,6 +226,8 @@ impl LocalInputs {
     }
 }
 
+/// Keeps track keyboard key state as opposed keyboard events. This is used
+/// primarily turn actual key state into axis or character movement values.
 #[derive(HasSchema, Clone, Default)]
 pub struct KeyboardState {
     pub current: HashMap<KeyCode, bool>,
