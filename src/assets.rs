@@ -112,6 +112,8 @@ pub struct Menus {
     pub numbers: Handle<Atlas>,
     pub bframe: BorderImageMeta,
     pub bframe_blink: BorderImageMeta,
+    pub bframe_dark: BorderImageMeta,
+    pub bframe_dark_blink: BorderImageMeta,
     pub back_button: SizedImageAsset,
     pub back_button_blink: SizedImageAsset,
     pub back_button_pressed: SizedImageAsset,

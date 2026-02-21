@@ -4,7 +4,7 @@ use super::*;
 use crate::play::*;
 use crate::player::*;
 
-#[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(HasSchema, Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub enum PartnerSetting {
     #[default]
     CPU,
@@ -19,7 +19,7 @@ impl PartnerSetting {
     }
 }
 
-#[derive(HasSchema, Clone, Default)]
+#[derive(HasSchema, Clone, Default, Debug)]
 pub enum Join {
     #[default]
     Empty,
@@ -183,7 +183,7 @@ impl Join {
     }
 }
 
-#[derive(HasSchema, Clone, Default)]
+#[derive(HasSchema, Clone, Default, Debug)]
 pub struct TeamSelect {
     pub visible: bool,
     pub joins: [Join; 4],
@@ -200,6 +200,14 @@ impl ShowHide for TeamSelect {
     }
 }
 impl TeamSelect {
+    pub fn no_joins(&self) -> bool {
+        for join in &self.joins {
+            if !join.is_empty() {
+                return false;
+            }
+        }
+        true
+    }
     pub fn add_source(&mut self, source: SingleSource) {
         if !self.joins.iter().any(|join| join.is_source(source)) {
             for pad in &mut self.joins {
@@ -210,7 +218,7 @@ impl TeamSelect {
             }
         }
     }
-    pub fn remove_gamepad(&mut self, source: SingleSource) {
+    pub fn remove_source(&mut self, source: SingleSource) {
         for pad in &mut self.joins {
             if pad.is_source(source) {
                 *pad = default();
@@ -393,6 +401,67 @@ impl TeamSelect {
                     partner_setting.cycle();
                 }
             }
+        }
+    }
+    pub fn keyboard_join_a(&mut self) {
+        if let Some(slot) = self.next_slot_a() {
+            if let Some(i) = self.joins.iter().enumerate().find_map(|(i, join)| {
+                join.get_source()
+                    .is_some_and(|s| s == SingleSource::KeyboardMouse)
+                    .then_some(i)
+            }) {
+                if self.joins[i]
+                    .get_player_slot()
+                    .is_some_and(|s| s.team() == Team::A)
+                {
+                    self.joins[i] = Join::Joined {
+                        source: SingleSource::KeyboardMouse,
+                    };
+                } else {
+                    self.joins[i] = Join::Single {
+                        partner_setting: PartnerSetting::CPU,
+                        source: SingleSource::KeyboardMouse,
+                        slot,
+                    };
+                }
+            }
+        }
+    }
+    pub fn keyboard_join_b(&mut self) {
+        if let Some(slot) = self.next_slot_b() {
+            if let Some(i) = self.joins.iter().enumerate().find_map(|(i, join)| {
+                join.get_source()
+                    .is_some_and(|s| s == SingleSource::KeyboardMouse)
+                    .then_some(i)
+            }) {
+                if self.joins[i]
+                    .get_player_slot()
+                    .is_some_and(|s| s.team() == Team::B)
+                {
+                    self.joins[i] = Join::Joined {
+                        source: SingleSource::KeyboardMouse,
+                    };
+                } else {
+                    self.joins[i] = Join::Single {
+                        partner_setting: PartnerSetting::CPU,
+                        source: SingleSource::KeyboardMouse,
+                        slot,
+                    };
+                }
+            }
+        }
+    }
+    pub fn keyboard_join_center(&mut self) {
+        if let Some(i) = self.joins.iter().enumerate().find_map(|(i, join)| {
+            (join
+                .get_source()
+                .is_some_and(|s| s == SingleSource::KeyboardMouse)
+                && join.is_hovered())
+            .then_some(i)
+        }) {
+            self.joins[i] = Join::Joined {
+                source: SingleSource::KeyboardMouse,
+            };
         }
     }
     pub fn is_double(&self, source: SingleSource) -> bool {

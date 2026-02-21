@@ -103,17 +103,35 @@ impl TeamSelect {
         let small_inner_font = asset_server.get(root.font.small_inner).family_name.clone();
         let small_outer_font = asset_server.get(root.font.small_outer).family_name.clone();
 
+        let mut clicked_a = false;
+        let mut clicked_b = false;
+        let mut clicked_center = false;
+
         use egui::*;
         let area = Area::new("self_area")
             .anchor(Align2::CENTER_CENTER, [0., 0.])
             .show(&ctx, |ui| {
                 ui.style_mut().spacing.item_spacing = Vec2::ZERO;
                 ui.horizontal(|ui| {
-                    ui.image(a_team_background.sized_texture(&textures));
-                    ui.image(center_controller_column.sized_texture(&textures));
-                    ui.image(b_team_background.sized_texture(&textures));
+                    let response_a = ui.image(a_team_background.sized_texture(&textures));
+                    let response_center =
+                        ui.image(center_controller_column.sized_texture(&textures));
+                    let response_b = ui.image(b_team_background.sized_texture(&textures));
+
+                    if ctx.clicked_rect(response_a.rect) {
+                        clicked_a = true;
+                    }
+                    if ctx.clicked_rect(response_center.rect) {
+                        clicked_center = true;
+                    }
+                    if ctx.clicked_rect(response_b.rect) {
+                        clicked_b = true;
+                    }
                 });
             });
+
+        let clicked_anywhere = ctx.clicked_rect(area.response.rect);
+
         let origin = area.response.rect.min;
 
         let mut painter = ctx.layer_painter(layer_id());
@@ -122,6 +140,15 @@ impl TeamSelect {
             origin,
             root.screen_size.to_array().into(),
         ));
+
+        let inner_font = asset_server
+            .get(root.font.primary_inner)
+            .family_name
+            .clone();
+        let outer_font = asset_server
+            .get(root.font.primary_outer)
+            .family_name
+            .clone();
 
         // This fixes a glitch with the ui animations when rendering new text.
         // All of it is invisible with the default `Color32`.
@@ -472,8 +499,8 @@ impl TeamSelect {
             origin + slots.back_btn_offset.to_array().into(),
             asset.tile_size.to_array().into(),
         );
-        let pressed = inputs.values().any(|input| input.menu_back.pressed());
-        let clicked = ctx.input(|r| {
+        let pressed_menu_back = inputs.values().any(|input| input.menu_back.pressed());
+        let clicking_back_btn = ctx.input(|r| {
             r.pointer
                 .press_origin()
                 .is_some_and(|pos| back_button_rect.contains(pos))
@@ -482,7 +509,7 @@ impl TeamSelect {
         let mut progress =
             ctx.data_mut(|w| *w.get_temp_mut_or_default::<f32>(Id::new("back_button_progress")));
 
-        if pressed || clicked {
+        if pressed_menu_back || clicking_back_btn {
             progress = (progress + 1.0).min(back_buffer as f32);
         } else {
             progress = 0.0;
@@ -527,6 +554,57 @@ impl TeamSelect {
                 start.egui_size(),
             )) {
                 output = Some(TeamSelectOutput::PlayersInfo(players_info));
+            }
+        }
+        // press any button text
+        if self.no_joins() {
+            let color = if world.resource::<Time>().elapsed().as_secs_f32() % 1.0 < 0.5 {
+                Color32::WHITE
+            } else {
+                Color32::YELLOW
+            };
+            Area::new("press")
+                .anchor(Align2::CENTER_CENTER, [0., 25.])
+                .order(Order::Tooltip)
+                .show(&ctx, |ui| {
+                    BorderedFrame::new(&root.menu.bframe_dark)
+                        .padding(Margin::same(5.0))
+                        .show(ui, |ui| {
+                            let text = "Press Anything To Join";
+                            let response =
+                                ui.label(RichText::new(text).color(color).font(FontId {
+                                    size: 7.0,
+                                    family: FontFamily::Name(inner_font),
+                                }));
+                            TextPainter::new(text)
+                                .size(7.0)
+                                .pos(response.rect.min)
+                                .family(outer_font)
+                                .color(Color32::BLACK)
+                                .paint(ui.painter())
+                        });
+                });
+        }
+
+        if !clicking_back_btn && output.is_none() {
+            if clicked_a {
+                self.keyboard_join_a();
+            }
+            if clicked_center {
+                self.keyboard_join_center();
+            }
+            if clicked_b {
+                self.keyboard_join_b();
+            }
+            if clicked_anywhere
+                && self
+                    .get_index_from_source(SingleSource::KeyboardMouse)
+                    .is_none()
+            {
+                self.add_source(SingleSource::KeyboardMouse);
+            }
+            if ctx.input(|r| r.pointer.secondary_clicked()) {
+                self.remove_source(SingleSource::KeyboardMouse);
             }
         }
         output
