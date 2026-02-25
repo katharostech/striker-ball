@@ -51,6 +51,7 @@ sprite:
   p2_shadow: sprites/players/p2Shadow.png
   p3_shadow: sprites/players/p3Shadow.png
   p4_shadow: sprites/players/p4Shadow.png
+  cpu_shadow: sprites/players/cpuShadow.png
   aim_cone: sprites/players/aimCone.png
   aim_arrow: sprites/players/aimArrow.png
 

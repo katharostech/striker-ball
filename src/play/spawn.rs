@@ -171,7 +171,6 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
     let asset_server = world.asset_server();
     let root = asset_server.root::<Data>();
     let transform = new_player_transform(slot, &root);
-    let team = slot.team();
     let animations = asset_server.get(root.sprite.player_animations);
 
     let Sprites {
@@ -216,46 +215,31 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
         })
         .insert(Transform::from_z(layers::PLAYER));
 
-    world
-        .spawn()
-        .insert(PlayerShadowSprite)
-        .insert(Sprite {
-            image: match team {
-                Team::A => root.sprite.p1_shadow,
-                Team::B => root.sprite.p2_shadow,
-            },
-            ..Default::default()
-        })
-        .insert(Follow::XY {
-            target: player.id(),
-            offset: Vec2::new(0., -4.),
-        })
-        .insert(Transform::from_z(layers::PLAYER_SHADOW));
-
-    // twin stick left or right indicator
-    if let PlayerInfo::Local {
-        twin_stick: true, ..
-    } = player_info
-    {
-        world
-            .spawn()
-            .insert(StickIndicator)
-            .insert(Sprite {
-                image: match slot {
-                    PlayerSlot::A1 | PlayerSlot::B1 => lstick_indicator,
-                    PlayerSlot::A2 | PlayerSlot::B2 => rstick_indicator,
-                },
-                ..Default::default()
-            })
-            .insert(Follow::XY {
-                target: player.id(),
-                offset: Vec2::new(0., 22.),
-            })
-            .insert(Transform::from_z(layers::PLAYER_SHADOW));
-    }
     match player_info {
         PlayerInfo::Network => {}
-        PlayerInfo::Local { number, .. } => {
+        PlayerInfo::Local {
+            number, twin_stick, ..
+        } => {
+            // twin stick left or right indicator
+            if twin_stick {
+                world
+                    .spawn()
+                    .insert(PlayerFieldIndicator)
+                    .insert(Sprite {
+                        image: match slot {
+                            PlayerSlot::A1 | PlayerSlot::B1 => lstick_indicator,
+                            PlayerSlot::A2 | PlayerSlot::B2 => rstick_indicator,
+                        },
+                        ..Default::default()
+                    })
+                    .insert(Follow::XY {
+                        target: player.id(),
+                        offset: Vec2::new(0., 22.),
+                    })
+                    .insert(Transform::from_z(layers::PLAYER_SHADOW));
+            }
+
+            // P1, P2, etc.
             world
                 .spawn()
                 .insert(PlayerIndicator {
@@ -270,8 +254,24 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
                     offset: Vec2::new(0., -18.),
                 })
                 .insert(Transform::from_z(layers::PLAYER_SHADOW));
+
+            // shadows
+            world
+                .spawn()
+                .insert(PlayerShadowSprite)
+                .insert(Sprite {
+                    image: root.sprite.player_shadows()[number],
+                    color: *Color::WHITE.clone().set_a(0.9),
+                    ..Default::default()
+                })
+                .insert(Follow::XY {
+                    target: player.id(),
+                    offset: Vec2::new(0., -4.),
+                })
+                .insert(Transform::from_z(layers::PLAYER_SHADOW));
         }
         PlayerInfo::CPU => {
+            // indicator
             world
                 .spawn()
                 .insert(PlayerIndicator {
@@ -284,6 +284,21 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
                 .insert(Follow::XY {
                     target: player.id(),
                     offset: Vec2::new(0., -18.),
+                })
+                .insert(Transform::from_z(layers::PLAYER_SHADOW));
+
+            // shadows
+            world
+                .spawn()
+                .insert(PlayerShadowSprite)
+                .insert(Sprite {
+                    image: root.sprite.cpu_shadow,
+                    color: *Color::WHITE.clone().set_a(0.9),
+                    ..Default::default()
+                })
+                .insert(Follow::XY {
+                    target: player.id(),
+                    offset: Vec2::new(0., -4.),
                 })
                 .insert(Transform::from_z(layers::PLAYER_SHADOW));
 

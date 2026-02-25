@@ -2,8 +2,8 @@ use super::*;
 
 pub mod prelude {
     pub use super::{
-        AimArrow, AimCone, Player, PlayerEntSigns, PlayerIndicator, PlayerPlugin,
-        PlayerShadowSprite, PlayerSlot, PlayerSprite, StickIndicator, Team,
+        AimArrow, AimCone, Player, PlayerEntSigns, PlayerFieldIndicator, PlayerIndicator,
+        PlayerPlugin, PlayerShadowSprite, PlayerSlot, PlayerSprite, Team,
     };
 }
 pub mod state {
@@ -154,7 +154,7 @@ pub struct AimArrow(pub Entity);
 #[derive(HasSchema, Clone, Default)]
 pub struct AimCone(pub Entity);
 #[derive(HasSchema, Clone, Default)]
-pub struct StickIndicator;
+pub struct PlayerFieldIndicator;
 #[derive(HasSchema, Clone, Default)]
 pub struct PlayerSprite;
 #[derive(HasSchema, Clone, Default)]
@@ -239,7 +239,7 @@ impl SessionPlugin for PlayerPlugin {
             .add_system_to_stage(Update, aim_arrows_update)
             .add_system_to_stage(Update, aim_cones_update)
             .add_system_to_stage(PostUpdate, player_graphics)
-            .add_system_to_stage(PostUpdate, hide_stick_indicators)
+            .add_system_to_stage(PostUpdate, hide_field_indicators)
             .add_system_to_stage(PostUpdate, hide_player_indicators)
             .add_system_to_stage(PostUpdate, sync_sub_sprites);
     }
@@ -573,7 +573,6 @@ fn shoot_update(
         let player = players.get_mut(player_e).unwrap();
         let control = inputs.get_character_control(player.slot);
         let direction = Vec2::new(control.x, control.y);
-
         if direction.length() > 0.2 {
             let direction = direction.normalize();
             let range_clock = Vec2::new(1.0, 0.05 * time.delta_multiplier()).normalize_or_zero();
@@ -853,11 +852,11 @@ fn hide_player_indicators(
     }
 }
 
-fn hide_stick_indicators(
+fn hide_field_indicators(
     entities: Res<Entities>,
     states: Comp<State>,
     players: Comp<Player>,
-    indicators: Comp<StickIndicator>,
+    indicators: Comp<PlayerFieldIndicator>,
     follows: Comp<Follow>,
     mut sprites: CompMut<Sprite>,
 ) {

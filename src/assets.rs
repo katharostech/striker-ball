@@ -89,6 +89,7 @@ pub struct Sprites {
     pub p2_shadow: Handle<Image>,
     pub p3_shadow: Handle<Image>,
     pub p4_shadow: Handle<Image>,
+    pub cpu_shadow: Handle<Image>,
     pub aim_cone: Handle<Image>,
     pub aim_arrow: Handle<Image>,
 
