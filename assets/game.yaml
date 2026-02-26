@@ -83,24 +83,6 @@ menu:
   back_button_blink: [ui/goBackButtonBlink.png, 55, 15]
   back_button_pressed: [ui/goBackButtonPressedBlink.png, 55, 15]
   back_button_pos: [161, 193]
-  bframe_dark:
-    image: ui/borderedFrameDark.png
-    image_size: [12, 12]
-    border_size:
-      top: &margin 4
-      left: *margin
-      right: *margin
-      bottom: *margin
-    scale: 1
-  bframe_dark_blink:
-    image: ui/borderedFrameDarkBlink.png
-    image_size: [12, 12]
-    border_size:
-      top: *margin
-      left: *margin
-      right: *margin
-      bottom: *margin
-    scale: 1
   bframe:
     image: ui/borderedFrame.png
     image_size: [12, 12]
@@ -112,6 +94,24 @@ menu:
     scale: 1
   bframe_blink:
     image: ui/borderedFrameBlink.png
+    image_size: [12, 12]
+    border_size:
+      top: *margin
+      left: *margin
+      right: *margin
+      bottom: *margin
+    scale: 1
+  bframe_dark:
+    image: ui/borderedFrameDark.png
+    image_size: [12, 12]
+    border_size:
+      top: *margin
+      left: *margin
+      right: *margin
+      bottom: *margin
+    scale: 1
+  bframe_dark_blink:
+    image: ui/borderedFrameDarkBlink.png
     image_size: [12, 12]
     border_size:
       top: *margin
