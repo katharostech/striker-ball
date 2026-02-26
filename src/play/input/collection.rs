@@ -31,7 +31,10 @@ fn apply_mouse_event(input: &mut PlayInput, event: &MouseButtonEvent) {
     let MouseButtonEvent { button, state } = event;
     match button {
         MouseButton::Left => input.shoot.apply_bool(state.pressed()),
-        MouseButton::Right => input.pass.apply_bool(state.pressed()),
+        MouseButton::Right => {
+            input.pass.apply_bool(state.pressed());
+            input.tackle.apply_bool(state.pressed());
+        }
         MouseButton::Middle | MouseButton::Other(_) => {}
     }
 }
