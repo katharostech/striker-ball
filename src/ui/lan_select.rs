@@ -54,6 +54,8 @@ impl ServiceType {
 pub struct LanSelect {
     pub visible: bool,
     pub selection: LanSelection,
+    // TODO: all the back buttons should probably be handled like this.
+    pub back_button_pressed: bool,
 }
 impl ShowHide for LanSelect {
     fn show(&mut self) {
@@ -138,7 +140,15 @@ impl LanSelect {
                 }
             }
             if input.menu_back.just_pressed() {
-                output = LanSelectOutput::Exit.into()
+                if matches!(
+                    self.selection,
+                    LanSelection::OnePlayerBind | LanSelection::TwoPlayerBind { .. }
+                ) {
+                    self.selection = LanSelection::OnePlayer;
+                } else {
+                    self.back_button_pressed = true;
+                    output = LanSelectOutput::Exit.into();
+                }
             }
             if input.menu_up.just_pressed() || input.menu_down.just_pressed() {
                 match self.selection {
@@ -156,7 +166,6 @@ impl LanSelect {
         }
         let mut output = None;
 
-        let local_inputs = world.resource::<LocalInputs>();
         let asset_server = world.resource::<AssetServer>();
         let root = asset_server.root::<Data>();
         let locale = &asset_server.get(root.localization);
@@ -300,20 +309,18 @@ impl LanSelect {
             origin + root.menu.back_button_pos.to_array().into(),
             root.menu.back_button.egui_size(),
         );
-        let show_pressed =
-            ctx.data_mut(|w| w.get_temp::<()>(Id::new("back_button_pressed")).is_some());
-        if !show_pressed
-            && world.resource::<MenuState>() == MenuState::LanSelect
-            && (ctx.clicked_rect(rect)
-                || local_inputs
-                    .values()
-                    .any(|input| input.menu_back.just_pressed()))
-        {
-            ctx.data_mut(|w| {
-                w.get_temp_mut_or_default::<()>(Id::new("back_button_pressed"));
-            });
+        if ctx.clicked_rect(rect) {
+            if matches!(
+                self.selection,
+                LanSelection::OnePlayerBind | LanSelection::TwoPlayerBind { .. }
+            ) {
+                self.selection = LanSelection::OnePlayer;
+            } else {
+                self.back_button_pressed = true;
+                output = Some(LanSelectOutput::Exit);
+            }
         }
-        let image = if show_pressed {
+        let image = if self.back_button_pressed {
             root.menu.back_button_pressed
         } else if ctx.hovered_rect(rect)
             && pointer_navigation
@@ -323,9 +330,6 @@ impl LanSelect {
         } else {
             root.menu.back_button
         };
-        if ctx.clicked_rect(rect) {
-            output = Some(LanSelectOutput::Exit);
-        }
         image
             .image_painter()
             .size(image.egui_size())
