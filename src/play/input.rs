@@ -16,6 +16,7 @@ pub struct PlayInput {
     pub x: f32,
     pub y: f32,
     pub shoot: PressInput,
+    pub tackle: PressInput,
     pub pass: PressInput,
 }
 
@@ -49,6 +50,8 @@ impl PlayTeamInputs {
             client.p2.shoot.advance();
             client.p1.pass.advance();
             client.p2.pass.advance();
+            client.p1.tackle.advance();
+            client.p2.tackle.advance();
         }
     }
 }

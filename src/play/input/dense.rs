@@ -7,8 +7,9 @@ bitfield::bitfield! {
     impl Debug;
     pub shoot, set_shoot: 0;
     pub pass, set_pass: 1;
-    pub some_angle, set_some_angle: 2;
-    pub from into DenseAngle, angle, set_angle: 32, 3;
+    pub tackle, set_tackle: 2;
+    pub some_angle, set_some_angle: 3;
+    pub from into DenseAngle, angle, set_angle: 32, 4;
 }
 
 impl DenseControl<PlayInputDense> for PlayInput {
@@ -19,6 +20,7 @@ impl DenseControl<PlayInputDense> for PlayInput {
         let mut dense = PlayInputDense::default();
         dense.set_shoot(self.shoot.pressed());
         dense.set_pass(self.pass.pressed());
+        dense.set_tackle(self.tackle.pressed());
         dense.set_some_angle(angle.is_some());
 
         if let Some(angle) = angle {
@@ -32,6 +34,7 @@ impl DenseControl<PlayInputDense> for PlayInput {
         self.y = y;
         self.shoot.apply_bool(dense.shoot());
         self.pass.apply_bool(dense.pass());
+        self.tackle.apply_bool(dense.tackle());
     }
 }
 impl From<u64> for PlayInputDense {

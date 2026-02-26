@@ -502,7 +502,7 @@ fn to_tackle_transition(
     let control = inputs.get_character_control(player.slot);
     let Sounds { player_tackle, .. } = root.sound;
 
-    if control.pass.just_pressed() && state.age() > 0 {
+    if control.tackle.just_pressed() && state.age() > 0 {
         state.current = state::tackle();
         player.action_angle = player.angle;
         audio.play_sound(*player_tackle, player_tackle.volume());

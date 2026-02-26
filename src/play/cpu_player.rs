@@ -214,8 +214,10 @@ pub fn apply_cpu_input(
             if partner_is_ahead && !partner_is_tackleable {
                 if input.pass.pressed() {
                     input.pass.apply_bool(false);
+                    input.tackle.apply_bool(false);
                 } else {
                     input.pass.apply_bool(true);
+                    input.tackle.apply_bool(true);
                 }
             } else if distance_to_closest_enemy < tackle_distance {
                 let direction_to_pin = (closest_enemy_pin_pos - self_pos).normalize_or_zero();
@@ -257,8 +259,10 @@ pub fn apply_cpu_input(
                 if self_distance < tackle_distance {
                     if input.pass.pressed() {
                         input.pass.apply_bool(false);
+                        input.tackle.apply_bool(false);
                     } else {
                         input.pass.apply_bool(true);
+                        input.tackle.apply_bool(true);
                     }
                 }
             } else {
@@ -287,8 +291,10 @@ pub fn apply_cpu_input(
             {
                 if input.pass.pressed() {
                     input.pass.apply_bool(false);
+                    input.tackle.apply_bool(false);
                 } else {
                     input.pass.apply_bool(true);
+                    input.tackle.apply_bool(true);
                 }
             }
         } else {

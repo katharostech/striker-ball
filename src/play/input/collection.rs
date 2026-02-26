@@ -54,6 +54,9 @@ fn apply_gamepad_event_primary(input: &mut PlayInput, event: &GamepadEvent, game
                 input.shoot.apply_value(*value);
             }
             GamepadButton::West => {
+                input.tackle.apply_value(*value);
+            }
+            GamepadButton::East => {
                 input.pass.apply_value(*value);
             }
             GamepadButton::RightTrigger2 => {
@@ -64,6 +67,7 @@ fn apply_gamepad_event_primary(input: &mut PlayInput, event: &GamepadEvent, game
             }
             GamepadButton::LeftTrigger => {
                 input.pass.apply_value(*value);
+                input.tackle.apply_value(*value);
             }
             _ => {}
         },
@@ -89,6 +93,9 @@ fn apply_gamepad_event_secondary(input: &mut PlayInput, event: &GamepadEvent, ga
                 input.shoot.apply_value(*value);
             }
             GamepadButton::West => {
+                input.tackle.apply_value(*value);
+            }
+            GamepadButton::East => {
                 input.pass.apply_value(*value);
             }
             GamepadButton::RightTrigger2 => {
@@ -99,6 +106,7 @@ fn apply_gamepad_event_secondary(input: &mut PlayInput, event: &GamepadEvent, ga
             }
             GamepadButton::RightTrigger => {
                 input.pass.apply_value(*value);
+                input.tackle.apply_value(*value);
             }
             _ => {}
         },
