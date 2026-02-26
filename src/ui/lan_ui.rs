@@ -132,7 +132,6 @@ impl LanUI {
         let ctx = world.resource::<EguiCtx>();
         let asset_server = world.resource::<AssetServer>();
         let root = asset_server.root::<Data>();
-        let locale = &asset_server.get(root.localization);
         let pointer_navigation = local_inputs.pointer_navigation();
         let mut matchmaker = world.resource_mut::<Matchmaker>();
 
