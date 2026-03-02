@@ -216,7 +216,21 @@ pub fn player(world: &World, player_info: PlayerInfo, slot: PlayerSlot) -> Entit
         .insert(Transform::from_z(layers::PLAYER));
 
     match player_info {
-        PlayerInfo::Network => {}
+        PlayerInfo::Network => {
+            world
+                .spawn()
+                .insert(PlayerShadowSprite)
+                .insert(Sprite {
+                    image: root.sprite.cpu_shadow,
+                    color: *Color::WHITE.clone().set_a(0.9),
+                    ..Default::default()
+                })
+                .insert(Follow::XY {
+                    target: player.id(),
+                    offset: Vec2::new(0., -4.),
+                })
+                .insert(Transform::from_z(layers::PLAYER_SHADOW));
+        }
         PlayerInfo::Local {
             number, twin_stick, ..
         } => {
